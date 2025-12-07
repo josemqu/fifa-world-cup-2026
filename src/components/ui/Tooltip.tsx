@@ -3,13 +3,16 @@
 import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 interface TooltipProps {
   children: React.ReactNode;
   content: string;
+  className?: string;
 }
 
-export function Tooltip({ children, content }: TooltipProps) {
+export function Tooltip({ children, content, className }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -50,7 +53,7 @@ export function Tooltip({ children, content }: TooltipProps) {
       ref={triggerRef}
       onMouseEnter={() => setIsVisible(true)}
       onMouseLeave={() => setIsVisible(false)}
-      className="inline-block relative cursor-help mx-2"
+      className="inline-block relative cursor-help mx-0"
     >
       {children}
       <AnimatePresence>

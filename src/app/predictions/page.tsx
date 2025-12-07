@@ -3,6 +3,8 @@
 import { useState, useMemo } from "react";
 import { useTournament } from "@/context/TournamentContext";
 import { runMonteCarloSimulation, PredictionResult } from "@/utils/monteCarlo";
+import { Tooltip } from "@/components/ui/Tooltip";
+import { Info } from "lucide-react";
 import { clsx } from "clsx";
 
 type SortColumn =
@@ -136,7 +138,7 @@ export default function PredictionsPage() {
     align = "right",
   }: {
     column: SortColumn;
-    label: string;
+    label: React.ReactNode;
     align?: "left" | "right";
   }) => (
     <th
@@ -246,12 +248,26 @@ export default function PredictionsPage() {
                     <SortHeader column="teamName" label="Equipo" align="left" />
                     <SortHeader
                       column="teamRanking"
-                      label="Ranking"
+                      label={
+                        <div className="flex items-center gap-1">
+                          Ranking
+                          <Tooltip content="Ranking FIFA" className="mx-0">
+                            <Info className="w-3 h-3 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300" />
+                          </Tooltip>
+                        </div>
+                      }
                       align="right"
                     />
                     <SortHeader
                       column="teamFifaPoints"
-                      label="Puntos"
+                      label={
+                        <div className="flex items-center gap-1">
+                          Puntos
+                          <Tooltip content="Puntuación FIFA" className="mx-0">
+                            <Info className="w-3 h-3 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300" />
+                          </Tooltip>
+                        </div>
+                      }
                       align="right"
                     />
                     <SortHeader column="championCount" label="Campeón" />
