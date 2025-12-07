@@ -185,8 +185,8 @@ export function GroupCard({ group, onMatchUpdate }: GroupCardProps) {
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
                   <Tooltip content={getTeamName(match.homeTeamId)}>
-                    <span className="font-bold text-slate-700 dark:text-slate-200 cursor-help">
-                      {getTeamAbbreviation(getTeamName(match.homeTeamId))}
+                    <span className="font-bold text-slate-700 dark:text-slate-200 cursor-help text-xs">
+                      {getTeamName(match.homeTeamId)}
                     </span>
                   </Tooltip>
                 </div>
@@ -233,8 +233,8 @@ export function GroupCard({ group, onMatchUpdate }: GroupCardProps) {
 
                 <div className="flex items-center gap-2 flex-1 min-w-0 justify-start">
                   <Tooltip content={getTeamName(match.awayTeamId)}>
-                    <span className="font-bold text-slate-700 dark:text-slate-200 cursor-help">
-                      {getTeamAbbreviation(getTeamName(match.awayTeamId))}
+                    <span className="font-bold text-slate-700 dark:text-slate-200 cursor-help text-xs">
+                      {getTeamName(match.awayTeamId)}
                     </span>
                   </Tooltip>
                 </div>
