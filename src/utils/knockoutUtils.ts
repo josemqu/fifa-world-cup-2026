@@ -68,6 +68,16 @@ export function getKnockoutPairings(groups: Group[]) {
 export function generateR32Matches(groups: Group[]) {
   const { qualified, combination, bestThirds } = getKnockoutPairings(groups);
 
+  // Helper to check if a group is finished
+  const isGroupFinished = (groupName: string) => {
+    const group = groups.find((g) => g.name === groupName);
+    return group ? group.matches.every((m) => m.finished) : false;
+  };
+
+  const allGroupsFinished = groups.every((g) =>
+    g.matches.every((m) => m.finished)
+  );
+
   // Fallback assignment logic if combination is missing but we have 8 thirds
   let fallbackAssignments: { [key: string]: Team } = {};
   if (!combination && bestThirds.length === 8) {
@@ -104,52 +114,74 @@ export function generateR32Matches(groups: Group[]) {
       // e.g. "2A"
       const rank = match.home.charAt(0); // "2"
       const groupName = match.home.charAt(1); // "A"
-      if (rank === "1") homeTeam = qualified[groupName].first;
-      else if (rank === "2") homeTeam = qualified[groupName].second;
+      if (isGroupFinished(groupName)) {
+        if (rank === "1") homeTeam = qualified[groupName].first;
+        else if (rank === "2") homeTeam = qualified[groupName].second;
+      }
     } else if (match.type === "variable") {
       // e.g. "1E"
       const rank = match.home.charAt(0);
       const groupName = match.home.charAt(1);
-      if (rank === "1") homeTeam = qualified[groupName].first;
+      if (isGroupFinished(groupName)) {
+        if (rank === "1") homeTeam = qualified[groupName].first;
+      }
     }
 
     // Resolve Away Team
     if (match.type === "fixed") {
       const rank = match.away.charAt(0);
       const groupName = match.away.charAt(1);
-      if (rank === "1") awayTeam = qualified[groupName].first;
-      else if (rank === "2") awayTeam = qualified[groupName].second;
+      if (isGroupFinished(groupName)) {
+        if (rank === "1") awayTeam = qualified[groupName].first;
+        else if (rank === "2") awayTeam = qualified[groupName].second;
+      }
     } else if (match.type === "variable") {
       // match.away is "3?"
       // We need the combination logic
-      if (combination) {
-        const homeGroup = match.home.charAt(1); // e.g. "E" from "1E"
-        const opponentGroup = combination.matchups[homeGroup]; // e.g. "L"
-        if (opponentGroup) {
-          awayTeam = qualified[opponentGroup].third;
-        } else {
-          // @ts-ignore
-          if (match.possibilities) {
-            // @ts-ignore
-            awayTeam = { placeholder: `3° (${match.possibilities.join("/")})` };
+      // Only assign 3rd place teams if ALL groups are finished
+      if (allGroupsFinished) {
+        if (combination) {
+          const homeGroup = match.home.charAt(1); // e.g. "E" from "1E"
+          const opponentGroup = combination.matchups[homeGroup]; // e.g. "L"
+          if (opponentGroup) {
+            awayTeam = qualified[opponentGroup].third;
           } else {
-            awayTeam = { placeholder: `3° ?` };
+            // @ts-ignore
+            if (match.possibilities) {
+              // @ts-ignore
+              awayTeam = {
+                placeholder: `3° (${match.possibilities.join("/")})`,
+              };
+            } else {
+              awayTeam = { placeholder: `3° ?` };
+            }
+          }
+        } else {
+          // Fallback: Check if we have a calculated assignment
+          const homeGroup = match.home.charAt(1);
+          if (fallbackAssignments[homeGroup]) {
+            awayTeam = fallbackAssignments[homeGroup];
+          } else {
+            // Fallback if no combination matches yet (e.g. not enough games played)
+            // @ts-ignore
+            if (match.possibilities) {
+              // @ts-ignore
+              awayTeam = {
+                placeholder: `3° (${match.possibilities.join("/")})`,
+              };
+            } else {
+              awayTeam = { placeholder: match.away };
+            }
           }
         }
       } else {
-        // Fallback: Check if we have a calculated assignment
-        const homeGroup = match.home.charAt(1);
-        if (fallbackAssignments[homeGroup]) {
-          awayTeam = fallbackAssignments[homeGroup];
-        } else {
-          // Fallback if no combination matches yet (e.g. not enough games played)
+        // If not all groups finished, show placeholder
+        // @ts-ignore
+        if (match.possibilities) {
           // @ts-ignore
-          if (match.possibilities) {
-            // @ts-ignore
-            awayTeam = { placeholder: `3° (${match.possibilities.join("/")})` };
-          } else {
-            awayTeam = { placeholder: match.away };
-          }
+          awayTeam = { placeholder: `3° (${match.possibilities.join("/")})` };
+        } else {
+          awayTeam = { placeholder: match.away };
         }
       }
     }

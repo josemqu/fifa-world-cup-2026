@@ -443,6 +443,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         return recalculateGroupStats({ ...group, matches: updatedMatches });
       });
     });
+    setKnockoutMatches([]);
   };
 
   const simulateKnockout = () => {
