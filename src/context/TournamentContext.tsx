@@ -607,7 +607,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     setGroups((currentGroups) => {
       return currentGroups.map((group) => {
         const updatedMatches = group.matches.map((match) => {
-          if (match.finished) return match;
+          // if (match.finished) return match; // Allow re-simulation
 
           const homeTeam = group.teams.find((t) => t.id === match.homeTeamId);
           const awayTeam = group.teams.find((t) => t.id === match.awayTeamId);
@@ -641,7 +641,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     // 1. Simulate Groups locally (respecting existing results)
     const simulatedGroups = groups.map((group) => {
       const updatedMatches = group.matches.map((match) => {
-        if (match.finished) return match;
+        // if (match.finished) return match; // Allow re-simulation
 
         const homeTeam = group.teams.find((t) => t.id === match.homeTeamId);
         const awayTeam = group.teams.find((t) => t.id === match.awayTeamId);
