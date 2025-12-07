@@ -12,7 +12,9 @@ interface KnockoutStageProps {
   onMatchUpdate: (
     matchId: string,
     homeScore: number | null,
-    awayScore: number | null
+    awayScore: number | null,
+    homePenalties?: number | null,
+    awayPenalties?: number | null
   ) => void;
 }
 
@@ -24,7 +26,13 @@ function MatchCard({
 }: {
   match: KnockoutMatch;
   roundName: string;
-  onUpdate: (id: string, h: number | null, a: number | null) => void;
+  onUpdate: (
+    id: string,
+    h: number | null,
+    a: number | null,
+    hp?: number | null,
+    ap?: number | null
+  ) => void;
 }) {
   const homeTeam = match.homeTeam;
   const awayTeam = match.awayTeam;
@@ -42,12 +50,44 @@ function MatchCard({
   const isAwayPlaceholder = !awayTeam || "placeholder" in awayTeam;
   const canEdit = !isHomePlaceholder && !isAwayPlaceholder;
 
+  // Check for tie
+  const isTied =
+    match.homeScore !== null &&
+    match.homeScore !== undefined &&
+    match.awayScore !== null &&
+    match.awayScore !== undefined &&
+    match.homeScore === match.awayScore;
+
+  // Check for penalty tie (Invalid state)
+  const isPenaltyTied =
+    isTied &&
+    match.homePenalties !== null &&
+    match.homePenalties !== undefined &&
+    match.awayPenalties !== null &&
+    match.awayPenalties !== undefined &&
+    match.homePenalties === match.awayPenalties;
+
   return (
-    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 shadow-sm min-w-[200px] relative z-10">
+    <div
+      className={clsx(
+        "bg-white dark:bg-slate-800 border rounded-lg p-3 shadow-sm min-w-[200px] relative z-10 transition-colors",
+        isPenaltyTied
+          ? "border-red-300 dark:border-red-900/50"
+          : "border-slate-200 dark:border-slate-700"
+      )}
+    >
       <div className="text-xs text-slate-400 mb-2 flex justify-between">
         <span>Match {match.id}</span>
         {match.nextMatchId && <span>To: {match.nextMatchId}</span>}
       </div>
+      {isPenaltyTied && (
+        <div
+          className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-bold shadow-sm z-20"
+          title="Penalties cannot be tied"
+        >
+          !
+        </div>
+      )}
       <div className="flex flex-col gap-2">
         {/* Home Team */}
         <div className="flex justify-between items-center gap-2">
@@ -62,19 +102,53 @@ function MatchCard({
           >
             {homeName}
           </span>
-          <input
-            type="number"
-            min="0"
-            className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
-            value={match.homeScore ?? ""}
-            onChange={(e) => {
-              const val =
-                e.target.value === "" ? null : parseInt(e.target.value);
-              onUpdate(match.id, val, match.awayScore ?? null);
-            }}
-            placeholder="-"
-            disabled={!canEdit}
-          />
+          <div className="flex items-center gap-1">
+            {isTied && (
+              <input
+                type="number"
+                min="0"
+                className={clsx(
+                  "w-5 h-5 text-center text-[10px] font-medium border rounded focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50",
+                  isPenaltyTied
+                    ? "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800 text-red-600 focus:ring-red-500 focus:border-red-500"
+                    : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:ring-blue-500 focus:border-transparent"
+                )}
+                value={match.homePenalties ?? ""}
+                onChange={(e) => {
+                  const val =
+                    e.target.value === "" ? null : parseInt(e.target.value);
+                  onUpdate(
+                    match.id,
+                    match.homeScore ?? null,
+                    match.awayScore ?? null,
+                    val,
+                    match.awayPenalties ?? null
+                  );
+                }}
+                placeholder="P"
+                disabled={!canEdit}
+              />
+            )}
+            <input
+              type="number"
+              min="0"
+              className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
+              value={match.homeScore ?? ""}
+              onChange={(e) => {
+                const val =
+                  e.target.value === "" ? null : parseInt(e.target.value);
+                onUpdate(
+                  match.id,
+                  val,
+                  match.awayScore ?? null,
+                  match.homePenalties ?? null,
+                  match.awayPenalties ?? null
+                );
+              }}
+              placeholder="-"
+              disabled={!canEdit}
+            />
+          </div>
         </div>
 
         {/* Away Team */}
@@ -90,19 +164,53 @@ function MatchCard({
           >
             {awayName}
           </span>
-          <input
-            type="number"
-            min="0"
-            className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
-            value={match.awayScore ?? ""}
-            onChange={(e) => {
-              const val =
-                e.target.value === "" ? null : parseInt(e.target.value);
-              onUpdate(match.id, match.homeScore ?? null, val);
-            }}
-            placeholder="-"
-            disabled={!canEdit}
-          />
+          <div className="flex items-center gap-1">
+            {isTied && (
+              <input
+                type="number"
+                min="0"
+                className={clsx(
+                  "w-5 h-5 text-center text-[10px] font-medium border rounded focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50",
+                  isPenaltyTied
+                    ? "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800 text-red-600 focus:ring-red-500 focus:border-red-500"
+                    : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:ring-blue-500 focus:border-transparent"
+                )}
+                value={match.awayPenalties ?? ""}
+                onChange={(e) => {
+                  const val =
+                    e.target.value === "" ? null : parseInt(e.target.value);
+                  onUpdate(
+                    match.id,
+                    match.homeScore ?? null,
+                    match.awayScore ?? null,
+                    match.homePenalties ?? null,
+                    val
+                  );
+                }}
+                placeholder="P"
+                disabled={!canEdit}
+              />
+            )}
+            <input
+              type="number"
+              min="0"
+              className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
+              value={match.awayScore ?? ""}
+              onChange={(e) => {
+                const val =
+                  e.target.value === "" ? null : parseInt(e.target.value);
+                onUpdate(
+                  match.id,
+                  match.homeScore ?? null,
+                  val,
+                  match.homePenalties ?? null,
+                  match.awayPenalties ?? null
+                );
+              }}
+              placeholder="-"
+              disabled={!canEdit}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -119,7 +227,13 @@ function MatchPair({
   match1: KnockoutMatch;
   match2: KnockoutMatch;
   roundName: string;
-  onUpdate: (id: string, h: number | null, a: number | null) => void;
+  onUpdate: (
+    id: string,
+    h: number | null,
+    a: number | null,
+    hp?: number | null,
+    ap?: number | null
+  ) => void;
 }) {
   return (
     <div className="flex flex-col justify-around h-full relative mb-4">

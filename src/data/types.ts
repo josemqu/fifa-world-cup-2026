@@ -46,6 +46,8 @@ export type KnockoutMatch = {
   awayTeam: Team | null | { placeholder: string };
   homeScore?: number | null;
   awayScore?: number | null;
+  homePenalties?: number | null;
+  awayPenalties?: number | null;
   winner?: Team | null;
   nextMatchId?: string; // Where the winner goes
 };

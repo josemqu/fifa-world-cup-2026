@@ -29,7 +29,9 @@ interface TournamentContextType {
   updateKnockoutMatch: (
     matchId: string,
     homeScore: number | null,
-    awayScore: number | null
+    awayScore: number | null,
+    homePenalties?: number | null,
+    awayPenalties?: number | null
   ) => void;
   simulateAll: () => void;
 }
@@ -244,7 +246,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   const updateKnockoutMatch = (
     matchId: string,
     homeScore: number | null,
-    awayScore: number | null
+    awayScore: number | null,
+    homePenalties: number | null = null,
+    awayPenalties: number | null = null
   ) => {
     setKnockoutMatches((currentMatches) => {
       let newMatches = [...currentMatches];
@@ -254,6 +258,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       const match = { ...newMatches[matchIndex] };
       match.homeScore = homeScore;
       match.awayScore = awayScore;
+      match.homePenalties = homePenalties;
+      match.awayPenalties = awayPenalties;
 
       // Determine winner
       let winner: Team | null = null;
@@ -268,6 +274,13 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
             winner = match.homeTeam as Team;
           } else if (awayScore > homeScore) {
             winner = match.awayTeam as Team;
+          } else if (homePenalties !== null && awayPenalties !== null) {
+            // Penalties tie-breaker
+            if (homePenalties > awayPenalties) {
+              winner = match.homeTeam as Team;
+            } else if (awayPenalties > homePenalties) {
+              winner = match.awayTeam as Team;
+            }
           }
         }
       }
@@ -345,6 +358,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
             // Reset score/winner of next match if teams changed (or were reset)
             nextMatch.homeScore = null;
             nextMatch.awayScore = null;
+            nextMatch.homePenalties = null;
+            nextMatch.awayPenalties = null;
             nextMatch.winner = null;
 
             newMatches[nextMatchIndex] = nextMatch;
@@ -396,6 +411,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
             // Reset score/winner of 3rd place match
             thirdPlaceMatch.homeScore = null;
             thirdPlaceMatch.awayScore = null;
+            thirdPlaceMatch.homePenalties = null;
+            thirdPlaceMatch.awayPenalties = null;
             thirdPlaceMatch.winner = null;
 
             newMatches[thirdPlaceIndex] = thirdPlaceMatch;
