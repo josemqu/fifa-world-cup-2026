@@ -1,69 +1,108 @@
-import { Group } from "@/data/types";
+import { Group, KnockoutMatch } from "@/data/types";
 import {
-  generateR32Matches,
   getGroupStandings,
   getSortedThirdPlaceTeams,
 } from "@/utils/knockoutUtils";
-import {
-  R16_MATCHES,
-  QF_MATCHES,
-  SF_MATCHES,
-  FINAL_MATCHES,
-} from "@/data/knockoutData";
 import { clsx } from "clsx";
 import { motion } from "framer-motion";
 
 interface KnockoutStageProps {
   groups: Group[];
+  matches: KnockoutMatch[];
+  onMatchUpdate: (
+    matchId: string,
+    homeScore: number | null,
+    awayScore: number | null
+  ) => void;
 }
 
 // Helper to render a match card
-function MatchCard({ match, roundName }: { match: any; roundName: string }) {
+function MatchCard({
+  match,
+  roundName,
+  onUpdate,
+}: {
+  match: KnockoutMatch;
+  roundName: string;
+  onUpdate: (id: string, h: number | null, a: number | null) => void;
+}) {
+  const homeTeam = match.homeTeam;
+  const awayTeam = match.awayTeam;
+
   const homeName =
-    "placeholder" in match.homeTeam
-      ? match.homeTeam.placeholder
-      : match.homeTeam.name;
+    homeTeam && "placeholder" in homeTeam
+      ? homeTeam.placeholder
+      : homeTeam?.name;
   const awayName =
-    "placeholder" in match.awayTeam
-      ? match.awayTeam.placeholder
-      : match.awayTeam.name;
+    awayTeam && "placeholder" in awayTeam
+      ? awayTeam.placeholder
+      : awayTeam?.name;
+
+  const isHomePlaceholder = !homeTeam || "placeholder" in homeTeam;
+  const isAwayPlaceholder = !awayTeam || "placeholder" in awayTeam;
+  const canEdit = !isHomePlaceholder && !isAwayPlaceholder;
 
   return (
     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 shadow-sm min-w-[200px] relative z-10">
       <div className="text-xs text-slate-400 mb-2 flex justify-between">
         <span>Match {match.id}</span>
-        {match.next && <span>To: G{match.next}</span>}
+        {match.nextMatchId && <span>To: {match.nextMatchId}</span>}
       </div>
       <div className="flex flex-col gap-2">
-        <div className="flex justify-between items-center">
+        {/* Home Team */}
+        <div className="flex justify-between items-center gap-2">
           <span
             className={clsx(
-              "font-medium text-sm",
-              "placeholder" in match.homeTeam
+              "font-medium text-sm truncate max-w-[120px]",
+              isHomePlaceholder
                 ? "text-slate-400 italic"
                 : "text-slate-900 dark:text-slate-100"
             )}
+            title={homeName}
           >
             {homeName}
           </span>
-          <span className="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-xs font-mono">
-            -
-          </span>
+          <input
+            type="number"
+            min="0"
+            className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
+            value={match.homeScore ?? ""}
+            onChange={(e) => {
+              const val =
+                e.target.value === "" ? null : parseInt(e.target.value);
+              onUpdate(match.id, val, match.awayScore ?? null);
+            }}
+            placeholder="-"
+            disabled={!canEdit}
+          />
         </div>
-        <div className="flex justify-between items-center">
+
+        {/* Away Team */}
+        <div className="flex justify-between items-center gap-2">
           <span
             className={clsx(
-              "font-medium text-sm",
-              "placeholder" in match.awayTeam
+              "font-medium text-sm truncate max-w-[120px]",
+              isAwayPlaceholder
                 ? "text-slate-400 italic"
                 : "text-slate-900 dark:text-slate-100"
             )}
+            title={awayName}
           >
             {awayName}
           </span>
-          <span className="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-xs font-mono">
-            -
-          </span>
+          <input
+            type="number"
+            min="0"
+            className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
+            value={match.awayScore ?? ""}
+            onChange={(e) => {
+              const val =
+                e.target.value === "" ? null : parseInt(e.target.value);
+              onUpdate(match.id, match.homeScore ?? null, val);
+            }}
+            placeholder="-"
+            disabled={!canEdit}
+          />
         </div>
       </div>
     </div>
@@ -75,15 +114,17 @@ function MatchPair({
   match1,
   match2,
   roundName,
+  onUpdate,
 }: {
-  match1: any;
-  match2: any;
+  match1: KnockoutMatch;
+  match2: KnockoutMatch;
   roundName: string;
+  onUpdate: (id: string, h: number | null, a: number | null) => void;
 }) {
   return (
     <div className="flex flex-col justify-around h-full relative">
-      <MatchCard match={match1} roundName={roundName} />
-      <MatchCard match={match2} roundName={roundName} />
+      <MatchCard match={match1} roundName={roundName} onUpdate={onUpdate} />
+      <MatchCard match={match2} roundName={roundName} onUpdate={onUpdate} />
 
       {/* Connector Bracket */}
       <div className="absolute right-0 top-1/4 bottom-1/4 w-8 translate-x-full pointer-events-none">
@@ -139,45 +180,43 @@ const STAGES = [
   },
 ] as const;
 
-export function KnockoutStage({ groups }: KnockoutStageProps) {
-  const r32Matches = generateR32Matches(groups);
+export function KnockoutStage({
+  groups,
+  matches,
+  onMatchUpdate,
+}: KnockoutStageProps) {
   const { thirdPlaceTeams } = getGroupStandings(groups);
   const sortedThirds = getSortedThirdPlaceTeams(thirdPlaceTeams);
 
   // Helper to chunk matches into pairs
-  const pairMatches = (matches: any[]) => {
+  const pairMatches = (matchList: KnockoutMatch[]) => {
     const pairs = [];
-    for (let i = 0; i < matches.length; i += 2) {
-      pairs.push({ m1: matches[i], m2: matches[i + 1] });
+    for (let i = 0; i < matchList.length; i += 2) {
+      pairs.push({ m1: matchList[i], m2: matchList[i + 1] });
     }
     return pairs;
   };
 
-  const r32Pairs = pairMatches(r32Matches);
-  const r16Pairs = pairMatches(
-    R16_MATCHES.map((m) => ({
-      ...m,
-      homeTeam: { placeholder: `W${m.home.replace("W", "")}` },
-      awayTeam: { placeholder: `W${m.away.replace("W", "")}` },
-    }))
-  );
-  const qfPairs = pairMatches(
-    QF_MATCHES.map((m) => ({
-      ...m,
-      homeTeam: { placeholder: `W${m.home.replace("W", "")}` },
-      awayTeam: { placeholder: `W${m.away.replace("W", "")}` },
-    }))
-  );
-  const sfPairs = pairMatches(
-    SF_MATCHES.map((m) => ({
-      ...m,
-      homeTeam: { placeholder: `W${m.home.replace("W", "")}` },
-      awayTeam: { placeholder: `W${m.away.replace("W", "")}` },
-    }))
-  );
+  const r32Matches = matches
+    .filter((m) => m.stage === "R32")
+    .sort((a, b) => Number(a.id) - Number(b.id));
+  const r16Matches = matches
+    .filter((m) => m.stage === "R16")
+    .sort((a, b) => Number(a.id) - Number(b.id));
+  const qfMatches = matches
+    .filter((m) => m.stage === "QF")
+    .sort((a, b) => Number(a.id) - Number(b.id));
+  const sfMatches = matches
+    .filter((m) => m.stage === "SF")
+    .sort((a, b) => Number(a.id) - Number(b.id));
 
-  const finalMatch = FINAL_MATCHES.find((m) => m.id === "104");
-  const thirdPlaceMatch = FINAL_MATCHES.find((m) => m.id === "103");
+  const finalMatch = matches.find((m) => m.id === "104");
+  const thirdPlaceMatch = matches.find((m) => m.id === "103");
+
+  const r32Pairs = pairMatches(r32Matches);
+  const r16Pairs = pairMatches(r16Matches);
+  const qfPairs = pairMatches(qfMatches);
+  const sfPairs = pairMatches(sfMatches);
 
   return (
     <motion.div
@@ -195,7 +234,7 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
         >
           {/* Stage Backgrounds & Headers */}
           {STAGES.map((stage) => (
-            <>
+            <div key={`stage-group-${stage.id}`} className="contents">
               {/* Background Column */}
               <div
                 key={`bg-${stage.id}`}
@@ -235,7 +274,7 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
                   {stage.label}
                 </h3>
               </div>
-            </>
+            </div>
           ))}
 
           {/* Round of 32 */}
@@ -245,7 +284,12 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
               className="col-start-1"
               style={{ gridRow: i + 2 }}
             >
-              <MatchPair match1={pair.m1} match2={pair.m2} roundName="R32" />
+              <MatchPair
+                match1={pair.m1}
+                match2={pair.m2}
+                roundName="R32"
+                onUpdate={onMatchUpdate}
+              />
             </div>
           ))}
 
@@ -256,7 +300,12 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
               className="col-start-2"
               style={{ gridRow: `${i * 2 + 2} / span 2` }}
             >
-              <MatchPair match1={pair.m1} match2={pair.m2} roundName="R16" />
+              <MatchPair
+                match1={pair.m1}
+                match2={pair.m2}
+                roundName="R16"
+                onUpdate={onMatchUpdate}
+              />
             </div>
           ))}
 
@@ -267,7 +316,12 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
               className="col-start-3"
               style={{ gridRow: `${i * 4 + 2} / span 4` }}
             >
-              <MatchPair match1={pair.m1} match2={pair.m2} roundName="QF" />
+              <MatchPair
+                match1={pair.m1}
+                match2={pair.m2}
+                roundName="QF"
+                onUpdate={onMatchUpdate}
+              />
             </div>
           ))}
 
@@ -278,7 +332,12 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
               className="col-start-4"
               style={{ gridRow: `${i * 8 + 2} / span 8` }}
             >
-              <MatchPair match1={pair.m1} match2={pair.m2} roundName="SF" />
+              <MatchPair
+                match1={pair.m1}
+                match2={pair.m2}
+                roundName="SF"
+                onUpdate={onMatchUpdate}
+              />
             </div>
           ))}
 
@@ -291,23 +350,12 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
             {finalMatch && (
               <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 z-10">
                 <h4 className="text-sm font-semibold text-center mb-2 text-slate-500">
-                  {finalMatch.label}
+                  Final
                 </h4>
                 <MatchCard
-                  match={{
-                    ...finalMatch,
-                    homeTeam: {
-                      placeholder: finalMatch.home.startsWith("W")
-                        ? `W${finalMatch.home.replace("W", "")}`
-                        : `L${finalMatch.home.replace("L", "")}`,
-                    },
-                    awayTeam: {
-                      placeholder: finalMatch.away.startsWith("W")
-                        ? `W${finalMatch.away.replace("W", "")}`
-                        : `L${finalMatch.away.replace("L", "")}`,
-                    },
-                  }}
+                  match={finalMatch}
                   roundName="Final"
+                  onUpdate={onMatchUpdate}
                 />
                 {/* Incoming Line Connector */}
                 <div className="absolute top-1/2 left-0 w-4 h-[2px] bg-slate-300 dark:bg-slate-600 transform -translate-y-1/2 -translate-x-full" />
@@ -318,23 +366,12 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
             {thirdPlaceMatch && (
               <div className="absolute top-1/2 left-0 right-0 mt-32 z-10">
                 <h4 className="text-sm font-semibold text-center mb-2 text-slate-500">
-                  {thirdPlaceMatch.label}
+                  Tercer Puesto
                 </h4>
                 <MatchCard
-                  match={{
-                    ...thirdPlaceMatch,
-                    homeTeam: {
-                      placeholder: thirdPlaceMatch.home.startsWith("W")
-                        ? `W${thirdPlaceMatch.home.replace("W", "")}`
-                        : `L${thirdPlaceMatch.home.replace("L", "")}`,
-                    },
-                    awayTeam: {
-                      placeholder: thirdPlaceMatch.away.startsWith("W")
-                        ? `W${thirdPlaceMatch.away.replace("W", "")}`
-                        : `L${thirdPlaceMatch.away.replace("L", "")}`,
-                    },
-                  }}
-                  roundName="Final"
+                  match={thirdPlaceMatch}
+                  roundName="3rdPlace"
+                  onUpdate={onMatchUpdate}
                 />
               </div>
             )}
