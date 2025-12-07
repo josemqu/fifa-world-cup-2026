@@ -40,7 +40,8 @@ export default function PredictionsPage() {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortColumn(column);
-      setSortDirection("desc");
+      // Default to ascending for ranking (lower is better), descending for others
+      setSortDirection(column === "teamRanking" ? "asc" : "desc");
     }
   };
 
