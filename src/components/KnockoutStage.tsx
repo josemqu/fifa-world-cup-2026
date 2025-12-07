@@ -1,4 +1,4 @@
-import { Group, Team } from "@/data/types";
+import { Group } from "@/data/types";
 import {
   generateR32Matches,
   getGroupStandings,
@@ -28,7 +28,7 @@ function MatchCard({ match, roundName }: { match: any; roundName: string }) {
       : match.awayTeam.name;
 
   return (
-    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 shadow-sm min-w-[200px] mb-4">
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 shadow-sm min-w-[200px] relative z-10">
       <div className="text-xs text-slate-400 mb-2 flex justify-between">
         <span>Match {match.id}</span>
         {match.next && <span>To: G{match.next}</span>}
@@ -69,120 +69,202 @@ function MatchCard({ match, roundName }: { match: any; roundName: string }) {
   );
 }
 
+// Helper to render a pair of matches with a connector
+function MatchPair({
+  match1,
+  match2,
+  roundName,
+}: {
+  match1: any;
+  match2: any;
+  roundName: string;
+}) {
+  return (
+    <div className="flex flex-col justify-around h-full relative">
+      <MatchCard match={match1} roundName={roundName} />
+      <MatchCard match={match2} roundName={roundName} />
+
+      {/* Connector Bracket */}
+      <div className="absolute right-0 top-1/4 bottom-1/4 w-8 translate-x-full pointer-events-none">
+        {/* Vertical Line and Horizontal Arms */}
+        <div className="absolute inset-0 border-r-2 border-y-2 border-slate-300 dark:border-slate-600 rounded-r-xl" />
+        {/* Horizontal Tail to next round */}
+        <div className="absolute top-1/2 right-0 w-4 h-[2px] bg-slate-300 dark:bg-slate-600 translate-x-full transform -translate-y-1/2" />
+      </div>
+    </div>
+  );
+}
+
 export function KnockoutStage({ groups }: KnockoutStageProps) {
   const r32Matches = generateR32Matches(groups);
   const { thirdPlaceTeams } = getGroupStandings(groups);
   const sortedThirds = getSortedThirdPlaceTeams(thirdPlaceTeams);
 
-  // For subsequent rounds, we would need to determine winners.
-  // For now, I'll just render the structure with placeholders "Winner GXX"
+  // Helper to chunk matches into pairs
+  const pairMatches = (matches: any[]) => {
+    const pairs = [];
+    for (let i = 0; i < matches.length; i += 2) {
+      pairs.push({ m1: matches[i], m2: matches[i + 1] });
+    }
+    return pairs;
+  };
+
+  const r32Pairs = pairMatches(r32Matches);
+  const r16Pairs = pairMatches(
+    R16_MATCHES.map((m) => ({
+      ...m,
+      homeTeam: { placeholder: `W${m.home.replace("W", "")}` },
+      awayTeam: { placeholder: `W${m.away.replace("W", "")}` },
+    }))
+  );
+  const qfPairs = pairMatches(
+    QF_MATCHES.map((m) => ({
+      ...m,
+      homeTeam: { placeholder: `W${m.home.replace("W", "")}` },
+      awayTeam: { placeholder: `W${m.away.replace("W", "")}` },
+    }))
+  );
+  const sfPairs = pairMatches(
+    SF_MATCHES.map((m) => ({
+      ...m,
+      homeTeam: { placeholder: `W${m.home.replace("W", "")}` },
+      awayTeam: { placeholder: `W${m.away.replace("W", "")}` },
+    }))
+  );
+
+  const finalMatch = FINAL_MATCHES.find((m) => m.id === "104");
+  const thirdPlaceMatch = FINAL_MATCHES.find((m) => m.id === "103");
+
+  const headerClass =
+    "text-lg font-bold text-slate-800 dark:text-slate-100 mb-2 py-3 px-4 shadow-sm border border-slate-200 dark:border-slate-800 rounded-lg backdrop-blur-sm text-center bg-slate-50/95 dark:bg-slate-900/95";
 
   return (
     <div className="flex flex-col gap-8 pb-8">
-      <div className="overflow-x-auto">
-        <div className="flex gap-8 min-w-max px-4">
-          {/* Round of 32 */}
-          <div className="flex flex-col">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6 sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 py-3 px-4 shadow-sm border border-slate-200 dark:border-slate-800 rounded-lg backdrop-blur-sm z-10 text-center">
-              16avos de Final
-            </h3>
-            <div className="flex flex-col gap-4">
-              {r32Matches.map((m) => (
-                <MatchCard key={m.id} match={m} roundName="R32" />
-              ))}
-            </div>
+      <div className="overflow-x-auto py-4">
+        <div
+          className="grid gap-x-12 gap-y-4 min-w-max px-4"
+          style={{
+            gridTemplateColumns: "repeat(5, minmax(240px, 1fr))",
+            gridTemplateRows: "auto repeat(8, minmax(180px, auto))",
+          }}
+        >
+          {/* Headers */}
+          <div className="col-start-1">
+            <h3 className={headerClass}>16avos de Final</h3>
           </div>
+          <div className="col-start-2">
+            <h3 className={headerClass}>Octavos de Final</h3>
+          </div>
+          <div className="col-start-3">
+            <h3 className={headerClass}>Cuartos de Final</h3>
+          </div>
+          <div className="col-start-4">
+            <h3 className={headerClass}>Semifinales</h3>
+          </div>
+          <div className="col-start-5">
+            <h3 className={headerClass}>Finales</h3>
+          </div>
+
+          {/* Round of 32 */}
+          {r32Pairs.map((pair, i) => (
+            <div
+              key={`r32-${i}`}
+              className="col-start-1"
+              style={{ gridRow: i + 2 }}
+            >
+              <MatchPair match1={pair.m1} match2={pair.m2} roundName="R32" />
+            </div>
+          ))}
 
           {/* Round of 16 */}
-          <div className="flex flex-col">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6 sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 py-3 px-4 shadow-sm border border-slate-200 dark:border-slate-800 rounded-lg backdrop-blur-sm z-10 text-center">
-              Octavos de Final
-            </h3>
-            <div className="flex flex-col gap-4 justify-around h-full">
-              {R16_MATCHES.map((m) => (
-                <MatchCard
-                  key={m.id}
-                  match={{
-                    ...m,
-                    homeTeam: { placeholder: `W${m.home.replace("W", "")}` },
-                    awayTeam: { placeholder: `W${m.away.replace("W", "")}` },
-                  }}
-                  roundName="R16"
-                />
-              ))}
+          {r16Pairs.map((pair, i) => (
+            <div
+              key={`r16-${i}`}
+              className="col-start-2"
+              style={{ gridRow: `${i * 2 + 2} / span 2` }}
+            >
+              <MatchPair match1={pair.m1} match2={pair.m2} roundName="R16" />
             </div>
-          </div>
+          ))}
 
           {/* Quarter Finals */}
-          <div className="flex flex-col">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6 sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 py-3 px-4 shadow-sm border border-slate-200 dark:border-slate-800 rounded-lg backdrop-blur-sm z-10 text-center">
-              Cuartos de Final
-            </h3>
-            <div className="flex flex-col gap-4 justify-around h-full">
-              {QF_MATCHES.map((m) => (
-                <MatchCard
-                  key={m.id}
-                  match={{
-                    ...m,
-                    homeTeam: { placeholder: `W${m.home.replace("W", "")}` },
-                    awayTeam: { placeholder: `W${m.away.replace("W", "")}` },
-                  }}
-                  roundName="QF"
-                />
-              ))}
+          {qfPairs.map((pair, i) => (
+            <div
+              key={`qf-${i}`}
+              className="col-start-3"
+              style={{ gridRow: `${i * 4 + 2} / span 4` }}
+            >
+              <MatchPair match1={pair.m1} match2={pair.m2} roundName="QF" />
             </div>
-          </div>
+          ))}
 
           {/* Semi Finals */}
-          <div className="flex flex-col">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6 sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 py-3 px-4 shadow-sm border border-slate-200 dark:border-slate-800 rounded-lg backdrop-blur-sm z-10 text-center">
-              Semifinales
-            </h3>
-            <div className="flex flex-col gap-4 justify-around h-full">
-              {SF_MATCHES.map((m) => (
-                <MatchCard
-                  key={m.id}
-                  match={{
-                    ...m,
-                    homeTeam: { placeholder: `W${m.home.replace("W", "")}` },
-                    awayTeam: { placeholder: `W${m.away.replace("W", "")}` },
-                  }}
-                  roundName="SF"
-                />
-              ))}
+          {sfPairs.map((pair, i) => (
+            <div
+              key={`sf-${i}`}
+              className="col-start-4"
+              style={{ gridRow: `${i * 8 + 2} / span 8` }}
+            >
+              <MatchPair match1={pair.m1} match2={pair.m2} roundName="SF" />
             </div>
-          </div>
+          ))}
 
-          {/* Final & 3rd Place */}
-          <div className="flex flex-col">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6 sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 py-3 px-4 shadow-sm border border-slate-200 dark:border-slate-800 rounded-lg backdrop-blur-sm z-10 text-center">
-              Finales
-            </h3>
-            <div className="flex flex-col gap-4 justify-center h-full">
-              {FINAL_MATCHES.map((m) => (
-                <div key={m.id} className="mb-8">
-                  <h4 className="text-sm font-semibold text-center mb-2 text-slate-500">
-                    {m.label}
-                  </h4>
-                  <MatchCard
-                    match={{
-                      ...m,
-                      homeTeam: {
-                        placeholder: m.home.startsWith("W")
-                          ? `W${m.home.replace("W", "")}`
-                          : `L${m.home.replace("L", "")}`,
-                      },
-                      awayTeam: {
-                        placeholder: m.away.startsWith("W")
-                          ? `W${m.away.replace("W", "")}`
-                          : `L${m.away.replace("L", "")}`,
-                      },
-                    }}
-                    roundName="Final"
-                  />
-                </div>
-              ))}
-            </div>
+          {/* Finals & 3rd Place */}
+          <div
+            className="col-start-5 relative"
+            style={{ gridRow: "2 / span 8" }}
+          >
+            {/* Final Match - Centered */}
+            {finalMatch && (
+              <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 z-10">
+                <h4 className="text-sm font-semibold text-center mb-2 text-slate-500">
+                  {finalMatch.label}
+                </h4>
+                <MatchCard
+                  match={{
+                    ...finalMatch,
+                    homeTeam: {
+                      placeholder: finalMatch.home.startsWith("W")
+                        ? `W${finalMatch.home.replace("W", "")}`
+                        : `L${finalMatch.home.replace("L", "")}`,
+                    },
+                    awayTeam: {
+                      placeholder: finalMatch.away.startsWith("W")
+                        ? `W${finalMatch.away.replace("W", "")}`
+                        : `L${finalMatch.away.replace("L", "")}`,
+                    },
+                  }}
+                  roundName="Final"
+                />
+                {/* Incoming Line Connector */}
+                <div className="absolute top-1/2 left-0 w-4 h-[2px] bg-slate-300 dark:bg-slate-600 transform -translate-y-1/2 -translate-x-full" />
+              </div>
+            )}
+
+            {/* 3rd Place Match - Bottom */}
+            {thirdPlaceMatch && (
+              <div className="absolute bottom-12 left-0 right-0 z-10">
+                <h4 className="text-sm font-semibold text-center mb-2 text-slate-500">
+                  {thirdPlaceMatch.label}
+                </h4>
+                <MatchCard
+                  match={{
+                    ...thirdPlaceMatch,
+                    homeTeam: {
+                      placeholder: thirdPlaceMatch.home.startsWith("W")
+                        ? `W${thirdPlaceMatch.home.replace("W", "")}`
+                        : `L${thirdPlaceMatch.home.replace("L", "")}`,
+                    },
+                    awayTeam: {
+                      placeholder: thirdPlaceMatch.away.startsWith("W")
+                        ? `W${thirdPlaceMatch.away.replace("W", "")}`
+                        : `L${thirdPlaceMatch.away.replace("L", "")}`,
+                    },
+                  }}
+                  roundName="Final"
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
