@@ -11,6 +11,7 @@ export function Header() {
 
   const isGroups = pathname === "/groups" || pathname === "/";
   const isKnockout = pathname === "/knockout";
+  const isPredictions = pathname === "/predictions";
 
   return (
     <div className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 shadow-sm transition-all">
@@ -31,7 +32,7 @@ export function Header() {
           <Link
             href="/groups"
             className={clsx(
-              "w-full md:w-40 rounded-lg py-2 text-sm font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200",
+              "w-full md:w-32 lg:w-40 rounded-lg py-2 text-sm font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200",
               isGroups
                 ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm"
                 : "text-slate-500 dark:text-slate-400 hover:bg-white/40 hover:text-slate-700 dark:hover:text-slate-200"
@@ -42,13 +43,24 @@ export function Header() {
           <Link
             href="/knockout"
             className={clsx(
-              "w-full md:w-40 rounded-lg py-2 text-sm font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200",
+              "w-full md:w-32 lg:w-40 rounded-lg py-2 text-sm font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200",
               isKnockout
                 ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm"
                 : "text-slate-500 dark:text-slate-400 hover:bg-white/40 hover:text-slate-700 dark:hover:text-slate-200"
             )}
           >
             Fase Eliminatoria
+          </Link>
+          <Link
+            href="/predictions"
+            className={clsx(
+              "w-full md:w-32 lg:w-40 rounded-lg py-2 text-sm font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200",
+              isPredictions
+                ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm"
+                : "text-slate-500 dark:text-slate-400 hover:bg-white/40 hover:text-slate-700 dark:hover:text-slate-200"
+            )}
+          >
+            Predicciones
           </Link>
         </div>
 
