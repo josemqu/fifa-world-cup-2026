@@ -145,7 +145,7 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <div className="overflow-x-auto py-4">
+      <div className="overflow-x-auto">
         <div
           className="grid gap-x-12 gap-y-4 min-w-max px-4"
           style={{
