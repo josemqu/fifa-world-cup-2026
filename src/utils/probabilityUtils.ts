@@ -129,10 +129,18 @@ export const calculateKnockoutProbabilities = async (
     const projectedMatchupKey = `${bestHomeId}-${bestAwayId}`;
     const matchupCount = stats.matchupCounts.get(projectedMatchupKey) || 0;
 
+    // Calculate Conditional Probability (Bayes)
+    // P(Matchup | Team) = P(Matchup) / P(Team)
+    // We condition on the most likely team to be conservative and consistent
+    // This answers: "Given that the most confident projection is correct, what is the chance of this specific opponent?"
+    const maxTeamCount = Math.max(maxHomeCount, maxAwayCount);
+    const conditionalMatchupProb =
+      maxTeamCount > 0 ? matchupCount / maxTeamCount : 0;
+
     results.set(matchId, {
       homeTeamProb: maxHomeCount / iterations,
       awayTeamProb: maxAwayCount / iterations,
-      matchupProb: matchupCount / iterations,
+      matchupProb: conditionalMatchupProb,
       projectedHomeTeam: bestHomeId
         ? stats.teamData.get(bestHomeId)
         : undefined,
