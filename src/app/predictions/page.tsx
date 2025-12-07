@@ -185,7 +185,7 @@ export default function PredictionsPage() {
                   "px-6 py-2 rounded-lg font-bold text-white transition-all shadow-md active:scale-95",
                   isRunning
                     ? "bg-slate-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25"
+                    : "bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25"
                 )}
               >
                 {isRunning ? (
