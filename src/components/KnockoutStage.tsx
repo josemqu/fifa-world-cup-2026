@@ -147,7 +147,7 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
     >
       <div className="overflow-x-auto">
         <div
-          className="grid gap-x-12 gap-y-4 min-w-max px-4"
+          className="grid gap-x-12 gap-y-4 min-w-max"
           style={{
             gridTemplateColumns: "repeat(5, minmax(240px, 1fr))",
             gridTemplateRows: "auto repeat(8, minmax(220px, auto))",
