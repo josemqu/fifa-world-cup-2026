@@ -18,13 +18,15 @@ export function Header() {
       <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Title Section */}
         <div className="shrink-0 text-center md:text-left">
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
-            FIFA World Cup{" "}
-            <span className="text-blue-600 dark:text-blue-400">2026</span>
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            Fixture & Simulador
-          </p>
+          <Link href="/" className="block hover:opacity-80 transition-opacity">
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
+              FIFA World Cup{" "}
+              <span className="text-blue-600 dark:text-blue-400">2026</span>
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              Fixture & Simulador
+            </p>
+          </Link>
         </div>
 
         {/* Tabs Section */}
