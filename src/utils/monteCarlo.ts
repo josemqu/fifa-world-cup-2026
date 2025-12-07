@@ -4,6 +4,7 @@ import { simulateTournament } from "@/utils/simulationUtils";
 export type PredictionResult = {
   teamId: string;
   teamName: string;
+  teamRanking?: number;
   simulations: number;
   championCount: number;
   finalistCount: number;
@@ -25,6 +26,7 @@ export const runMonteCarloSimulation = async (
       stats[t.id] = {
         teamId: t.id,
         teamName: t.name,
+        teamRanking: t.ranking,
         simulations: iterations,
         championCount: 0,
         finalistCount: 0,

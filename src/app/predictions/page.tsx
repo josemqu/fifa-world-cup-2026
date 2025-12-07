@@ -1,15 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTournament } from "@/context/TournamentContext";
 import { runMonteCarloSimulation, PredictionResult } from "@/utils/monteCarlo";
 import { clsx } from "clsx";
+
+type SortColumn =
+  | "teamName"
+  | "teamRanking"
+  | "championCount"
+  | "finalistCount"
+  | "semiFinalistCount"
+  | "quarterFinalistCount"
+  | "r16Count"
+  | "r32Count";
 
 export default function PredictionsPage() {
   const { groups } = useTournament();
   const [results, setResults] = useState<PredictionResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [iterations, setIterations] = useState(1000);
+  const [sortColumn, setSortColumn] = useState<SortColumn>("championCount");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   const handleRun = async () => {
     setIsRunning(true);
@@ -22,6 +34,76 @@ export default function PredictionsPage() {
     }, 100);
   };
 
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("desc");
+    }
+  };
+
+  const sortedResults = useMemo(() => {
+    return [...results]
+      .filter((r) => r.r32Count > 0)
+      .sort((a, b) => {
+        let comparison = 0;
+
+        // Primary sort
+        if (sortColumn === "teamName") {
+          comparison = a.teamName.localeCompare(b.teamName);
+        } else if (sortColumn === "teamRanking") {
+          // Handle undefined rankings (put them last)
+          const rankA = a.teamRanking ?? 999;
+          const rankB = b.teamRanking ?? 999;
+          comparison = rankA - rankB;
+        } else {
+          comparison = a[sortColumn] - b[sortColumn];
+        }
+
+        // Reverse if descending (default for numbers)
+        // For text (teamName), asc means A-Z, so we keep comparison.
+        // For numbers (like ranking), asc means 1-100 (smaller is better/first).
+        // For stats (counts), asc means 0-100, desc means 100-0.
+
+        // Handling Sort Direction Inversion
+        if (sortColumn === "teamName") {
+          if (sortDirection === "desc") {
+            comparison = b.teamName.localeCompare(a.teamName);
+          }
+        } else if (sortColumn === "teamRanking") {
+          // For Ranking: Asc (1 -> 100), Desc (100 -> 1).
+          // Default comparison is Asc (a - b).
+          if (sortDirection === "desc") {
+            const rankA = a.teamRanking ?? 999;
+            const rankB = b.teamRanking ?? 999;
+            comparison = rankB - rankA;
+          }
+        } else {
+          // For Stats: Asc (0 -> 100), Desc (100 -> 0).
+          // Default comparison is Asc (a - b).
+          if (sortDirection === "desc") {
+            comparison = b[sortColumn] - a[sortColumn];
+          }
+        }
+
+        if (comparison !== 0) return comparison;
+
+        // Tie-breakers (always cascading descending for stats)
+        // Champion -> Final -> SF -> QF -> R16 -> R32
+        if (b.championCount !== a.championCount)
+          return b.championCount - a.championCount;
+        if (b.finalistCount !== a.finalistCount)
+          return b.finalistCount - a.finalistCount;
+        if (b.semiFinalistCount !== a.semiFinalistCount)
+          return b.semiFinalistCount - a.semiFinalistCount;
+        if (b.quarterFinalistCount !== a.quarterFinalistCount)
+          return b.quarterFinalistCount - a.quarterFinalistCount;
+        if (b.r16Count !== a.r16Count) return b.r16Count - a.r16Count;
+        return b.r32Count - a.r32Count;
+      });
+  }, [results, sortColumn, sortDirection]);
+
   const getPercentage = (count: number) => {
     return ((count / iterations) * 100).toFixed(1) + "%";
   };
@@ -33,6 +115,40 @@ export default function PredictionsPage() {
     if (percentage >= 10) return "text-slate-900 dark:text-slate-100";
     return "text-slate-500 dark:text-slate-500";
   };
+
+  const SortHeader = ({
+    column,
+    label,
+    align = "right",
+  }: {
+    column: SortColumn;
+    label: string;
+    align?: "left" | "right";
+  }) => (
+    <th
+      className={clsx(
+        "px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors select-none",
+        align === "right" ? "text-right" : "text-left",
+        sortColumn === column &&
+          "text-blue-600 dark:text-blue-400 bg-slate-50 dark:bg-slate-800/50"
+      )}
+      onClick={() => handleSort(column)}
+    >
+      <div
+        className={clsx(
+          "flex items-center gap-1",
+          align === "right" ? "justify-end" : "justify-start"
+        )}
+      >
+        {label}
+        {sortColumn === column && (
+          <span className="text-[10px]">
+            {sortDirection === "asc" ? "▲" : "▼"}
+          </span>
+        )}
+      </div>
+    </th>
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8">
@@ -109,58 +225,64 @@ export default function PredictionsPage() {
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     <th className="px-4 py-3">#</th>
-                    <th className="px-4 py-3">Equipo</th>
-                    <th className="px-4 py-3 text-right">Campeón</th>
-                    <th className="px-4 py-3 text-right">Final</th>
-                    <th className="px-4 py-3 text-right">Semis</th>
-                    <th className="px-4 py-3 text-right">Cuartos</th>
-                    <th className="px-4 py-3 text-right">Octavos</th>
-                    <th className="px-4 py-3 text-right">16avos</th>
+                    <SortHeader column="teamName" label="Equipo" align="left" />
+                    <SortHeader
+                      column="teamRanking"
+                      label="Ranking"
+                      align="right"
+                    />
+                    <SortHeader column="championCount" label="Campeón" />
+                    <SortHeader column="finalistCount" label="Final" />
+                    <SortHeader column="semiFinalistCount" label="Semis" />
+                    <SortHeader column="quarterFinalistCount" label="Cuartos" />
+                    <SortHeader column="r16Count" label="Octavos" />
+                    <SortHeader column="r32Count" label="16avos" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {results
-                    .filter((r) => r.r32Count > 0) // Only show teams that have a chance to qualify (or qualified)
-                    .map((team, index) => {
-                      const winRate = (team.championCount / iterations) * 100;
+                  {sortedResults.map((team, index) => {
+                    const winRate = (team.championCount / iterations) * 100;
 
-                      return (
-                        <tr
-                          key={team.teamId}
-                          className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-sm"
+                    return (
+                      <tr
+                        key={team.teamId}
+                        className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-sm"
+                      >
+                        <td className="px-4 py-3 text-slate-400 dark:text-slate-600 font-mono">
+                          {index + 1}
+                        </td>
+                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
+                          {team.teamName}
+                        </td>
+                        <td className="px-4 py-3 text-right text-slate-500 dark:text-slate-400 font-mono">
+                          {team.teamRanking ?? "-"}
+                        </td>
+                        <td
+                          className={clsx(
+                            "px-4 py-3 text-right",
+                            getProbabilityColor(winRate)
+                          )}
                         >
-                          <td className="px-4 py-3 text-slate-400 dark:text-slate-600 font-mono">
-                            {index + 1}
-                          </td>
-                          <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
-                            {team.teamName}
-                          </td>
-                          <td
-                            className={clsx(
-                              "px-4 py-3 text-right",
-                              getProbabilityColor(winRate)
-                            )}
-                          >
-                            {getPercentage(team.championCount)}
-                          </td>
-                          <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
-                            {getPercentage(team.finalistCount)}
-                          </td>
-                          <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
-                            {getPercentage(team.semiFinalistCount)}
-                          </td>
-                          <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
-                            {getPercentage(team.quarterFinalistCount)}
-                          </td>
-                          <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
-                            {getPercentage(team.r16Count)}
-                          </td>
-                          <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
-                            {getPercentage(team.r32Count)}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                          {getPercentage(team.championCount)}
+                        </td>
+                        <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
+                          {getPercentage(team.finalistCount)}
+                        </td>
+                        <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
+                          {getPercentage(team.semiFinalistCount)}
+                        </td>
+                        <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
+                          {getPercentage(team.quarterFinalistCount)}
+                        </td>
+                        <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
+                          {getPercentage(team.r16Count)}
+                        </td>
+                        <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
+                          {getPercentage(team.r32Count)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
