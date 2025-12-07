@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { TournamentProvider } from "@/context/TournamentContext";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -20,11 +21,12 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body
-        className={`${inter.className} bg-slate-50 dark:bg-slate-900 min-h-screen text-slate-900 dark:text-slate-100`}
+        className={`${inter.className} bg-slate-50 dark:bg-slate-900 min-h-screen flex flex-col text-slate-900 dark:text-slate-100`}
       >
         <TournamentProvider>
           <Header />
-          <main className="min-h-screen pb-12">{children}</main>
+          <main className="flex-1 pb-32">{children}</main>
+          <Footer />
         </TournamentProvider>
         <Analytics />
       </body>

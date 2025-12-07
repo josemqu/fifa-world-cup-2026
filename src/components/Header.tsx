@@ -23,7 +23,7 @@ export function Header() {
             <span className="text-blue-600 dark:text-blue-400">2026</span>
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            Fixture Oficial & Simulador
+            Fixture & Simulador
           </p>
         </div>
 
