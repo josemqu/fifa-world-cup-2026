@@ -66,8 +66,9 @@ interface TournamentContextType {
     homePenalties?: number | null,
     awayPenalties?: number | null
   ) => void;
-  simulateAll: () => void;
+  simulateGroups: () => void;
   simulateKnockout: () => void;
+  simulateAll: () => void;
 }
 
 const TournamentContext = createContext<TournamentContextType | undefined>(
@@ -131,6 +132,150 @@ const getInitialKnockoutMatches = (): KnockoutMatch[] => {
   });
 
   return matches;
+};
+
+// Core simulation logic for knockout matches
+const runKnockoutSimulation = (matches: KnockoutMatch[]): KnockoutMatch[] => {
+  const newMatches = [...matches];
+  // Sort by ID to ensure we process stages in order (R32 -> R16 -> ... -> Final)
+  newMatches.sort((a, b) => Number(a.id) - Number(b.id));
+
+  const allStaticMatches = [
+    ...R16_MATCHES,
+    ...QF_MATCHES,
+    ...SF_MATCHES,
+    ...FINAL_MATCHES,
+  ];
+
+  for (let i = 0; i < newMatches.length; i++) {
+    const match = newMatches[i];
+
+    // Only simulate if teams are present
+    if (
+      match.homeTeam &&
+      !("placeholder" in match.homeTeam) &&
+      match.awayTeam &&
+      !("placeholder" in match.awayTeam)
+    ) {
+      // Generate realistic scores based on ranking
+      const hTeam = match.homeTeam as Team;
+      const aTeam = match.awayTeam as Team;
+
+      const { home, away } = predictMatchScore(hTeam.ranking, aTeam.ranking);
+
+      const homeScore = home;
+      const awayScore = away;
+      match.homeScore = homeScore;
+      match.awayScore = awayScore;
+
+      let winner: Team | null = null;
+      match.homePenalties = null;
+      match.awayPenalties = null;
+
+      if (homeScore > awayScore) {
+        winner = match.homeTeam as Team;
+      } else if (awayScore > homeScore) {
+        winner = match.awayTeam as Team;
+      } else {
+        // Penalties
+        let homePens = 0;
+        let awayPens = 0;
+        do {
+          homePens = Math.floor(Math.random() * 5) + 3;
+          awayPens = Math.floor(Math.random() * 5) + 3;
+        } while (homePens === awayPens);
+
+        match.homePenalties = homePens;
+        match.awayPenalties = awayPens;
+
+        if (homePens > awayPens) winner = match.homeTeam as Team;
+        else winner = match.awayTeam as Team;
+      }
+      match.winner = winner;
+
+      // Propagate to next match
+      if (match.nextMatchId) {
+        const nextMatchIndex = newMatches.findIndex(
+          (m) => m.id === match.nextMatchId
+        );
+        if (nextMatchIndex !== -1) {
+          const nextMatch = newMatches[nextMatchIndex];
+          const staticNextMatch = allStaticMatches.find(
+            (m) => m.id === match.nextMatchId
+          );
+
+          if (staticNextMatch) {
+            const isHomeSource =
+              staticNextMatch.home === `W${match.id}` ||
+              staticNextMatch.home === `L${match.id}`;
+            const isAwaySource =
+              staticNextMatch.away === `W${match.id}` ||
+              staticNextMatch.away === `L${match.id}`;
+
+            if (winner) {
+              if (isHomeSource) {
+                if (staticNextMatch.home === `L${match.id}`) {
+                  const loser =
+                    winner.id === (match.homeTeam as Team).id
+                      ? match.awayTeam
+                      : match.homeTeam;
+                  nextMatch.homeTeam = loser as Team;
+                } else {
+                  nextMatch.homeTeam = winner;
+                }
+              }
+              if (isAwaySource) {
+                if (staticNextMatch.away === `L${match.id}`) {
+                  const loser =
+                    winner.id === (match.homeTeam as Team).id
+                      ? match.awayTeam
+                      : match.homeTeam;
+                  nextMatch.awayTeam = loser as Team;
+                } else {
+                  nextMatch.awayTeam = winner;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Special handling for SF matches propagating to 3rd Place match (103)
+      if (match.id === "101" || match.id === "102") {
+        const thirdPlaceMatchId = "103";
+        const thirdPlaceIndex = newMatches.findIndex(
+          (m) => m.id === thirdPlaceMatchId
+        );
+        if (thirdPlaceIndex !== -1) {
+          const thirdPlaceMatch = newMatches[thirdPlaceIndex];
+          const staticThirdPlace = FINAL_MATCHES.find(
+            (m) => m.id === thirdPlaceMatchId
+          );
+
+          if (staticThirdPlace) {
+            const isHomeSource = staticThirdPlace.home === `L${match.id}`;
+            const isAwaySource = staticThirdPlace.away === `L${match.id}`;
+
+            if (winner) {
+              const loser =
+                winner.id === (match.homeTeam as Team).id
+                  ? match.awayTeam
+                  : match.homeTeam;
+
+              if (isHomeSource) {
+                thirdPlaceMatch.homeTeam = loser as Team;
+              }
+              if (isAwaySource) {
+                thirdPlaceMatch.awayTeam = loser as Team;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return newMatches;
 };
 
 export function TournamentProvider({ children }: { children: ReactNode }) {
@@ -458,10 +603,12 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const simulateAll = () => {
+  const simulateGroups = () => {
     setGroups((currentGroups) => {
       return currentGroups.map((group) => {
         const updatedMatches = group.matches.map((match) => {
+          if (match.finished) return match;
+
           const homeTeam = group.teams.find((t) => t.id === match.homeTeamId);
           const awayTeam = group.teams.find((t) => t.id === match.awayTeamId);
 
@@ -486,158 +633,61 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
 
   const simulateKnockout = () => {
     setKnockoutMatches((currentMatches) => {
-      const newMatches = [...currentMatches];
-      // Sort by ID to ensure we process stages in order (R32 -> R16 -> ... -> Final)
-      newMatches.sort((a, b) => Number(a.id) - Number(b.id));
-
-      const allStaticMatches = [
-        ...R16_MATCHES,
-        ...QF_MATCHES,
-        ...SF_MATCHES,
-        ...FINAL_MATCHES,
-      ];
-
-      for (let i = 0; i < newMatches.length; i++) {
-        const match = newMatches[i];
-
-        // Only simulate if teams are present
-        if (
-          match.homeTeam &&
-          !("placeholder" in match.homeTeam) &&
-          match.awayTeam &&
-          !("placeholder" in match.awayTeam)
-        ) {
-          // Generate realistic scores based on ranking
-          const hTeam = match.homeTeam as Team;
-          const aTeam = match.awayTeam as Team;
-
-          const { home, away } = predictMatchScore(
-            hTeam.ranking,
-            aTeam.ranking
-          );
-
-          const homeScore = home;
-          const awayScore = away;
-          match.homeScore = homeScore;
-          match.awayScore = awayScore;
-
-          let winner: Team | null = null;
-          match.homePenalties = null;
-          match.awayPenalties = null;
-
-          if (homeScore > awayScore) {
-            winner = match.homeTeam as Team;
-          } else if (awayScore > homeScore) {
-            winner = match.awayTeam as Team;
-          } else {
-            // Penalties
-            let homePens = 0;
-            let awayPens = 0;
-            do {
-              homePens = Math.floor(Math.random() * 5) + 3;
-              awayPens = Math.floor(Math.random() * 5) + 3;
-            } while (homePens === awayPens);
-
-            match.homePenalties = homePens;
-            match.awayPenalties = awayPens;
-
-            if (homePens > awayPens) winner = match.homeTeam as Team;
-            else winner = match.awayTeam as Team;
-          }
-          match.winner = winner;
-
-          // Propagate to next match
-          if (match.nextMatchId) {
-            const nextMatchIndex = newMatches.findIndex(
-              (m) => m.id === match.nextMatchId
-            );
-            if (nextMatchIndex !== -1) {
-              const nextMatch = newMatches[nextMatchIndex];
-              const staticNextMatch = allStaticMatches.find(
-                (m) => m.id === match.nextMatchId
-              );
-
-              if (staticNextMatch) {
-                const isHomeSource =
-                  staticNextMatch.home === `W${match.id}` ||
-                  staticNextMatch.home === `L${match.id}`;
-                const isAwaySource =
-                  staticNextMatch.away === `W${match.id}` ||
-                  staticNextMatch.away === `L${match.id}`;
-
-                if (winner) {
-                  if (isHomeSource) {
-                    if (staticNextMatch.home === `L${match.id}`) {
-                      const loser =
-                        winner.id === (match.homeTeam as Team).id
-                          ? match.awayTeam
-                          : match.homeTeam;
-                      nextMatch.homeTeam = loser as Team;
-                    } else {
-                      nextMatch.homeTeam = winner;
-                    }
-                  }
-                  if (isAwaySource) {
-                    if (staticNextMatch.away === `L${match.id}`) {
-                      const loser =
-                        winner.id === (match.homeTeam as Team).id
-                          ? match.awayTeam
-                          : match.homeTeam;
-                      nextMatch.awayTeam = loser as Team;
-                    } else {
-                      nextMatch.awayTeam = winner;
-                    }
-                  }
-                }
-
-                // Reset next match scores for re-simulation (will be picked up later in loop if valid)
-                // Actually, since we process in order, the next match is later in the array.
-                // We should reset its scores so it can be freshly simulated when the loop reaches it.
-                // BUT if we are simulating everything, the loop WILL reach it and overwrite the scores anyway.
-                // So strictly speaking we don't need to reset scores here, BUT we need to ensure
-                // that when the loop reaches it, it sees the updated teams.
-                // Since `nextMatch` is a reference to an object in `newMatches`, modifying it here updates it for the loop.
-              }
-            }
-          }
-
-          // Special handling for SF matches propagating to 3rd Place match (103)
-          if (match.id === "101" || match.id === "102") {
-            const thirdPlaceMatchId = "103";
-            const thirdPlaceIndex = newMatches.findIndex(
-              (m) => m.id === thirdPlaceMatchId
-            );
-            if (thirdPlaceIndex !== -1) {
-              const thirdPlaceMatch = newMatches[thirdPlaceIndex];
-              const staticThirdPlace = FINAL_MATCHES.find(
-                (m) => m.id === thirdPlaceMatchId
-              );
-
-              if (staticThirdPlace) {
-                const isHomeSource = staticThirdPlace.home === `L${match.id}`;
-                const isAwaySource = staticThirdPlace.away === `L${match.id}`;
-
-                if (winner) {
-                  const loser =
-                    winner.id === (match.homeTeam as Team).id
-                      ? match.awayTeam
-                      : match.homeTeam;
-
-                  if (isHomeSource) {
-                    thirdPlaceMatch.homeTeam = loser as Team;
-                  }
-                  if (isAwaySource) {
-                    thirdPlaceMatch.awayTeam = loser as Team;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-
-      return newMatches;
+      return runKnockoutSimulation(currentMatches);
     });
+  };
+
+  const simulateAll = () => {
+    // 1. Simulate Groups locally (respecting existing results)
+    const simulatedGroups = groups.map((group) => {
+      const updatedMatches = group.matches.map((match) => {
+        if (match.finished) return match;
+
+        const homeTeam = group.teams.find((t) => t.id === match.homeTeamId);
+        const awayTeam = group.teams.find((t) => t.id === match.awayTeamId);
+
+        const { home, away } = predictMatchScore(
+          homeTeam?.ranking,
+          awayTeam?.ranking
+        );
+
+        return {
+          ...match,
+          homeScore: home,
+          awayScore: away,
+          finished: true,
+        };
+      });
+
+      return recalculateGroupStats({ ...group, matches: updatedMatches });
+    });
+
+    // 2. Generate R32 Matches
+    const r32 = generateR32Matches(simulatedGroups).map((m) => ({
+      ...m,
+      stage: "R32" as const,
+    }));
+
+    // 3. Create Full Knockout Structure (R32 + initial empty R16-Final)
+    const initialKnockout = getInitialKnockoutMatches();
+    // Merge: R32 from generator + initial empty stages
+    const allMatches = [...r32, ...initialKnockout].sort(
+      (a, b) => Number(a.id) - Number(b.id)
+    );
+
+    // 4. Run Knockout Simulation
+    // We also want to respect existing knockout matches if they are valid?
+    // For simplicity in "Simulate All", we usually re-sim knockout because the tree might change significantly if groups changed.
+    // However, if the user wants to "Simulate the Rest", we might want to keep finished knockout matches IF the teams match.
+    // But since group results might change the teams in the bracket, it's safer to re-simulate knockout from scratch
+    // OR at least re-evaluate the tree.
+    // Given the requirement is about group dependency, ensuring groups are *complete* is key.
+    // For now, we will re-simulate the knockout stage entirely to ensure consistency with the new group results.
+    const simulatedKnockoutMatches = runKnockoutSimulation(allMatches);
+
+    // 5. Update State
+    setGroups(simulatedGroups);
+    setKnockoutMatches(simulatedKnockoutMatches);
   };
 
   return (
@@ -647,8 +697,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         knockoutMatches,
         updateMatch,
         updateKnockoutMatch,
-        simulateAll,
+        simulateGroups,
         simulateKnockout,
+        simulateAll,
       }}
     >
       {children}
