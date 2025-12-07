@@ -50,7 +50,7 @@ export function Tooltip({ children, content }: TooltipProps) {
       ref={triggerRef}
       onMouseEnter={() => setIsVisible(true)}
       onMouseLeave={() => setIsVisible(false)}
-      className="inline-block relative cursor-help mx-1"
+      className="inline-block relative cursor-help mx-2"
     >
       {children}
       <AnimatePresence>
