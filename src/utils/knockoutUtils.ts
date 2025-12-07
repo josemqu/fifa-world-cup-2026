@@ -87,22 +87,63 @@ export function generateR32Matches(groups: Group[]) {
       (m) => m.type === "variable"
     ).map((m) => m.home.charAt(1));
 
-    // Simple greedy assignment:
-    // Try to assign each home group a third place team from a different group
-    const availableThirds = [...bestThirds];
-    const assignments: { [key: string]: Team } = {};
-
-    // Sort home groups to prioritize hard-to-match ones? Not strictly necessary for fallback.
-    for (const homeGroup of variableHomeGroups) {
-      const candidateIndex = availableThirds.findIndex(
-        (t) => t.group !== homeGroup
-      );
-      if (candidateIndex !== -1) {
-        assignments[homeGroup] = availableThirds[candidateIndex];
-        availableThirds.splice(candidateIndex, 1);
+    // Backtracking solver to find valid assignment (homeGroup !== thirdGroup)
+    const solve = (
+      index: number,
+      usedIndices: Set<number>,
+      currentAssignments: { [key: string]: Team }
+    ): boolean => {
+      if (index === variableHomeGroups.length) {
+        fallbackAssignments = { ...currentAssignments };
+        return true;
       }
+
+      const homeGroup = variableHomeGroups[index];
+
+      // Try to find a third place team for this group
+      for (let i = 0; i < bestThirds.length; i++) {
+        if (!usedIndices.has(i)) {
+          const thirdTeam = bestThirds[i];
+
+          // Constraint: Third place team cannot play against 1st place of same group
+          if (thirdTeam.group !== homeGroup) {
+            usedIndices.add(i);
+            currentAssignments[homeGroup] = thirdTeam;
+
+            if (solve(index + 1, usedIndices, currentAssignments)) {
+              return true;
+            }
+
+            // Backtrack
+            delete currentAssignments[homeGroup];
+            usedIndices.delete(i);
+          }
+        }
+      }
+
+      return false;
+    };
+
+    const solutionFound = solve(0, new Set(), {});
+
+    // If no strict solution found (rare but possible with weird distributions?),
+    // fall back to purely random valid assignment ignoring same-group constraint
+    // to AT LEAST have a match.
+    if (!solutionFound) {
+      const usedIndices = new Set<number>();
+      const assignments: { [key: string]: Team } = {};
+
+      for (const homeGroup of variableHomeGroups) {
+        for (let i = 0; i < bestThirds.length; i++) {
+          if (!usedIndices.has(i)) {
+            assignments[homeGroup] = bestThirds[i];
+            usedIndices.add(i);
+            break;
+          }
+        }
+      }
+      fallbackAssignments = assignments;
     }
-    fallbackAssignments = assignments;
   }
 
   return R32_MATCHES.map((match) => {

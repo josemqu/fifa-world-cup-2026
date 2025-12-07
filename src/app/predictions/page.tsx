@@ -3,9 +3,11 @@
 import { useState, useMemo } from "react";
 import { useTournament } from "@/context/TournamentContext";
 import { runMonteCarloSimulation, PredictionResult } from "@/utils/monteCarlo";
+import { simulateTournament } from "@/utils/simulationUtils";
 import { Tooltip } from "@/components/ui/Tooltip";
-import { Info } from "lucide-react";
+import { Info, Timer, CheckCircle2, X } from "lucide-react";
 import { clsx } from "clsx";
+import { Team, KnockoutMatch } from "@/data/types";
 
 type SortColumn =
   | "teamName"
@@ -23,18 +25,48 @@ export default function PredictionsPage() {
   const [results, setResults] = useState<PredictionResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [iterations, setIterations] = useState(10000);
+  const [executionTime, setExecutionTime] = useState<number>(0);
   const [sortColumn, setSortColumn] = useState<SortColumn>("championCount");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  // Verification State
+  const [showVerification, setShowVerification] = useState(false);
+  const [sampleResult, setSampleResult] = useState<{
+    champion?: Team;
+    finalists: Team[];
+    matches: KnockoutMatch[];
+  } | null>(null);
 
   const handleRun = async (numIterations: number = iterations) => {
     setIsRunning(true);
     setResults([]);
+    setExecutionTime(0);
     // Add a small delay to allow UI to update to loading state
     setTimeout(async () => {
+      const start = performance.now();
       const data = await runMonteCarloSimulation(groups, numIterations);
+      const end = performance.now();
+
+      setExecutionTime(end - start);
       setResults(data);
       setIsRunning(false);
     }, 100);
+  };
+
+  const handleVerify = () => {
+    const result = simulateTournament(groups);
+    const final = result.knockoutMatches.find((m) => m.stage === "Final");
+    const champion = final?.winner || undefined;
+    const finalists = [final?.homeTeam, final?.awayTeam].filter(
+      (t) => t && !("placeholder" in t)
+    ) as Team[];
+
+    setSampleResult({
+      champion,
+      finalists,
+      matches: result.knockoutMatches,
+    });
+    setShowVerification(true);
   };
 
   const handleSort = (column: SortColumn) => {
@@ -181,61 +213,83 @@ export default function PredictionsPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-4">
-              <select
-                value={iterations}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  setIterations(val);
-                  handleRun(val);
-                }}
-                disabled={isRunning}
-                className="bg-slate-100 dark:bg-slate-800 border-none rounded-lg px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
-              >
-                <option value={100}>100 simulaciones</option>
-                <option value={1000}>1.000 simulaciones</option>
-                <option value={5000}>5.000 simulaciones</option>
-                <option value={10000}>10.000 simulaciones</option>
-              </select>
+            <div className="flex flex-col items-end gap-2">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={handleVerify}
+                  className="px-4 py-2 rounded-lg font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  Verificar
+                </button>
 
-              <button
-                onClick={() => handleRun()}
-                disabled={isRunning}
-                className={clsx(
-                  "px-6 py-2 rounded-lg font-bold text-white transition-all shadow-md active:scale-95",
-                  isRunning
-                    ? "bg-slate-400 cursor-not-allowed"
-                    : "bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25"
-                )}
-              >
-                {isRunning ? (
-                  <span className="flex items-center gap-2">
-                    <svg
-                      className="animate-spin h-4 w-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Simulando...
+                <select
+                  value={iterations}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setIterations(val);
+                    handleRun(val);
+                  }}
+                  disabled={isRunning}
+                  className="bg-slate-100 dark:bg-slate-800 border-none rounded-lg px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                >
+                  <option value={100}>100 simulaciones</option>
+                  <option value={1000}>1.000 simulaciones</option>
+                  <option value={5000}>5.000 simulaciones</option>
+                  <option value={10000}>10.000 simulaciones</option>
+                </select>
+
+                <button
+                  onClick={() => handleRun()}
+                  disabled={isRunning}
+                  className={clsx(
+                    "px-6 py-2 rounded-lg font-bold text-white transition-all shadow-md active:scale-95",
+                    isRunning
+                      ? "bg-slate-400 cursor-not-allowed"
+                      : "bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25"
+                  )}
+                >
+                  {isRunning ? (
+                    <span className="flex items-center gap-2">
+                      <svg
+                        className="animate-spin h-4 w-4 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Simulando...
+                    </span>
+                  ) : (
+                    "Ejecutar Simulación"
+                  )}
+                </button>
+              </div>
+              {executionTime > 0 && (
+                <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-mono">
+                  <Timer className="w-3 h-3" />
+                  <span>
+                    {executionTime.toFixed(0)}ms (
+                    {Math.round(
+                      (iterations / executionTime) * 1000
+                    ).toLocaleString("es-ES")}{" "}
+                    sim/s)
                   </span>
-                ) : (
-                  "Ejecutar Simulación"
-                )}
-              </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -339,6 +393,132 @@ export default function PredictionsPage() {
           )}
         </div>
       </div>
+
+      {/* Verification Modal */}
+      {showVerification && sampleResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Verificación de Simulación
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowVerification(false)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-8">
+              <div className="text-sm text-slate-600 dark:text-slate-400 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-900/50">
+                Esta es una <strong>simulación única completa</strong> generada
+                en este momento para verificar que la lógica del torneo se
+                ejecuta correctamente paso a paso.
+              </div>
+
+              {/* Summary */}
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6 border border-slate-100 dark:border-slate-800">
+                <div className="text-center sm:text-left">
+                  <div className="text-sm text-slate-500 dark:text-slate-400 mb-1 font-medium uppercase tracking-wide">
+                    Campeón Simulado
+                  </div>
+                  <div className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2 justify-center sm:justify-start">
+                    {sampleResult.champion?.name}
+                    {sampleResult.champion?.ranking && (
+                      <span className="text-sm font-normal text-slate-400 bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded-full">
+                        #{sampleResult.champion.ranking}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="text-center sm:text-right">
+                  <div className="text-sm text-slate-500 dark:text-slate-400 mb-1 font-medium uppercase tracking-wide">
+                    Final
+                  </div>
+                  <div className="text-lg font-medium text-slate-700 dark:text-slate-300">
+                    {sampleResult.finalists[0]?.name} vs{" "}
+                    {sampleResult.finalists[1]?.name}
+                  </div>
+                </div>
+              </div>
+
+              {/* Path to Glory */}
+              <div>
+                <h4 className="font-semibold mb-4 text-sm uppercase text-slate-500 dark:text-slate-400 tracking-wider">
+                  Camino del Campeón
+                </h4>
+                <div className="space-y-3 relative">
+                  {/* Line connector */}
+                  <div className="absolute left-[27px] top-4 bottom-4 w-0.5 bg-slate-200 dark:bg-slate-800"></div>
+
+                  {sampleResult.matches
+                    .filter((m) => m.winner?.id === sampleResult.champion?.id)
+                    .map((m) => (
+                      <div
+                        key={m.id}
+                        className="relative flex items-center gap-4 text-sm p-3 bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm"
+                      >
+                        <div className="w-14 h-14 shrink-0 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-900 font-mono text-xs font-bold text-slate-500 dark:text-slate-400 z-10 border border-slate-200 dark:border-slate-800">
+                          {m.stage}
+                        </div>
+                        <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
+                          <div className="flex-1 flex items-center justify-between sm:justify-end gap-2 text-right">
+                            <span
+                              className={clsx(
+                                "font-medium",
+                                m.winner?.id === (m.homeTeam as Team).id
+                                  ? "text-green-600 dark:text-green-400 font-bold"
+                                  : "text-slate-600 dark:text-slate-400"
+                              )}
+                            >
+                              {(m.homeTeam as Team).name}
+                            </span>
+                          </div>
+                          <div className="font-mono font-bold bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded text-center min-w-[80px]">
+                            {m.homeScore} - {m.awayScore}
+                            {(m.homePenalties || m.awayPenalties) && (
+                              <div className="text-[10px] text-slate-500 font-normal">
+                                ({m.homePenalties}-{m.awayPenalties})
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 flex items-center justify-between sm:justify-start gap-2 text-left">
+                            <span
+                              className={clsx(
+                                "font-medium",
+                                m.winner?.id === (m.awayTeam as Team).id
+                                  ? "text-green-600 dark:text-green-400 font-bold"
+                                  : "text-slate-600 dark:text-slate-400"
+                              )}
+                            >
+                              {(m.awayTeam as Team).name}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 rounded-b-2xl flex justify-end">
+              <button
+                onClick={() => handleVerify()}
+                className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-slate-700 dark:text-slate-200"
+              >
+                Generar otra prueba
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
