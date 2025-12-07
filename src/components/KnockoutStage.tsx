@@ -145,7 +145,7 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
         <div
           className="grid gap-x-12 gap-y-4 min-w-max"
           style={{
@@ -153,20 +153,27 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
             gridTemplateRows: "auto repeat(8, minmax(220px, auto))",
           }}
         >
+          {/* Stage Backgrounds - Subtle differences to separate stages */}
+          <div className="col-start-1 row-start-1 row-span-full rounded-2xl bg-blue-50/50 dark:bg-blue-900/10 -mx-4" />
+          <div className="col-start-2 row-start-1 row-span-full rounded-2xl bg-indigo-50/50 dark:bg-indigo-900/10 -mx-4" />
+          <div className="col-start-3 row-start-1 row-span-full rounded-2xl bg-violet-50/50 dark:bg-violet-900/10 -mx-4" />
+          <div className="col-start-4 row-start-1 row-span-full rounded-2xl bg-purple-50/50 dark:bg-purple-900/10 -mx-4" />
+          <div className="col-start-5 row-start-1 row-span-full rounded-2xl bg-fuchsia-50/50 dark:bg-fuchsia-900/10 -mx-4" />
+
           {/* Headers */}
-          <div className="col-start-1">
+          <div className="col-start-1 sticky top-0 z-20">
             <h3 className={headerClass}>16avos de Final</h3>
           </div>
-          <div className="col-start-2">
+          <div className="col-start-2 sticky top-0 z-20">
             <h3 className={headerClass}>Octavos de Final</h3>
           </div>
-          <div className="col-start-3">
+          <div className="col-start-3 sticky top-0 z-20">
             <h3 className={headerClass}>Cuartos de Final</h3>
           </div>
-          <div className="col-start-4">
+          <div className="col-start-4 sticky top-0 z-20">
             <h3 className={headerClass}>Semifinales</h3>
           </div>
-          <div className="col-start-5">
+          <div className="col-start-5 sticky top-0 z-20">
             <h3 className={headerClass}>Finales</h3>
           </div>
 
