@@ -6,9 +6,15 @@ import { getTeamAbbreviation } from "@/utils/teamAbbreviations";
 
 interface GroupCardProps {
   group: Group;
+  onMatchUpdate: (
+    groupId: string,
+    matchId: string,
+    homeScore: number | null,
+    awayScore: number | null
+  ) => void;
 }
 
-export function GroupCard({ group }: GroupCardProps) {
+export function GroupCard({ group, onMatchUpdate }: GroupCardProps) {
   // Sort teams by points, then GD, then GF (simplified logic for now)
   const sortedTeams = [...group.teams].sort((a, b) => {
     if (b.pts !== a.pts) return b.pts - a.pts;
@@ -190,7 +196,17 @@ export function GroupCard({ group }: GroupCardProps) {
                     type="number"
                     min="0"
                     className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    defaultValue={match.homeScore ?? ""}
+                    value={match.homeScore ?? ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const newScore = val === "" ? null : parseInt(val);
+                      onMatchUpdate(
+                        group.name,
+                        match.id,
+                        newScore,
+                        match.awayScore ?? null
+                      );
+                    }}
                     placeholder="-"
                   />
                   <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
@@ -200,7 +216,17 @@ export function GroupCard({ group }: GroupCardProps) {
                     type="number"
                     min="0"
                     className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    defaultValue={match.awayScore ?? ""}
+                    value={match.awayScore ?? ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const newScore = val === "" ? null : parseInt(val);
+                      onMatchUpdate(
+                        group.name,
+                        match.id,
+                        match.homeScore ?? null,
+                        newScore
+                      );
+                    }}
                     placeholder="-"
                   />
                 </div>
