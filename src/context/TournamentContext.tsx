@@ -17,6 +17,39 @@ import {
   FINAL_MATCHES,
 } from "@/data/knockoutData";
 
+// Helper functions for simulation
+const poisson = (lambda: number): number => {
+  const L = Math.exp(-lambda);
+  let k = 0;
+  let p = 1;
+  do {
+    k++;
+    p *= Math.random();
+  } while (p > L);
+  return k - 1;
+};
+
+const predictMatchScore = (
+  homeRank: number = 50,
+  awayRank: number = 50
+): { home: number; away: number } => {
+  const diff = awayRank - homeRank; // Positive if home is better (lower rank)
+  const factor = 0.02; // Tuning factor for strength difference
+
+  // Base expected goals ~1.4 per team
+  let homeLambda = 1.4 + diff * factor;
+  let awayLambda = 1.4 - diff * factor;
+
+  // Clamp values to be realistic
+  homeLambda = Math.max(0.2, Math.min(5.0, homeLambda));
+  awayLambda = Math.max(0.2, Math.min(5.0, awayLambda));
+
+  return {
+    home: poisson(homeLambda),
+    away: poisson(awayLambda),
+  };
+};
+
 interface TournamentContextType {
   groups: Group[];
   knockoutMatches: KnockoutMatch[];
@@ -429,13 +462,18 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     setGroups((currentGroups) => {
       return currentGroups.map((group) => {
         const updatedMatches = group.matches.map((match) => {
-          // Simple random score between 0 and 3
-          const homeScore = Math.floor(Math.random() * 4);
-          const awayScore = Math.floor(Math.random() * 4);
+          const homeTeam = group.teams.find((t) => t.id === match.homeTeamId);
+          const awayTeam = group.teams.find((t) => t.id === match.awayTeamId);
+
+          const { home, away } = predictMatchScore(
+            homeTeam?.ranking,
+            awayTeam?.ranking
+          );
+
           return {
             ...match,
-            homeScore,
-            awayScore,
+            homeScore: home,
+            awayScore: away,
             finished: true,
           };
         });
@@ -469,9 +507,17 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           match.awayTeam &&
           !("placeholder" in match.awayTeam)
         ) {
-          // Generate random scores
-          const homeScore = Math.floor(Math.random() * 4);
-          const awayScore = Math.floor(Math.random() * 4);
+          // Generate realistic scores based on ranking
+          const hTeam = match.homeTeam as Team;
+          const aTeam = match.awayTeam as Team;
+
+          const { home, away } = predictMatchScore(
+            hTeam.ranking,
+            aTeam.ranking
+          );
+
+          const homeScore = home;
+          const awayScore = away;
           match.homeScore = homeScore;
           match.awayScore = awayScore;
 

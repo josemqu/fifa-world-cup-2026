@@ -4,6 +4,7 @@ export type Team = {
   code?: string; // ISO code or similar if available, for flags
   group: string;
   isPlaceholder?: boolean;
+  ranking?: number; // FIFA Ranking
   // Stats for group stage
   played: number;
   won: number;
