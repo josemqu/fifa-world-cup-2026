@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { TournamentProvider } from "@/context/TournamentContext";
+import { Header } from "@/components/Header";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,7 +21,10 @@ export default function RootLayout({
       <body
         className={`${inter.className} bg-slate-50 dark:bg-slate-900 min-h-screen text-slate-900 dark:text-slate-100`}
       >
-        {children}
+        <TournamentProvider>
+          <Header />
+          <main className="min-h-screen pb-12">{children}</main>
+        </TournamentProvider>
       </body>
     </html>
   );
