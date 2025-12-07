@@ -158,6 +158,7 @@ export function generateR32Matches(groups: Group[]) {
       ...match,
       homeTeam,
       awayTeam,
+      nextMatchId: match.next,
     };
   });
 }

@@ -122,7 +122,7 @@ function MatchPair({
   onUpdate: (id: string, h: number | null, a: number | null) => void;
 }) {
   return (
-    <div className="flex flex-col justify-around h-full relative">
+    <div className="flex flex-col justify-around h-full relative mb-4">
       <MatchCard match={match1} roundName={roundName} onUpdate={onUpdate} />
       <MatchCard match={match2} roundName={roundName} onUpdate={onUpdate} />
 
@@ -220,7 +220,7 @@ export function KnockoutStage({
 
   return (
     <motion.div
-      className="flex flex-col gap-8 pb-8"
+      className="flex flex-col gap-8 py-4"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >

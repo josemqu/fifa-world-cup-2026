@@ -352,6 +352,57 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      // Special handling for SF matches propagating to 3rd Place match (103)
+      if (matchId === "101" || matchId === "102") {
+        const thirdPlaceMatchId = "103";
+        const thirdPlaceIndex = newMatches.findIndex(
+          (m) => m.id === thirdPlaceMatchId
+        );
+        if (thirdPlaceIndex !== -1) {
+          const thirdPlaceMatch = { ...newMatches[thirdPlaceIndex] };
+          const staticThirdPlace = FINAL_MATCHES.find(
+            (m) => m.id === thirdPlaceMatchId
+          );
+
+          if (staticThirdPlace) {
+            const isHomeSource = staticThirdPlace.home === `L${matchId}`;
+            const isAwaySource = staticThirdPlace.away === `L${matchId}`;
+
+            if (winner) {
+              const loser =
+                winner.id === (match.homeTeam as Team).id
+                  ? match.awayTeam
+                  : match.homeTeam;
+
+              if (isHomeSource) {
+                thirdPlaceMatch.homeTeam = (loser as Team) || {
+                  placeholder: `L${matchId}`,
+                };
+              }
+              if (isAwaySource) {
+                thirdPlaceMatch.awayTeam = (loser as Team) || {
+                  placeholder: `L${matchId}`,
+                };
+              }
+            } else {
+              if (isHomeSource) {
+                thirdPlaceMatch.homeTeam = { placeholder: `L${matchId}` };
+              }
+              if (isAwaySource) {
+                thirdPlaceMatch.awayTeam = { placeholder: `L${matchId}` };
+              }
+            }
+
+            // Reset score/winner of 3rd place match
+            thirdPlaceMatch.homeScore = null;
+            thirdPlaceMatch.awayScore = null;
+            thirdPlaceMatch.winner = null;
+
+            newMatches[thirdPlaceIndex] = thirdPlaceMatch;
+          }
+        }
+      }
+
       return newMatches;
     });
   };
