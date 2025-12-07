@@ -14,9 +14,22 @@ export type Team = {
   pts: number;
 };
 
+export type Match = {
+  id: string;
+  homeTeamId: string;
+  awayTeamId: string;
+  homeScore?: number | null;
+  awayScore?: number | null;
+  date?: string;
+  time?: string;
+  location?: string; // Stadium - City
+  finished: boolean;
+};
+
 export type Group = {
   name: string; // "A", "B", ...
   teams: Team[];
+  matches: Match[];
 };
 
 export type GroupStageData = {

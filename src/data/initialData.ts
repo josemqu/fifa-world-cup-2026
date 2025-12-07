@@ -1,4 +1,4 @@
-import { Group, Team } from "./types";
+import { Group, Team, Match } from "./types";
 
 const createTeam = (
   id: string,
@@ -19,7 +19,29 @@ const createTeam = (
   pts: 0,
 });
 
-export const INITIAL_GROUPS: Group[] = [
+const createGroupMatches = (groupName: string, teams: Team[]): Match[] => {
+  // Standard scheduling: 1v2, 3v4, 1v3, 2v4, 4v1, 2v3
+  // Indices: 0, 1, 2, 3
+  const pairings = [
+    { h: 0, a: 1, r: 1 },
+    { h: 2, a: 3, r: 1 },
+    { h: 0, a: 2, r: 2 },
+    { h: 3, a: 1, r: 2 }, // 3 vs 1 often in round 2 or 1vs3
+    { h: 3, a: 0, r: 3 }, // 4 vs 1
+    { h: 1, a: 2, r: 3 }, // 2 vs 3
+  ];
+
+  return pairings.map((p, idx) => ({
+    id: `M${groupName}${idx + 1}`,
+    homeTeamId: teams[p.h].id,
+    awayTeamId: teams[p.a].id,
+    finished: false,
+    date: `Jornada ${p.r}`,
+    // random times/venues could be added here if needed, or left undefined
+  }));
+};
+
+const RAW_GROUPS = [
   {
     name: "A",
     teams: [
@@ -129,3 +151,8 @@ export const INITIAL_GROUPS: Group[] = [
     ],
   },
 ];
+
+export const INITIAL_GROUPS: Group[] = RAW_GROUPS.map((g) => ({
+  ...g,
+  matches: createGroupMatches(g.name, g.teams),
+}));
