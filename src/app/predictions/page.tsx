@@ -238,6 +238,7 @@ export default function PredictionsPage() {
                   <option value={5000}>5.000 simulaciones</option>
                   <option value={10000}>10.000 simulaciones</option>
                   <option value={50000}>50.000 simulaciones</option>
+                  <option value={100000}>100.000 simulaciones</option>
                 </select>
 
                 <button
