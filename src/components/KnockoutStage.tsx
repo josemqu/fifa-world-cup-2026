@@ -83,8 +83,8 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
         <div className="flex gap-8 min-w-max px-4">
           {/* Round of 32 */}
           <div className="flex flex-col">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 sticky top-0 bg-slate-50 dark:bg-slate-900 py-2">
-              Round of 32
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6 sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 py-3 px-4 shadow-sm border border-slate-200 dark:border-slate-800 rounded-lg backdrop-blur-sm z-10 text-center">
+              16avos de Final
             </h3>
             <div className="flex flex-col gap-4">
               {r32Matches.map((m) => (
@@ -95,8 +95,8 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
 
           {/* Round of 16 */}
           <div className="flex flex-col">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 sticky top-0 bg-slate-50 dark:bg-slate-900 py-2">
-              Round of 16
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6 sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 py-3 px-4 shadow-sm border border-slate-200 dark:border-slate-800 rounded-lg backdrop-blur-sm z-10 text-center">
+              Octavos de Final
             </h3>
             <div className="flex flex-col gap-4 justify-around h-full">
               {R16_MATCHES.map((m) => (
@@ -115,8 +115,8 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
 
           {/* Quarter Finals */}
           <div className="flex flex-col">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 sticky top-0 bg-slate-50 dark:bg-slate-900 py-2">
-              Quarter Finals
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6 sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 py-3 px-4 shadow-sm border border-slate-200 dark:border-slate-800 rounded-lg backdrop-blur-sm z-10 text-center">
+              Cuartos de Final
             </h3>
             <div className="flex flex-col gap-4 justify-around h-full">
               {QF_MATCHES.map((m) => (
@@ -135,8 +135,8 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
 
           {/* Semi Finals */}
           <div className="flex flex-col">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 sticky top-0 bg-slate-50 dark:bg-slate-900 py-2">
-              Semi Finals
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6 sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 py-3 px-4 shadow-sm border border-slate-200 dark:border-slate-800 rounded-lg backdrop-blur-sm z-10 text-center">
+              Semifinales
             </h3>
             <div className="flex flex-col gap-4 justify-around h-full">
               {SF_MATCHES.map((m) => (
@@ -155,8 +155,8 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
 
           {/* Final & 3rd Place */}
           <div className="flex flex-col">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 sticky top-0 bg-slate-50 dark:bg-slate-900 py-2">
-              Finals
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6 sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 py-3 px-4 shadow-sm border border-slate-200 dark:border-slate-800 rounded-lg backdrop-blur-sm z-10 text-center">
+              Finales
             </h3>
             <div className="flex flex-col gap-4 justify-center h-full">
               {FINAL_MATCHES.map((m) => (
