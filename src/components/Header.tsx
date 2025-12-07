@@ -53,10 +53,11 @@ export function Header() {
         </div>
 
         {/* Actions Section */}
-        <div className="shrink-0">
+        <div className="shrink-0 flex gap-2">
           <button
             onClick={simulateAll}
             className="bg-blue-600/90 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded-lg font-medium transition-all shadow-sm hover:shadow-md flex items-center gap-2 active:scale-95 transform backdrop-blur-sm"
+            title="Simular resultados de la Fase de Grupos"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -70,7 +71,29 @@ export function Header() {
                 clipRule="evenodd"
               />
             </svg>
-            Simular Todo
+            <span className="hidden sm:inline">Simular Grupos</span>
+            <span className="sm:hidden">Grupos</span>
+          </button>
+
+          <button
+            onClick={simulateKnockout}
+            className="bg-indigo-600/90 hover:bg-indigo-600 text-white text-sm px-4 py-2 rounded-lg font-medium transition-all shadow-sm hover:shadow-md flex items-center gap-2 active:scale-95 transform backdrop-blur-sm"
+            title="Simular resultados de la Fase Eliminatoria"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-4 h-4"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span className="hidden sm:inline">Simular Eliminatoria</span>
+            <span className="sm:hidden">Playoffs</span>
           </button>
         </div>
       </div>
