@@ -14,7 +14,13 @@ export function Header() {
   const isPredictions = pathname === "/predictions";
 
   return (
-    <div className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 shadow-sm transition-all">
+    <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 shadow-sm transition-all">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-[100] px-4 py-2 bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-bold rounded-lg shadow-lg ring-2 ring-blue-500"
+      >
+        Saltar al contenido
+      </a>
       <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Title Section */}
         <div className="shrink-0 text-center md:text-left">
@@ -30,7 +36,7 @@ export function Header() {
         </div>
 
         {/* Tabs Section */}
-        <div className="flex p-1 gap-2 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl w-full md:w-auto backdrop-blur-sm">
+        <nav className="flex p-1 gap-2 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl w-full md:w-auto backdrop-blur-sm">
           <Link
             href="/groups"
             className={clsx(
@@ -64,7 +70,7 @@ export function Header() {
           >
             Predicciones
           </Link>
-        </div>
+        </nav>
 
         {/* Actions Section */}
         <div className="shrink-0 flex gap-2 flex-wrap justify-center">
@@ -132,6 +138,6 @@ export function Header() {
           </button>
         </div>
       </div>
-    </div>
+    </header>
   );
 }

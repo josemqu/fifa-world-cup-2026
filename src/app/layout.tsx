@@ -93,7 +93,9 @@ export default function RootLayout({
       >
         <TournamentProvider>
           <Header />
-          <main className="flex-1 pb-32">{children}</main>
+          <main id="main" className="flex-1 pb-32">
+            {children}
+          </main>
           <Footer />
         </TournamentProvider>
         <Analytics />
