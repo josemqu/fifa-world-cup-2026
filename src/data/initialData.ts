@@ -74,7 +74,7 @@ const RAW_GROUPS = [
   {
     name: "D",
     teams: [
-      createTeam("D1", "EEUU", "D", 11),
+      createTeam("D1", "Estados Unidos", "D", 11),
       createTeam("D2", "Australia", "D", 24),
       createTeam("D3", "Paraguay", "D", 55),
       createTeam("D4", "UEFA Playoff C", "D", 40, true),
