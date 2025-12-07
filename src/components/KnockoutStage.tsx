@@ -11,6 +11,7 @@ import {
   FINAL_MATCHES,
 } from "@/data/knockoutData";
 import { clsx } from "clsx";
+import { motion } from "framer-motion";
 
 interface KnockoutStageProps {
   groups: Group[];
@@ -139,7 +140,11 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
     "text-lg font-bold text-slate-800 dark:text-slate-100 mb-2 py-3 px-4 shadow-sm border border-slate-200 dark:border-slate-800 rounded-lg backdrop-blur-sm text-center bg-slate-50/95 dark:bg-slate-900/95";
 
   return (
-    <div className="flex flex-col gap-8 pb-8">
+    <motion.div
+      className="flex flex-col gap-8 pb-8"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+    >
       <div className="overflow-x-auto py-4">
         <div
           className="grid gap-x-12 gap-y-4 min-w-max px-4"
@@ -337,6 +342,6 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
           </table>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
