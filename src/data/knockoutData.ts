@@ -97,20 +97,76 @@ export const THIRD_PLACE_MATRIX: ThirdPlaceCombination[] = [
 // Variable matches will look up the opponent from the matrix
 export const R32_MATCHES = [
   { id: "73", type: "fixed", home: "2A", away: "2B", next: "89" },
-  { id: "74", type: "variable", home: "1E", away: "3?", next: "89" }, // 1°E vs 3° (A/B/C/D/F) - Look up 'E' in matrix
+  {
+    id: "74",
+    type: "variable",
+    home: "1E",
+    away: "3?",
+    possibilities: ["A", "B", "C", "D", "F"],
+    next: "89",
+  }, // 1°E vs 3° (A/B/C/D/F) - Look up 'E' in matrix
   { id: "75", type: "fixed", home: "1F", away: "2C", next: "90" },
   { id: "76", type: "fixed", home: "1C", away: "2F", next: "90" },
-  { id: "77", type: "variable", home: "1I", away: "3?", next: "91" }, // 1°I vs 3° (C/D/F/G/H) - Look up 'I' in matrix
+  {
+    id: "77",
+    type: "variable",
+    home: "1I",
+    away: "3?",
+    possibilities: ["C", "D", "F", "G", "H"],
+    next: "91",
+  }, // 1°I vs 3° (C/D/F/G/H) - Look up 'I' in matrix
   { id: "78", type: "fixed", home: "2E", away: "2I", next: "91" },
-  { id: "79", type: "variable", home: "1A", away: "3?", next: "92" }, // 1°A vs 3° (C/E/F/H/I) - Look up 'A' in matrix
-  { id: "80", type: "variable", home: "1L", away: "3?", next: "92" }, // 1°L vs 3° (E/H/I/J/K) - Look up 'L' in matrix
-  { id: "81", type: "variable", home: "1D", away: "3?", next: "93" }, // 1°D vs 3° (B/E/F/I/J) - Look up 'D' in matrix
-  { id: "82", type: "variable", home: "1G", away: "3?", next: "93" }, // 1°G vs 3° (A/E/H/I/J) - Look up 'G' in matrix
+  {
+    id: "79",
+    type: "variable",
+    home: "1A",
+    away: "3?",
+    possibilities: ["C", "E", "F", "H", "I"],
+    next: "92",
+  }, // 1°A vs 3° (C/E/F/H/I) - Look up 'A' in matrix
+  {
+    id: "80",
+    type: "variable",
+    home: "1L",
+    away: "3?",
+    possibilities: ["E", "H", "I", "J", "K"],
+    next: "92",
+  }, // 1°L vs 3° (E/H/I/J/K) - Look up 'L' in matrix
+  {
+    id: "81",
+    type: "variable",
+    home: "1D",
+    away: "3?",
+    possibilities: ["B", "E", "F", "I", "J"],
+    next: "93",
+  }, // 1°D vs 3° (B/E/F/I/J) - Look up 'D' in matrix
+  {
+    id: "82",
+    type: "variable",
+    home: "1G",
+    away: "3?",
+    possibilities: ["A", "E", "H", "I", "J"],
+    next: "93",
+  }, // 1°G vs 3° (A/E/H/I/J) - Look up 'G' in matrix
   { id: "83", type: "fixed", home: "2K", away: "2L", next: "94" },
   { id: "84", type: "fixed", home: "1H", away: "2J", next: "94" },
-  { id: "85", type: "variable", home: "1B", away: "3?", next: "95" }, // 1°B vs 3° (E/F/G/I/J) - Look up 'B' in matrix
+  {
+    id: "85",
+    type: "variable",
+    home: "1B",
+    away: "3?",
+    possibilities: ["E", "F", "G", "I", "J"],
+    next: "95",
+  }, // 1°B vs 3° (E/F/G/I/J) - Look up 'B' in matrix
   { id: "86", type: "fixed", home: "1J", away: "2H", next: "95" },
-  { id: "87", type: "variable", home: "1K", away: "3?", next: "96" }, // 1°K vs 3° (D/E/I/J/L) - Look up 'K' in matrix
+  {
+    id: "87",
+    type: "variable",
+    home: "1K",
+    away: "3?",
+    possibilities: ["D", "E", "I", "J", "L"],
+    next: "96",
+  }, // 1°K vs 3° (D/E/I/J/L) - Look up 'K' in matrix
   { id: "88", type: "fixed", home: "2D", away: "2G", next: "96" },
 ];
 
