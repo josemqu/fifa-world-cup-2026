@@ -7,7 +7,7 @@ import { useTournament } from "@/context/TournamentContext";
 
 export function Header() {
   const pathname = usePathname();
-  const { simulateAll } = useTournament();
+  const { simulateAll, simulateKnockout } = useTournament();
 
   const isGroups = pathname === "/groups" || pathname === "/";
   const isKnockout = pathname === "/knockout";

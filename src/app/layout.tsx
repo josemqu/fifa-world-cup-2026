@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { TournamentProvider } from "@/context/TournamentContext";
 import { Header } from "@/components/Header";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,6 +26,7 @@ export default function RootLayout({
           <Header />
           <main className="min-h-screen pb-12">{children}</main>
         </TournamentProvider>
+        <Analytics />
       </body>
     </html>
   );
