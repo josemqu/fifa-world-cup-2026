@@ -20,7 +20,14 @@ const TEAM_NAME_MAPPING: Record<string, string> = {
   // Add others if discovered
 };
 
-export const fetchFifaRankings = async (): Promise<Record<string, number>> => {
+export interface RankingData {
+  rank: number;
+  points: number;
+}
+
+export const fetchFifaRankings = async (): Promise<
+  Record<string, RankingData>
+> => {
   try {
     const response = await fetch("/api/rankings");
 
@@ -29,13 +36,14 @@ export const fetchFifaRankings = async (): Promise<Record<string, number>> => {
     }
 
     const data: FifaRankingResponse = await response.json();
-    const rankingMap: Record<string, number> = {};
+    const rankingMap: Record<string, RankingData> = {};
 
     data.rankings.forEach((item) => {
       const name = item.rankingItem.name;
       const rank = item.rankingItem.rank;
+      const points = item.rankingItem.totalPoints;
       if (rank) {
-        rankingMap[name] = rank;
+        rankingMap[name] = { rank, points };
       }
     });
 
@@ -46,10 +54,10 @@ export const fetchFifaRankings = async (): Promise<Record<string, number>> => {
   }
 };
 
-export const getRankingForTeam = (
+export const getRankingDataForTeam = (
   teamName: string,
-  rankings: Record<string, number>
-): number | undefined => {
+  rankings: Record<string, RankingData>
+): RankingData | undefined => {
   // 1. Direct match
   if (rankings[teamName]) return rankings[teamName];
 

@@ -20,11 +20,21 @@ export const poisson = (lambda: number): number => {
 };
 
 export const predictMatchScore = (
-  homeRank: number = 50,
-  awayRank: number = 50
+  home: { ranking?: number; fifaPoints?: number } = {},
+  away: { ranking?: number; fifaPoints?: number } = {}
 ): { home: number; away: number } => {
-  const diff = awayRank - homeRank; // Positive if home is better (lower rank)
-  const factor = 0.02; // Tuning factor for strength difference
+  let diff = 0;
+  let factor = 0.02;
+
+  if (home.fifaPoints && away.fifaPoints) {
+    diff = home.fifaPoints - away.fifaPoints; // Positive if home is better (higher points)
+    factor = 0.003; // Approx 0.003 for points (e.g. 100 diff -> 0.3 goals)
+  } else {
+    const homeRank = home.ranking || 50;
+    const awayRank = away.ranking || 50;
+    diff = awayRank - homeRank; // Positive if home is better (lower rank)
+    factor = 0.02; // Approx 0.02 for rank (e.g. 15 diff -> 0.3 goals)
+  }
 
   // Base expected goals ~1.4 per team
   let homeLambda = 1.4 + diff * factor;
@@ -190,7 +200,7 @@ export const runKnockoutSimulation = (
       const hTeam = match.homeTeam as Team;
       const aTeam = match.awayTeam as Team;
 
-      const { home, away } = predictMatchScore(hTeam.ranking, aTeam.ranking);
+      const { home, away } = predictMatchScore(hTeam, aTeam);
 
       const homeScore = home;
       const awayScore = away;
@@ -319,10 +329,7 @@ export const simulateTournament = (
       const homeTeam = group.teams.find((t) => t.id === match.homeTeamId);
       const awayTeam = group.teams.find((t) => t.id === match.awayTeamId);
 
-      const { home, away } = predictMatchScore(
-        homeTeam?.ranking,
-        awayTeam?.ranking
-      );
+      const { home, away } = predictMatchScore(homeTeam, awayTeam);
 
       return {
         ...match,

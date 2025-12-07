@@ -49,6 +49,13 @@ export function GroupCard({ group, onMatchUpdate }: GroupCardProps) {
               </th>
               <th
                 scope="col"
+                className="px-1 py-2 text-center w-12"
+                title="Puntos FIFA"
+              >
+                FIFA
+              </th>
+              <th
+                scope="col"
                 className="px-1 py-2 text-center w-7"
                 title="Partidos Jugados"
               >
@@ -130,6 +137,9 @@ export function GroupCard({ group, onMatchUpdate }: GroupCardProps) {
                       {getTeamAbbreviation(team.name)}
                     </span>
                   </Tooltip>
+                </td>
+                <td className="px-1 py-1 text-center text-xs text-slate-500 dark:text-slate-400 font-mono">
+                  {team.fifaPoints ? team.fifaPoints.toFixed(0) : "-"}
                 </td>
                 <td className="px-1 py-1 text-center text-slate-600 dark:text-slate-400">
                   {team.played}

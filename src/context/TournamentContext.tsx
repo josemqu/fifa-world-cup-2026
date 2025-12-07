@@ -10,7 +10,7 @@ import React, {
 import { Group, Team, KnockoutMatch } from "@/data/types";
 import { INITIAL_GROUPS } from "@/data/initialData";
 import { generateR32Matches } from "@/utils/knockoutUtils";
-import { fetchFifaRankings, getRankingForTeam } from "@/utils/rankingUtils";
+import { fetchFifaRankings, getRankingDataForTeam } from "@/utils/rankingUtils";
 import {
   R16_MATCHES,
   QF_MATCHES,
@@ -21,40 +21,8 @@ import {
   getInitialKnockoutMatches,
   runKnockoutSimulation,
   recalculateGroupStats,
+  predictMatchScore,
 } from "@/utils/simulationUtils";
-
-// Helper functions for simulation
-const poisson = (lambda: number): number => {
-  const L = Math.exp(-lambda);
-  let k = 0;
-  let p = 1;
-  do {
-    k++;
-    p *= Math.random();
-  } while (p > L);
-  return k - 1;
-};
-
-const predictMatchScore = (
-  homeRank: number = 50,
-  awayRank: number = 50
-): { home: number; away: number } => {
-  const diff = awayRank - homeRank; // Positive if home is better (lower rank)
-  const factor = 0.02; // Tuning factor for strength difference
-
-  // Base expected goals ~1.4 per team
-  let homeLambda = 1.4 + diff * factor;
-  let awayLambda = 1.4 - diff * factor;
-
-  // Clamp values to be realistic
-  homeLambda = Math.max(0.2, Math.min(5.0, homeLambda));
-  awayLambda = Math.max(0.2, Math.min(5.0, awayLambda));
-
-  return {
-    home: poisson(homeLambda),
-    away: poisson(awayLambda),
-  };
-};
 
 interface TournamentContextType {
   groups: Group[];
@@ -94,8 +62,10 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           currentGroups.map((group) => ({
             ...group,
             teams: group.teams.map((team) => {
-              const newRank = getRankingForTeam(team.name, rankings);
-              return newRank ? { ...team, ranking: newRank } : team;
+              const data = getRankingDataForTeam(team.name, rankings);
+              return data
+                ? { ...team, ranking: data.rank, fifaPoints: data.points }
+                : team;
             }),
           }))
         );
@@ -370,10 +340,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           const homeTeam = group.teams.find((t) => t.id === match.homeTeamId);
           const awayTeam = group.teams.find((t) => t.id === match.awayTeamId);
 
-          const { home, away } = predictMatchScore(
-            homeTeam?.ranking,
-            awayTeam?.ranking
-          );
+          const { home, away } = predictMatchScore(homeTeam, awayTeam);
 
           return {
             ...match,
@@ -404,10 +371,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         const homeTeam = group.teams.find((t) => t.id === match.homeTeamId);
         const awayTeam = group.teams.find((t) => t.id === match.awayTeamId);
 
-        const { home, away } = predictMatchScore(
-          homeTeam?.ranking,
-          awayTeam?.ranking
-        );
+        const { home, away } = predictMatchScore(homeTeam, awayTeam);
 
         return {
           ...match,

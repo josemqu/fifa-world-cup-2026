@@ -21,10 +21,8 @@ export async function GET() {
     }
 
     const data = await response.json();
-    console.log("FIFA rankings fetched successfully", data);
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Error fetching FIFA rankings:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

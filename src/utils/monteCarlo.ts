@@ -5,6 +5,7 @@ export type PredictionResult = {
   teamId: string;
   teamName: string;
   teamRanking?: number;
+  teamFifaPoints?: number;
   simulations: number;
   championCount: number;
   finalistCount: number;
@@ -27,6 +28,7 @@ export const runMonteCarloSimulation = async (
         teamId: t.id,
         teamName: t.name,
         teamRanking: t.ranking,
+        teamFifaPoints: t.fifaPoints,
         simulations: iterations,
         championCount: 0,
         finalistCount: 0,

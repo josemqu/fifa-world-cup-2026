@@ -5,6 +5,7 @@ export type Team = {
   group: string;
   isPlaceholder?: boolean;
   ranking?: number; // FIFA Ranking
+  fifaPoints?: number; // FIFA Ranking Points (Total Points)
   // Stats for group stage
   played: number;
   won: number;

@@ -8,6 +8,7 @@ import { clsx } from "clsx";
 type SortColumn =
   | "teamName"
   | "teamRanking"
+  | "teamFifaPoints"
   | "championCount"
   | "finalistCount"
   | "semiFinalistCount"
@@ -57,8 +58,12 @@ export default function PredictionsPage() {
           const rankA = a.teamRanking ?? 999;
           const rankB = b.teamRanking ?? 999;
           comparison = rankA - rankB;
+        } else if (sortColumn === "teamFifaPoints") {
+          const pointsA = a.teamFifaPoints ?? 0;
+          const pointsB = b.teamFifaPoints ?? 0;
+          comparison = pointsA - pointsB;
         } else {
-          comparison = a[sortColumn] - b[sortColumn];
+          comparison = (a[sortColumn] as number) - (b[sortColumn] as number);
         }
 
         // Reverse if descending (default for numbers)
@@ -79,11 +84,19 @@ export default function PredictionsPage() {
             const rankB = b.teamRanking ?? 999;
             comparison = rankB - rankA;
           }
+        } else if (sortColumn === "teamFifaPoints") {
+          // For Points: Asc (0 -> 2000), Desc (2000 -> 0).
+          // Default comparison is Asc (a - b).
+          if (sortDirection === "desc") {
+            const pointsA = a.teamFifaPoints ?? 0;
+            const pointsB = b.teamFifaPoints ?? 0;
+            comparison = pointsB - pointsA;
+          }
         } else {
           // For Stats: Asc (0 -> 100), Desc (100 -> 0).
           // Default comparison is Asc (a - b).
           if (sortDirection === "desc") {
-            comparison = b[sortColumn] - a[sortColumn];
+            comparison = (b[sortColumn] as number) - (a[sortColumn] as number);
           }
         }
 
@@ -231,6 +244,11 @@ export default function PredictionsPage() {
                       label="Ranking"
                       align="right"
                     />
+                    <SortHeader
+                      column="teamFifaPoints"
+                      label="Puntos"
+                      align="right"
+                    />
                     <SortHeader column="championCount" label="Campeón" />
                     <SortHeader column="finalistCount" label="Final" />
                     <SortHeader column="semiFinalistCount" label="Semis" />
@@ -256,6 +274,11 @@ export default function PredictionsPage() {
                         </td>
                         <td className="px-4 py-3 text-right text-slate-500 dark:text-slate-400 font-mono">
                           {team.teamRanking ?? "-"}
+                        </td>
+                        <td className="px-4 py-3 text-right text-slate-500 dark:text-slate-400 font-mono">
+                          {team.teamFifaPoints
+                            ? team.teamFifaPoints.toFixed(0)
+                            : "-"}
                         </td>
                         <td
                           className={clsx(
