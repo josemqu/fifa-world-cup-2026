@@ -20,16 +20,16 @@ export default function PredictionsPage() {
   const { groups } = useTournament();
   const [results, setResults] = useState<PredictionResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
-  const [iterations, setIterations] = useState(1000);
+  const [iterations, setIterations] = useState(10000);
   const [sortColumn, setSortColumn] = useState<SortColumn>("championCount");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
-  const handleRun = async () => {
+  const handleRun = async (numIterations: number = iterations) => {
     setIsRunning(true);
     setResults([]);
     // Add a small delay to allow UI to update to loading state
     setTimeout(async () => {
-      const data = await runMonteCarloSimulation(groups, iterations);
+      const data = await runMonteCarloSimulation(groups, numIterations);
       setResults(data);
       setIsRunning(false);
     }, 100);
@@ -174,26 +174,30 @@ export default function PredictionsPage() {
                 Simulación de Montecarlo
               </h2>
               <p className="text-slate-500 dark:text-slate-400">
-                Simula el resto del torneo {iterations.toLocaleString()} veces
-                para calcular las probabilidades de cada equipo.
+                Simula el resto del torneo {iterations.toLocaleString("es-ES")}{" "}
+                veces para calcular las probabilidades de cada equipo.
               </p>
             </div>
 
             <div className="flex items-center gap-4">
               <select
                 value={iterations}
-                onChange={(e) => setIterations(Number(e.target.value))}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setIterations(val);
+                  handleRun(val);
+                }}
                 disabled={isRunning}
                 className="bg-slate-100 dark:bg-slate-800 border-none rounded-lg px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
               >
                 <option value={100}>100 simulaciones</option>
-                <option value={1000}>1,000 simulaciones</option>
-                <option value={5000}>5,000 simulaciones</option>
-                <option value={10000}>10,000 simulaciones</option>
+                <option value={1000}>1.000 simulaciones</option>
+                <option value={5000}>5.000 simulaciones</option>
+                <option value={10000}>10.000 simulaciones</option>
               </select>
 
               <button
-                onClick={handleRun}
+                onClick={() => handleRun()}
                 disabled={isRunning}
                 className={clsx(
                   "px-6 py-2 rounded-lg font-bold text-white transition-all shadow-md active:scale-95",
