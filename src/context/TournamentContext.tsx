@@ -86,6 +86,24 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   const [knockoutMatches, setKnockoutMatches] = useState<KnockoutMatch[]>([]);
 
   // Fetch live rankings
+  useEffect(() => {
+    const loadRankings = async () => {
+      const rankings = await fetchFifaRankings();
+      if (Object.keys(rankings).length > 0) {
+        setGroups((currentGroups) =>
+          currentGroups.map((group) => ({
+            ...group,
+            teams: group.teams.map((team) => {
+              const newRank = getRankingForTeam(team.name, rankings);
+              return newRank ? { ...team, ranking: newRank } : team;
+            }),
+          }))
+        );
+      }
+    };
+    loadRankings();
+  }, []);
+
   // Initialize/Update R32 matches when groups change
   useEffect(() => {
     const r32 = generateR32Matches(groups);

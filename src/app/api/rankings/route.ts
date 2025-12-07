@@ -13,6 +13,7 @@ export async function GET() {
     );
 
     if (!response.ok) {
+      console.error("Failed to fetch rankings from FIFA", response);
       return NextResponse.json(
         { error: "Failed to fetch rankings from FIFA" },
         { status: response.status }
@@ -20,6 +21,7 @@ export async function GET() {
     }
 
     const data = await response.json();
+    console.log("FIFA rankings fetched successfully", data);
     return NextResponse.json(data);
   } catch (error) {
     console.error("Error fetching FIFA rankings:", error);
