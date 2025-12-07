@@ -145,7 +145,7 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
           className="grid gap-x-12 gap-y-4 min-w-max px-4"
           style={{
             gridTemplateColumns: "repeat(5, minmax(240px, 1fr))",
-            gridTemplateRows: "auto repeat(8, minmax(180px, auto))",
+            gridTemplateRows: "auto repeat(8, minmax(220px, auto))",
           }}
         >
           {/* Headers */}
