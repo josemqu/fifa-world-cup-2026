@@ -82,5 +82,16 @@ export const runMonteCarloSimulation = async (
     }
   }
 
-  return Object.values(stats).sort((a, b) => b.championCount - a.championCount);
+  return Object.values(stats).sort((a, b) => {
+    if (b.championCount !== a.championCount)
+      return b.championCount - a.championCount;
+    if (b.finalistCount !== a.finalistCount)
+      return b.finalistCount - a.finalistCount;
+    if (b.semiFinalistCount !== a.semiFinalistCount)
+      return b.semiFinalistCount - a.semiFinalistCount;
+    if (b.quarterFinalistCount !== a.quarterFinalistCount)
+      return b.quarterFinalistCount - a.quarterFinalistCount;
+    if (b.r16Count !== a.r16Count) return b.r16Count - a.r16Count;
+    return b.r32Count - a.r32Count;
+  });
 };
