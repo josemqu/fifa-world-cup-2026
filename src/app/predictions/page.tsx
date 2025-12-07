@@ -243,7 +243,7 @@ export default function PredictionsPage() {
                   onClick={() => handleRun()}
                   disabled={isRunning}
                   className={clsx(
-                    "px-6 py-2 rounded-lg font-bold text-white transition-all shadow-md active:scale-95",
+                    "min-w-[220px] px-6 py-2 rounded-lg font-bold text-white transition-all shadow-md active:scale-95 flex justify-center items-center",
                     isRunning
                       ? "bg-slate-400 cursor-not-allowed"
                       : "bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25"
@@ -278,18 +278,27 @@ export default function PredictionsPage() {
                   )}
                 </button>
               </div>
-              {executionTime > 0 && (
-                <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-mono">
-                  <Timer className="w-3 h-3" />
-                  <span>
-                    {executionTime.toFixed(0)}ms (
-                    {Math.round(
-                      (iterations / executionTime) * 1000
-                    ).toLocaleString("es-ES")}{" "}
-                    sim/s)
-                  </span>
-                </div>
-              )}
+              <div
+                className={clsx(
+                  "flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-mono transition-opacity duration-300",
+                  executionTime > 0 ? "opacity-100" : "opacity-0 select-none"
+                )}
+              >
+                <Timer className="w-3 h-3" />
+                <span>
+                  {executionTime > 0 ? (
+                    <>
+                      {executionTime.toFixed(0)}ms (
+                      {Math.round(
+                        (iterations / executionTime) * 1000
+                      ).toLocaleString("es-ES")}{" "}
+                      sim/s)
+                    </>
+                  ) : (
+                    "0ms (0 sim/s)"
+                  )}
+                </span>
+              </div>
             </div>
           </div>
 
