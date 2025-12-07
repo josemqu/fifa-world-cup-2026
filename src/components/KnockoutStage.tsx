@@ -6,6 +6,7 @@ import {
 import { clsx } from "clsx";
 import { motion } from "framer-motion";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { Info } from "lucide-react";
 
 interface KnockoutStageProps {
   groups: Group[];
@@ -146,9 +147,28 @@ function MatchCard({
                 {homeName}
               </span>
               {isHomeProjected && (
-                <span className="text-blue-600 dark:text-blue-400 font-medium text-sm shrink-0">
-                  ?
-                </span>
+                <Tooltip
+                  content={
+                    <div className="flex flex-col gap-1 min-w-[150px]">
+                      <span className="font-bold text-xs border-b border-slate-700/50 pb-1 mb-1">
+                        Candidatos Posibles
+                      </span>
+                      {prob?.homeCandidates?.map((c, i) => (
+                        <div
+                          key={c.team.id}
+                          className="flex justify-between items-center text-[10px]"
+                        >
+                          <span>{c.team.name}</span>
+                          <span className="font-mono text-slate-400">
+                            {(c.probability * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  }
+                >
+                  <Info className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0 cursor-help" />
+                </Tooltip>
               )}
             </div>
             {isHomeProjected && (
@@ -223,9 +243,28 @@ function MatchCard({
                 {awayName}
               </span>
               {isAwayProjected && (
-                <span className="text-blue-600 dark:text-blue-400 font-medium text-sm shrink-0">
-                  ?
-                </span>
+                <Tooltip
+                  content={
+                    <div className="flex flex-col gap-1 min-w-[150px]">
+                      <span className="font-bold text-xs border-b border-slate-700/50 pb-1 mb-1">
+                        Candidatos Posibles
+                      </span>
+                      {prob?.awayCandidates?.map((c, i) => (
+                        <div
+                          key={c.team.id}
+                          className="flex justify-between items-center text-[10px]"
+                        >
+                          <span>{c.team.name}</span>
+                          <span className="font-mono text-slate-400">
+                            {(c.probability * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  }
+                >
+                  <Info className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0 cursor-help" />
+                </Tooltip>
               )}
             </div>
             {isAwayProjected && (

@@ -20,6 +20,8 @@ export const calculateKnockoutProbabilities = async (
       matchupProb: number;
       projectedHomeTeam?: Team;
       projectedAwayTeam?: Team;
+      homeCandidates?: { team: Team; probability: number }[];
+      awayCandidates?: { team: Team; probability: number }[];
     }
   >
 > => {
@@ -129,6 +131,31 @@ export const calculateKnockoutProbabilities = async (
     const projectedMatchupKey = `${bestHomeId}-${bestAwayId}`;
     const matchupCount = stats.matchupCounts.get(projectedMatchupKey) || 0;
 
+    // Build Candidate Lists
+    const homeCandidates: { team: Team; probability: number }[] = [];
+    stats.homeTeamCounts.forEach((count, id) => {
+      const team = stats.teamData.get(id);
+      if (team) {
+        homeCandidates.push({
+          team,
+          probability: count / iterations,
+        });
+      }
+    });
+    homeCandidates.sort((a, b) => b.probability - a.probability);
+
+    const awayCandidates: { team: Team; probability: number }[] = [];
+    stats.awayTeamCounts.forEach((count, id) => {
+      const team = stats.teamData.get(id);
+      if (team) {
+        awayCandidates.push({
+          team,
+          probability: count / iterations,
+        });
+      }
+    });
+    awayCandidates.sort((a, b) => b.probability - a.probability);
+
     // Calculate Conditional Probability (Bayes)
     // P(Matchup | Team) = P(Matchup) / P(Team)
     // We condition on the most likely team to be conservative and consistent
@@ -147,6 +174,8 @@ export const calculateKnockoutProbabilities = async (
       projectedAwayTeam: bestAwayId
         ? stats.teamData.get(bestAwayId)
         : undefined,
+      homeCandidates,
+      awayCandidates,
     });
   });
 

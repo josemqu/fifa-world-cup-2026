@@ -58,5 +58,7 @@ export type KnockoutMatch = {
     matchupProb: number; // 0-1
     projectedHomeTeam?: Team;
     projectedAwayTeam?: Team;
+    homeCandidates?: { team: Team; probability: number }[];
+    awayCandidates?: { team: Team; probability: number }[];
   };
 };
