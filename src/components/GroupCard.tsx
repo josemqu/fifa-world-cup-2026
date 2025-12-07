@@ -1,6 +1,7 @@
 import { Group, Team } from "@/data/types";
 import { clsx } from "clsx";
 import { motion } from "framer-motion";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { getTeamAbbreviation } from "@/utils/teamAbbreviations";
 
 interface GroupCardProps {
@@ -112,9 +113,9 @@ export function GroupCard({ group }: GroupCardProps) {
                         : "bg-transparent"
                     )}
                   />
-                  <span title={team.name} className="cursor-help">
+                  <Tooltip content={team.name}>
                     {getTeamAbbreviation(team.name)}
-                  </span>
+                  </Tooltip>
                 </td>
                 <td className="px-2 py-3 text-center text-slate-600 dark:text-slate-400">
                   {team.played}
