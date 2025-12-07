@@ -243,7 +243,7 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
 
             {/* 3rd Place Match - Bottom */}
             {thirdPlaceMatch && (
-              <div className="absolute bottom-12 left-0 right-0 z-10">
+              <div className="absolute top-1/2 left-0 right-0 mt-32 z-10">
                 <h4 className="text-sm font-semibold text-center mb-2 text-slate-500">
                   {thirdPlaceMatch.label}
                 </h4>
