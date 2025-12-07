@@ -136,9 +136,6 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
   const finalMatch = FINAL_MATCHES.find((m) => m.id === "104");
   const thirdPlaceMatch = FINAL_MATCHES.find((m) => m.id === "103");
 
-  const headerClass =
-    "text-lg font-bold text-slate-800 dark:text-slate-100 mb-2 py-3 px-4 shadow-sm border border-slate-200 dark:border-slate-800 rounded-lg backdrop-blur-sm text-center bg-slate-50/95 dark:bg-slate-900/95";
-
   return (
     <motion.div
       className="flex flex-col gap-8 pb-8"
@@ -147,7 +144,7 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
     >
       <div className="overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
         <div
-          className="grid gap-x-12 gap-y-4 min-w-max"
+          className="grid gap-x-12 gap-y-4 min-w-max px-4"
           style={{
             gridTemplateColumns: "repeat(5, minmax(240px, 1fr))",
             gridTemplateRows: "auto repeat(8, minmax(220px, auto))",
@@ -162,19 +159,29 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
 
           {/* Headers */}
           <div className="col-start-1 sticky top-0 z-20">
-            <h3 className={headerClass}>16avos de Final</h3>
+            <h3 className="text-center py-2 px-3 rounded-xl bg-blue-100/95 dark:bg-blue-900/90 text-blue-700 dark:text-blue-300 font-semibold text-sm mb-4 backdrop-blur-sm -mx-4">
+              16avos de Final
+            </h3>
           </div>
           <div className="col-start-2 sticky top-0 z-20">
-            <h3 className={headerClass}>Octavos de Final</h3>
+            <h3 className="text-center py-2 px-3 rounded-xl bg-indigo-100/95 dark:bg-indigo-900/90 text-indigo-700 dark:text-indigo-300 font-semibold text-sm mb-4 backdrop-blur-sm -mx-4">
+              Octavos de Final
+            </h3>
           </div>
           <div className="col-start-3 sticky top-0 z-20">
-            <h3 className={headerClass}>Cuartos de Final</h3>
+            <h3 className="text-center py-2 px-3 rounded-xl bg-violet-100/95 dark:bg-violet-900/90 text-violet-700 dark:text-violet-300 font-semibold text-sm mb-4 backdrop-blur-sm -mx-4">
+              Cuartos de Final
+            </h3>
           </div>
           <div className="col-start-4 sticky top-0 z-20">
-            <h3 className={headerClass}>Semifinales</h3>
+            <h3 className="text-center py-2 px-3 rounded-xl bg-purple-100/95 dark:bg-purple-900/90 text-purple-700 dark:text-purple-300 font-semibold text-sm mb-4 backdrop-blur-sm -mx-4">
+              Semifinales
+            </h3>
           </div>
           <div className="col-start-5 sticky top-0 z-20">
-            <h3 className={headerClass}>Finales</h3>
+            <h3 className="text-center py-2 px-3 rounded-xl bg-fuchsia-100/95 dark:bg-fuchsia-900/90 text-fuchsia-700 dark:text-fuchsia-300 font-semibold text-sm mb-4 backdrop-blur-sm -mx-4">
+              Finales
+            </h3>
           </div>
 
           {/* Round of 32 */}
