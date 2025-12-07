@@ -123,6 +123,49 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     });
   }, [groups]);
 
+  // Probability Calculation Effect
+  useEffect(() => {
+    const runProbabilityCalc = async () => {
+      // Import dynamically to avoid circular dependencies if any, though imports are top-level
+      const { calculateKnockoutProbabilities } = await import(
+        "@/utils/probabilityUtils"
+      );
+
+      // Check if any group is unfinished
+      const anyUnfinished = groups.some((g) =>
+        g.matches.some((m) => !m.finished)
+      );
+
+      if (anyUnfinished) {
+        const probabilities = await calculateKnockoutProbabilities(groups);
+
+        setKnockoutMatches((prev) =>
+          prev.map((m) => {
+            const prob = probabilities.get(m.id);
+            if (prob) {
+              return { ...m, probabilisticData: prob };
+            }
+            return m;
+          })
+        );
+      } else {
+        // Clear probabilities if tournament is fully deterministic
+        setKnockoutMatches((prev) =>
+          prev.map((m) => {
+            if (m.probabilisticData) {
+              const { probabilisticData, ...rest } = m;
+              return rest;
+            }
+            return m;
+          })
+        );
+      }
+    };
+
+    const timer = setTimeout(runProbabilityCalc, 500);
+    return () => clearTimeout(timer);
+  }, [groups]);
+
   const updateMatch = (
     groupId: string,
     matchId: string,

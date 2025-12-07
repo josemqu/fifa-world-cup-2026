@@ -36,19 +36,34 @@ function MatchCard({
 }) {
   const homeTeam = match.homeTeam;
   const awayTeam = match.awayTeam;
+  const prob = match.probabilisticData;
+
+  const isHomeProjected =
+    (!homeTeam || "placeholder" in homeTeam) && !!prob?.projectedHomeTeam;
+  const isAwayProjected =
+    (!awayTeam || "placeholder" in awayTeam) && !!prob?.projectedAwayTeam;
+
+  const displayedHome = isHomeProjected ? prob!.projectedHomeTeam : homeTeam;
+  const displayedAway = isAwayProjected ? prob!.projectedAwayTeam : awayTeam;
 
   const homeName =
-    homeTeam && "placeholder" in homeTeam
-      ? homeTeam.placeholder
-      : homeTeam?.name;
+    displayedHome && "placeholder" in displayedHome
+      ? displayedHome.placeholder
+      : displayedHome?.name;
   const awayName =
-    awayTeam && "placeholder" in awayTeam
-      ? awayTeam.placeholder
-      : awayTeam?.name;
+    displayedAway && "placeholder" in displayedAway
+      ? displayedAway.placeholder
+      : displayedAway?.name;
 
-  const isHomePlaceholder = !homeTeam || "placeholder" in homeTeam;
-  const isAwayPlaceholder = !awayTeam || "placeholder" in awayTeam;
-  const canEdit = !isHomePlaceholder && !isAwayPlaceholder;
+  const isHomePlaceholder =
+    !displayedHome || "placeholder" in displayedHome || isHomeProjected;
+  const isAwayPlaceholder =
+    !displayedAway || "placeholder" in displayedAway || isAwayProjected;
+  const canEdit =
+    !isHomePlaceholder &&
+    !isAwayPlaceholder &&
+    !isHomeProjected &&
+    !isAwayProjected;
 
   // Check for tie
   const isTied =
@@ -70,15 +85,31 @@ function MatchCard({
   return (
     <div
       className={clsx(
-        "bg-white dark:bg-slate-800 border rounded-lg p-3 shadow-sm min-w-[200px] relative z-10 transition-colors",
+        "bg-white dark:bg-slate-800 border rounded-lg p-3 shadow-sm min-w-[220px] relative z-10 transition-colors",
         isPenaltyTied
           ? "border-red-300 dark:border-red-900/50"
           : "border-slate-200 dark:border-slate-700"
       )}
     >
-      <div className="text-xs text-slate-400 mb-2 flex justify-between">
+      <div className="text-xs text-slate-400 mb-2 flex justify-between items-center">
         <span>Match {match.id}</span>
-        {match.nextMatchId && <span>To: {match.nextMatchId}</span>}
+        {prob && prob.matchupProb > 0 && (
+          <span
+            className={clsx(
+              "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
+              prob.matchupProb > 0.8
+                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                : prob.matchupProb > 0.5
+                ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
+            )}
+            title={`Probability of this exact matchup: ${(
+              prob.matchupProb * 100
+            ).toFixed(1)}%`}
+          >
+            {(prob.matchupProb * 100).toFixed(0)}%
+          </span>
+        )}
       </div>
       {isPenaltyTied && (
         <div
@@ -91,18 +122,33 @@ function MatchCard({
       <div className="flex flex-col gap-2">
         {/* Home Team */}
         <div className="flex justify-between items-center gap-2">
-          <span
-            className={clsx(
-              "font-medium text-sm truncate max-w-[120px]",
-              isHomePlaceholder
-                ? "text-slate-400 italic"
-                : "text-slate-900 dark:text-slate-100"
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="flex items-center gap-1 min-w-0">
+              <span
+                className={clsx(
+                  "font-medium text-sm truncate",
+                  isHomePlaceholder
+                    ? "text-slate-400 italic"
+                    : "text-slate-900 dark:text-slate-100",
+                  isHomeProjected && "text-blue-600 dark:text-blue-400"
+                )}
+                title={homeName}
+              >
+                {homeName}
+              </span>
+              {isHomeProjected && (
+                <span className="text-blue-600 dark:text-blue-400 font-medium text-sm shrink-0">
+                  ?
+                </span>
+              )}
+            </div>
+            {isHomeProjected && (
+              <span className="text-[10px] text-blue-500/70 dark:text-blue-400/70 font-mono whitespace-nowrap flex-shrink-0">
+                {(prob!.homeTeamProb * 100).toFixed(0)}%
+              </span>
             )}
-            title={homeName}
-          >
-            {homeName}
-          </span>
-          <div className="flex items-center gap-1">
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0">
             {isTied && (
               <input
                 type="number"
@@ -153,18 +199,33 @@ function MatchCard({
 
         {/* Away Team */}
         <div className="flex justify-between items-center gap-2">
-          <span
-            className={clsx(
-              "font-medium text-sm truncate max-w-[120px]",
-              isAwayPlaceholder
-                ? "text-slate-400 italic"
-                : "text-slate-900 dark:text-slate-100"
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="flex items-center gap-1 min-w-0">
+              <span
+                className={clsx(
+                  "font-medium text-sm truncate",
+                  isAwayPlaceholder
+                    ? "text-slate-400 italic"
+                    : "text-slate-900 dark:text-slate-100",
+                  isAwayProjected && "text-blue-600 dark:text-blue-400"
+                )}
+                title={awayName}
+              >
+                {awayName}
+              </span>
+              {isAwayProjected && (
+                <span className="text-blue-600 dark:text-blue-400 font-medium text-sm shrink-0">
+                  ?
+                </span>
+              )}
+            </div>
+            {isAwayProjected && (
+              <span className="text-[10px] text-blue-500/70 dark:text-blue-400/70 font-mono whitespace-nowrap shrink-0">
+                {(prob!.awayTeamProb * 100).toFixed(0)}%
+              </span>
             )}
-            title={awayName}
-          >
-            {awayName}
-          </span>
-          <div className="flex items-center gap-1">
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0">
             {isTied && (
               <input
                 type="number"
