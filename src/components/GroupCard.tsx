@@ -121,7 +121,7 @@ export function GroupCard({ group, onMatchUpdate }: GroupCardProps) {
                   index < 2 ? "bg-green-50/30 dark:bg-green-900/10" : ""
                 )}
               >
-                <td className="px-2 py-1 font-medium text-slate-900 dark:text-slate-100 flex items-center gap-1.5 relative h-8">
+                <td className="px-2 py-1 pl-4 font-medium text-slate-900 dark:text-slate-100 flex items-center gap-1.5 relative h-8">
                   <span
                     className={clsx(
                       "w-1 h-full absolute left-0 top-0",
@@ -194,11 +194,9 @@ export function GroupCard({ group, onMatchUpdate }: GroupCardProps) {
               </div>
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-                  <Tooltip content={getTeamName(match.homeTeamId)}>
-                    <span className="font-medium text-sm truncate max-w-[120px] text-slate-900 dark:text-slate-100">
-                      {getTeamName(match.homeTeamId)}
-                    </span>
-                  </Tooltip>
+                  <span className="font-medium text-sm truncate max-w-[120px] text-slate-900 dark:text-slate-100">
+                    {getTeamName(match.homeTeamId)}
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-1.5 mx-2">
@@ -242,11 +240,9 @@ export function GroupCard({ group, onMatchUpdate }: GroupCardProps) {
                 </div>
 
                 <div className="flex items-center gap-2 flex-1 min-w-0 justify-start">
-                  <Tooltip content={getTeamName(match.awayTeamId)}>
-                    <span className="font-medium text-sm truncate max-w-[120px] text-slate-900 dark:text-slate-100">
-                      {getTeamName(match.awayTeamId)}
-                    </span>
-                  </Tooltip>
+                  <span className="font-medium text-sm truncate max-w-[120px] text-slate-900 dark:text-slate-100">
+                    {getTeamName(match.awayTeamId)}
+                  </span>
                 </div>
               </div>
             </div>
