@@ -96,6 +96,49 @@ function MatchPair({
   );
 }
 
+const STAGES = [
+  {
+    id: "r32",
+    label: "16avos de Final",
+    colStart: 1,
+    bgClass: "bg-blue-50/50 dark:bg-blue-900/10",
+    headerClass:
+      "bg-blue-100/95 dark:bg-blue-900/90 text-blue-700 dark:text-blue-300",
+  },
+  {
+    id: "r16",
+    label: "Octavos de Final",
+    colStart: 2,
+    bgClass: "bg-indigo-50/50 dark:bg-indigo-900/10",
+    headerClass:
+      "bg-indigo-100/95 dark:bg-indigo-900/90 text-indigo-700 dark:text-indigo-300",
+  },
+  {
+    id: "qf",
+    label: "Cuartos de Final",
+    colStart: 3,
+    bgClass: "bg-violet-50/50 dark:bg-violet-900/10",
+    headerClass:
+      "bg-violet-100/95 dark:bg-violet-900/90 text-violet-700 dark:text-violet-300",
+  },
+  {
+    id: "sf",
+    label: "Semifinales",
+    colStart: 4,
+    bgClass: "bg-purple-50/50 dark:bg-purple-900/10",
+    headerClass:
+      "bg-purple-100/95 dark:bg-purple-900/90 text-purple-700 dark:text-purple-300",
+  },
+  {
+    id: "f",
+    label: "Finales",
+    colStart: 5,
+    bgClass: "bg-fuchsia-50/50 dark:bg-fuchsia-900/10",
+    headerClass:
+      "bg-fuchsia-100/95 dark:bg-fuchsia-900/90 text-fuchsia-700 dark:text-fuchsia-300",
+  },
+] as const;
+
 export function KnockoutStage({ groups }: KnockoutStageProps) {
   const r32Matches = generateR32Matches(groups);
   const { thirdPlaceTeams } = getGroupStandings(groups);
@@ -147,42 +190,53 @@ export function KnockoutStage({ groups }: KnockoutStageProps) {
           className="grid gap-x-12 gap-y-4 min-w-max px-4"
           style={{
             gridTemplateColumns: "repeat(5, minmax(240px, 1fr))",
-            gridTemplateRows: "auto repeat(8, minmax(220px, auto))",
+            gridTemplateRows: "auto repeat(8, minmax(220px, auto)) auto",
           }}
         >
-          {/* Stage Backgrounds - Subtle differences to separate stages */}
-          <div className="col-start-1 row-start-1 row-span-full rounded-2xl bg-blue-50/50 dark:bg-blue-900/10 -mx-4" />
-          <div className="col-start-2 row-start-1 row-span-full rounded-2xl bg-indigo-50/50 dark:bg-indigo-900/10 -mx-4" />
-          <div className="col-start-3 row-start-1 row-span-full rounded-2xl bg-violet-50/50 dark:bg-violet-900/10 -mx-4" />
-          <div className="col-start-4 row-start-1 row-span-full rounded-2xl bg-purple-50/50 dark:bg-purple-900/10 -mx-4" />
-          <div className="col-start-5 row-start-1 row-span-full rounded-2xl bg-fuchsia-50/50 dark:bg-fuchsia-900/10 -mx-4" />
-
-          {/* Headers */}
-          <div className="col-start-1 sticky top-0 z-20">
-            <h3 className="text-center py-2 px-3 rounded-xl bg-blue-100/95 dark:bg-blue-900/90 text-blue-700 dark:text-blue-300 font-semibold text-sm mb-4 backdrop-blur-sm -mx-4">
-              16avos de Final
-            </h3>
-          </div>
-          <div className="col-start-2 sticky top-0 z-20">
-            <h3 className="text-center py-2 px-3 rounded-xl bg-indigo-100/95 dark:bg-indigo-900/90 text-indigo-700 dark:text-indigo-300 font-semibold text-sm mb-4 backdrop-blur-sm -mx-4">
-              Octavos de Final
-            </h3>
-          </div>
-          <div className="col-start-3 sticky top-0 z-20">
-            <h3 className="text-center py-2 px-3 rounded-xl bg-violet-100/95 dark:bg-violet-900/90 text-violet-700 dark:text-violet-300 font-semibold text-sm mb-4 backdrop-blur-sm -mx-4">
-              Cuartos de Final
-            </h3>
-          </div>
-          <div className="col-start-4 sticky top-0 z-20">
-            <h3 className="text-center py-2 px-3 rounded-xl bg-purple-100/95 dark:bg-purple-900/90 text-purple-700 dark:text-purple-300 font-semibold text-sm mb-4 backdrop-blur-sm -mx-4">
-              Semifinales
-            </h3>
-          </div>
-          <div className="col-start-5 sticky top-0 z-20">
-            <h3 className="text-center py-2 px-3 rounded-xl bg-fuchsia-100/95 dark:bg-fuchsia-900/90 text-fuchsia-700 dark:text-fuchsia-300 font-semibold text-sm mb-4 backdrop-blur-sm -mx-4">
-              Finales
-            </h3>
-          </div>
+          {/* Stage Backgrounds & Headers */}
+          {STAGES.map((stage) => (
+            <>
+              {/* Background Column */}
+              <div
+                key={`bg-${stage.id}`}
+                className={clsx(
+                  "row-start-1 row-span-full rounded-2xl -mx-4",
+                  stage.bgClass
+                )}
+                style={{ gridColumnStart: stage.colStart }}
+              />
+              {/* Top Header */}
+              <div
+                key={`top-header-${stage.id}`}
+                className="row-start-1"
+                style={{ gridColumnStart: stage.colStart }}
+              >
+                <h3
+                  className={clsx(
+                    "text-center py-2 px-3 rounded-xl font-semibold text-sm mb-4 -mx-4",
+                    stage.headerClass
+                  )}
+                >
+                  {stage.label}
+                </h3>
+              </div>
+              {/* Bottom Header */}
+              <div
+                key={`bottom-header-${stage.id}`}
+                className="row-start-10"
+                style={{ gridColumnStart: stage.colStart }}
+              >
+                <h3
+                  className={clsx(
+                    "text-center py-2 px-3 rounded-xl font-semibold text-sm mt-4 -mx-4",
+                    stage.headerClass
+                  )}
+                >
+                  {stage.label}
+                </h3>
+              </div>
+            </>
+          ))}
 
           {/* Round of 32 */}
           {r32Pairs.map((pair, i) => (
