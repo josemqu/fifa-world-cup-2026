@@ -72,7 +72,12 @@ export function Tooltip({ children, content, className }: TooltipProps) {
               }}
               className="pointer-events-none -translate-y-full"
             >
-              <div className="relative px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 dark:bg-slate-100 dark:text-slate-900 rounded-lg shadow-xl border border-slate-700/50 dark:border-slate-200/50 backdrop-blur-sm max-w-[250px] text-center">
+              <div
+                className={twMerge(
+                  "relative px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 dark:bg-slate-100 dark:text-slate-900 rounded-lg shadow-xl border border-slate-700/50 dark:border-slate-200/50 backdrop-blur-sm text-center",
+                  className
+                )}
+              >
                 {content}
                 {/* Arrow */}
                 <div className="absolute w-2 h-2 bg-slate-900 dark:bg-slate-100 rotate-45 left-1/2 -bottom-1 -translate-x-1/2 border-r border-b border-slate-700/50 dark:border-slate-200/50" />

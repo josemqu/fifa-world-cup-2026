@@ -1,4 +1,4 @@
-import { Group, KnockoutMatch } from "@/data/types";
+import { Group, KnockoutMatch, Team } from "@/data/types";
 import {
   getGroupStandings,
   getSortedThirdPlaceTeams,
@@ -18,6 +18,59 @@ interface KnockoutStageProps {
     homePenalties?: number | null,
     awayPenalties?: number | null
   ) => void;
+}
+
+// Helper component for candidates tooltip
+function CandidatesTooltip({
+  candidates,
+}: {
+  candidates: { team: Team; probability: number }[];
+}) {
+  const sorted = [...candidates].sort((a, b) => b.probability - a.probability);
+  const limit = 10;
+  const topCandidates = sorted.slice(0, limit);
+  const remaining = sorted.length - limit;
+
+  // Use 2 columns if we have more than 5 candidates to show
+  const useColumns = topCandidates.length > 5;
+
+  return (
+    <div
+      className={clsx(
+        "flex flex-col gap-1",
+        useColumns ? "min-w-[300px]" : "min-w-[150px]"
+      )}
+    >
+      <span className="font-bold text-xs border-b border-slate-700/50 pb-1 mb-1">
+        Candidatos Posibles
+      </span>
+      <div
+        className={clsx(
+          "grid gap-x-6 gap-y-1",
+          useColumns ? "grid-cols-2" : "grid-cols-1"
+        )}
+      >
+        {topCandidates.map((c) => (
+          <div
+            key={c.team.id}
+            className="flex justify-between items-center text-[10px]"
+          >
+            <span className="truncate max-w-[100px]" title={c.team.name}>
+              {c.team.name}
+            </span>
+            <span className="font-mono text-slate-400 ml-2 shrink-0">
+              {(c.probability * 100).toFixed(0)}%
+            </span>
+          </div>
+        ))}
+      </div>
+      {remaining > 0 && (
+        <div className="text-[10px] text-slate-400 italic pt-1 text-center border-t border-slate-700/30 mt-1">
+          + {remaining} equipos más
+        </div>
+      )}
+    </div>
+  );
 }
 
 // Helper to render a match card
@@ -149,22 +202,9 @@ function MatchCard({
               {isHomeProjected && (
                 <Tooltip
                   content={
-                    <div className="flex flex-col gap-1 min-w-[150px]">
-                      <span className="font-bold text-xs border-b border-slate-700/50 pb-1 mb-1">
-                        Candidatos Posibles
-                      </span>
-                      {prob?.homeCandidates?.map((c, i) => (
-                        <div
-                          key={c.team.id}
-                          className="flex justify-between items-center text-[10px]"
-                        >
-                          <span>{c.team.name}</span>
-                          <span className="font-mono text-slate-400">
-                            {(c.probability * 100).toFixed(0)}%
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                    <CandidatesTooltip
+                      candidates={prob?.homeCandidates || []}
+                    />
                   }
                 >
                   <Info className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0 cursor-help" />
@@ -245,22 +285,9 @@ function MatchCard({
               {isAwayProjected && (
                 <Tooltip
                   content={
-                    <div className="flex flex-col gap-1 min-w-[150px]">
-                      <span className="font-bold text-xs border-b border-slate-700/50 pb-1 mb-1">
-                        Candidatos Posibles
-                      </span>
-                      {prob?.awayCandidates?.map((c, i) => (
-                        <div
-                          key={c.team.id}
-                          className="flex justify-between items-center text-[10px]"
-                        >
-                          <span>{c.team.name}</span>
-                          <span className="font-mono text-slate-400">
-                            {(c.probability * 100).toFixed(0)}%
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                    <CandidatesTooltip
+                      candidates={prob?.awayCandidates || []}
+                    />
                   }
                 >
                   <Info className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0 cursor-help" />
