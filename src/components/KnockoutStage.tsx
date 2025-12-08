@@ -78,6 +78,7 @@ function MatchCard({
   match,
   roundName,
   onUpdate,
+  tooltipPlacement = "top",
 }: {
   match: KnockoutMatch;
   roundName: string;
@@ -88,6 +89,7 @@ function MatchCard({
     hp?: number | null,
     ap?: number | null
   ) => void;
+  tooltipPlacement?: "top" | "right" | "bottom" | "left";
 }) {
   const homeTeam = match.homeTeam;
   const awayTeam = match.awayTeam;
@@ -150,6 +152,7 @@ function MatchCard({
         <span>Match {match.id}</span>
         {prob && prob.matchupProb > 0 && (
           <Tooltip
+            placement={tooltipPlacement}
             content={
               <div className="flex flex-col gap-1">
                 <span>Probabilidad de cruce entre</span>
@@ -201,6 +204,7 @@ function MatchCard({
               </span>
               {isHomeProjected && (
                 <Tooltip
+                  placement={tooltipPlacement}
                   content={
                     <CandidatesTooltip
                       candidates={prob?.homeCandidates || []}
@@ -284,6 +288,7 @@ function MatchCard({
               </span>
               {isAwayProjected && (
                 <Tooltip
+                  placement={tooltipPlacement}
                   content={
                     <CandidatesTooltip
                       candidates={prob?.awayCandidates || []}
@@ -359,6 +364,7 @@ function MatchPair({
   match2,
   roundName,
   onUpdate,
+  tooltipPlacement,
 }: {
   match1: KnockoutMatch;
   match2: KnockoutMatch;
@@ -370,11 +376,22 @@ function MatchPair({
     hp?: number | null,
     ap?: number | null
   ) => void;
+  tooltipPlacement?: "top" | "right" | "bottom" | "left";
 }) {
   return (
     <div className="flex flex-col justify-around h-full relative mb-4">
-      <MatchCard match={match1} roundName={roundName} onUpdate={onUpdate} />
-      <MatchCard match={match2} roundName={roundName} onUpdate={onUpdate} />
+      <MatchCard
+        match={match1}
+        roundName={roundName}
+        onUpdate={onUpdate}
+        tooltipPlacement={tooltipPlacement}
+      />
+      <MatchCard
+        match={match2}
+        roundName={roundName}
+        onUpdate={onUpdate}
+        tooltipPlacement={tooltipPlacement}
+      />
 
       {/* Connector Bracket */}
       <div className="absolute right-0 top-1/4 bottom-1/4 w-8 translate-x-full pointer-events-none">
@@ -539,6 +556,7 @@ export function KnockoutStage({
                 match2={pair.m2}
                 roundName="R32"
                 onUpdate={onMatchUpdate}
+                tooltipPlacement="right"
               />
             </div>
           ))}
