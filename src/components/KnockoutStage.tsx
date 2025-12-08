@@ -442,13 +442,12 @@ export function KnockoutStage({
   const sfPairs = pairMatches(sfMatches);
 
   return (
-    <motion.div
-      className="flex flex-col gap-8 py-4"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
+    <div className="flex flex-col gap-8">
       <div className="overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
-        <div
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
           className="grid gap-x-12 gap-y-4 min-w-max px-4"
           style={{
             gridTemplateColumns: "repeat(5, minmax(240px, 1fr))",
@@ -599,11 +598,16 @@ export function KnockoutStage({
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Third Place Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden max-w-4xl">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
+        className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden max-w-4xl"
+      >
         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
           <h3 className="font-bold text-slate-900 dark:text-slate-100">
             Mejores Terceros
@@ -669,7 +673,7 @@ export function KnockoutStage({
             </tbody>
           </table>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }
