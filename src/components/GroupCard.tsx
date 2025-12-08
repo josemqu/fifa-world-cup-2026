@@ -1,8 +1,9 @@
 import { Group, Team, Match } from "@/data/types";
 import { clsx } from "clsx";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { getTeamAbbreviation } from "@/utils/teamAbbreviations";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface GroupCardProps {
   group: Group;
@@ -12,9 +13,16 @@ interface GroupCardProps {
     homeScore: number | null,
     awayScore: number | null
   ) => void;
+  showMatches?: boolean;
+  onToggleMatches?: () => void;
 }
 
-export function GroupCard({ group, onMatchUpdate }: GroupCardProps) {
+export function GroupCard({
+  group,
+  onMatchUpdate,
+  showMatches = true,
+  onToggleMatches,
+}: GroupCardProps) {
   // Sort teams by points, then GD, then GF (simplified logic for now)
   const sortedTeams = [...group.teams].sort((a, b) => {
     if (b.pts !== a.pts) return b.pts - a.pts;
@@ -33,10 +41,19 @@ export function GroupCard({ group, onMatchUpdate }: GroupCardProps) {
       animate={{ opacity: 1, y: 0 }}
       className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col"
     >
-      <div className="bg-slate-50 dark:bg-slate-900/50 px-3 py-2 border-b border-slate-200 dark:border-slate-700">
+      <div className="bg-slate-50 dark:bg-slate-900/50 px-3 py-2 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
         <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">
           Grupo {group.name}
         </h3>
+        {onToggleMatches && (
+          <button
+            onClick={onToggleMatches}
+            className="p-1 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 rounded-md transition-colors"
+            title={showMatches ? "Ocultar partidos" : "Mostrar partidos"}
+          >
+            {showMatches ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+        )}
       </div>
 
       {/* Standings Table */}
@@ -164,81 +181,93 @@ export function GroupCard({ group, onMatchUpdate }: GroupCardProps) {
       </div>
 
       {/* Matches List */}
-      <div className="bg-slate-50/30 dark:bg-slate-900/20 p-2">
-        <h4 className="font-semibold text-[10px] uppercase text-slate-500 dark:text-slate-400 mb-2 tracking-wider">
-          Partidos
-        </h4>
-        <div className="space-y-1.5">
-          {group.matches.map((match) => (
-            <div
-              key={match.id}
-              className="text-xs border border-slate-200 dark:border-slate-700 rounded-md p-1.5 bg-white dark:bg-slate-800 shadow-sm"
-            >
-              <div className="flex justify-between items-center text-[10px] text-slate-400 dark:text-slate-500 mb-1 uppercase tracking-wide leading-none">
-                <span>{match.date}</span>
-                {match.location && (
-                  <span className="truncate max-w-[120px]">
-                    {match.location}
-                  </span>
-                )}
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-                  <span className="font-medium text-sm truncate max-w-[120px] text-slate-900 dark:text-slate-100">
-                    {getTeamName(match.homeTeamId)}
-                  </span>
-                </div>
+      <AnimatePresence initial={false}>
+        {showMatches && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="bg-slate-50/30 dark:bg-slate-900/20 p-2 border-t border-slate-200 dark:border-slate-700">
+              <h4 className="font-semibold text-[10px] uppercase text-slate-500 dark:text-slate-400 mb-2 tracking-wider">
+                Partidos
+              </h4>
+              <div className="space-y-1.5">
+                {group.matches.map((match) => (
+                  <div
+                    key={match.id}
+                    className="text-xs border border-slate-200 dark:border-slate-700 rounded-md p-1.5 bg-white dark:bg-slate-800 shadow-sm"
+                  >
+                    <div className="flex justify-between items-center text-[10px] text-slate-400 dark:text-slate-500 mb-1 uppercase tracking-wide leading-none">
+                      <span>{match.date}</span>
+                      {match.location && (
+                        <span className="truncate max-w-[120px]">
+                          {match.location}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                        <span className="font-medium text-sm truncate max-w-[120px] text-slate-900 dark:text-slate-100">
+                          {getTeamName(match.homeTeamId)}
+                        </span>
+                      </div>
 
-                <div className="flex items-center gap-1.5 mx-2">
-                  <input
-                    type="number"
-                    min="0"
-                    className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    value={match.homeScore ?? ""}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      const newScore = val === "" ? null : parseInt(val);
-                      onMatchUpdate(
-                        group.name,
-                        match.id,
-                        newScore,
-                        match.awayScore ?? null
-                      );
-                    }}
-                    placeholder="-"
-                  />
-                  <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
-                    :
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    value={match.awayScore ?? ""}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      const newScore = val === "" ? null : parseInt(val);
-                      onMatchUpdate(
-                        group.name,
-                        match.id,
-                        match.homeScore ?? null,
-                        newScore
-                      );
-                    }}
-                    placeholder="-"
-                  />
-                </div>
+                      <div className="flex items-center gap-1.5 mx-2">
+                        <input
+                          type="number"
+                          min="0"
+                          className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          value={match.homeScore ?? ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const newScore = val === "" ? null : parseInt(val);
+                            onMatchUpdate(
+                              group.name,
+                              match.id,
+                              newScore,
+                              match.awayScore ?? null
+                            );
+                          }}
+                          placeholder="-"
+                        />
+                        <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
+                          :
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          value={match.awayScore ?? ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const newScore = val === "" ? null : parseInt(val);
+                            onMatchUpdate(
+                              group.name,
+                              match.id,
+                              match.homeScore ?? null,
+                              newScore
+                            );
+                          }}
+                          placeholder="-"
+                        />
+                      </div>
 
-                <div className="flex items-center gap-2 flex-1 min-w-0 justify-start">
-                  <span className="font-medium text-sm truncate max-w-[120px] text-slate-900 dark:text-slate-100">
-                    {getTeamName(match.awayTeamId)}
-                  </span>
-                </div>
+                      <div className="flex items-center gap-2 flex-1 min-w-0 justify-start">
+                        <span className="font-medium text-sm truncate max-w-[120px] text-slate-900 dark:text-slate-100">
+                          {getTeamName(match.awayTeamId)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
