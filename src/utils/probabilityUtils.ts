@@ -94,6 +94,8 @@ export const calculateKnockoutProbabilities = async (
       matchupProb: number;
       projectedHomeTeam?: Team;
       projectedAwayTeam?: Team;
+      homeCandidates?: { team: Team; probability: number }[];
+      awayCandidates?: { team: Team; probability: number }[];
     }
   >();
 
