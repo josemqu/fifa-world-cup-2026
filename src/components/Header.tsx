@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 
@@ -22,14 +23,28 @@ export function Header() {
       <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Title Section */}
         <div className="shrink-0 text-center md:text-left">
-          <Link href="/" className="block hover:opacity-80 transition-opacity">
-            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
-              FIFA World Cup{" "}
-              <span className="text-blue-600 dark:text-blue-400">2026</span>
-            </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Fixture & Simulador
-            </p>
+          <Link
+            href="/"
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+          >
+            <div className="relative w-10 h-12 md:w-12 md:h-14">
+              <Image
+                src="https://digitalhub.fifa.com/transform/157d23bf-7e13-4d7b-949e-5d27d340987e/WC26_Logo?&io=transform:fill,height:210&quality=75"
+                alt="FIFA World Cup 2026 Logo"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+            <div>
+              <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
+                FIFA World Cup{" "}
+                <span className="text-blue-600 dark:text-blue-400">2026</span>
+              </h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                Fixture & Simulador
+              </p>
+            </div>
           </Link>
         </div>
 
