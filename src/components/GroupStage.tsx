@@ -15,8 +15,16 @@ interface GroupStageProps {
 
 export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
   // Store which groups have their matches HIDDEN.
-  // Using "hidden" logic means default (undefined/false) is visible.
-  const [hiddenGroups, setHiddenGroups] = useState<Record<string, boolean>>({});
+  // We initialize with all groups hidden by default as requested.
+  const [hiddenGroups, setHiddenGroups] = useState<Record<string, boolean>>(
+    () => {
+      const initialHidden: Record<string, boolean> = {};
+      groups.forEach((g) => {
+        initialHidden[g.name] = true;
+      });
+      return initialHidden;
+    }
+  );
 
   const allHidden = groups.every((g) => hiddenGroups[g.name]);
 
