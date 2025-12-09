@@ -7,6 +7,7 @@ export const JsonLd = () => {
     operatingSystem: "Any",
     description:
       "Simula los resultados del Mundial 2026 con este fixture interactivo. Predice los partidos, calcula la tabla de posiciones y visualiza el cuadro de la fase final.",
+    image: "https://fifa-world-cup-2026.vercel.app/og-image.png",
     offers: {
       "@type": "Offer",
       price: "0",

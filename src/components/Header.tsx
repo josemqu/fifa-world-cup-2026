@@ -84,6 +84,7 @@ export function Header() {
               viewBox="0 0 20 20"
               fill="currentColor"
               className="w-4 h-4"
+              aria-hidden="true"
             >
               <path
                 fillRule="evenodd"
@@ -105,6 +106,7 @@ export function Header() {
               viewBox="0 0 20 20"
               fill="currentColor"
               className="w-4 h-4"
+              aria-hidden="true"
             >
               <path
                 fillRule="evenodd"
@@ -126,6 +128,7 @@ export function Header() {
               viewBox="0 0 20 20"
               fill="currentColor"
               className="w-4 h-4"
+              aria-hidden="true"
             >
               <path
                 fillRule="evenodd"

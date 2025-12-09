@@ -197,7 +197,7 @@ function MatchCard({
               />
               <span
                 className={clsx(
-                  "font-medium text-sm truncate",
+                  "font-medium text-sm",
                   isHomePlaceholder
                     ? "text-slate-400 italic"
                     : "text-slate-900 dark:text-slate-100",
@@ -286,7 +286,7 @@ function MatchCard({
               />
               <span
                 className={clsx(
-                  "font-medium text-sm truncate",
+                  "font-medium text-sm",
                   isAwayPlaceholder
                     ? "text-slate-400 italic"
                     : "text-slate-900 dark:text-slate-100",

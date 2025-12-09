@@ -497,6 +497,10 @@ export default function PredictionsPage() {
                             >
                               {(m.homeTeam as Team).name}
                             </span>
+                            <TeamFlag
+                              teamName={(m.homeTeam as Team).name}
+                              className="w-5 h-3.5 shadow-sm shrink-0"
+                            />
                           </div>
                           <div className="font-mono font-bold bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded text-center min-w-[80px]">
                             {m.homeScore} - {m.awayScore}

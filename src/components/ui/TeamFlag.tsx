@@ -30,7 +30,11 @@ export function TeamFlag({
       title={teamName}
     >
       {isValidCountryCode ? (
-        <Flag code={code} className="object-cover w-full h-full" />
+        <Flag
+          code={code}
+          className="object-cover w-full h-full"
+          alt={`Bandera de ${teamName}`}
+        />
       ) : (
         /* White flag placeholder */
         <div className="w-full h-full bg-white dark:bg-slate-100" />
