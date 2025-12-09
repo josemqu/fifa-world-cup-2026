@@ -499,7 +499,7 @@ export function KnockoutStage({
 
   return (
     <motion.div
-      className="flex flex-col gap-8"
+      className="flex flex-col gap-4"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
