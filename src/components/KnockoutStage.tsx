@@ -118,6 +118,8 @@ function MatchCard({
     !displayedHome || "placeholder" in displayedHome || isHomeProjected;
   const isAwayPlaceholder =
     !displayedAway || "placeholder" in displayedAway || isAwayProjected;
+
+  const isMatchupDetermined = !isHomePlaceholder && !isAwayPlaceholder;
   const canEdit =
     !isHomePlaceholder &&
     !isAwayPlaceholder &&
@@ -152,32 +154,35 @@ function MatchCard({
     >
       <div className="text-xs text-slate-400 mb-2 flex justify-between items-center">
         <span>Match {match.id}</span>
-        {prob && prob.matchupProb > 0 && (
-          <Tooltip
-            placement={tooltipPlacement}
-            content={
-              <div className="flex flex-col gap-1">
-                <span>Probabilidad de cruce entre</span>
-                <span className="font-bold text-yellow-300">
-                  {homeName} y {awayName}
-                </span>
-              </div>
-            }
-          >
-            <span
-              className={clsx(
-                "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-                prob.matchupProb > 0.8
-                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                  : prob.matchupProb > 0.5
-                  ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                  : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
-              )}
+        {prob &&
+          prob.matchupProb > 0 &&
+          (prob.matchupProb * 100).toFixed(0) !== "100" &&
+          !isMatchupDetermined && (
+            <Tooltip
+              placement={tooltipPlacement}
+              content={
+                <div className="flex flex-col gap-1">
+                  <span>Probabilidad de cruce entre</span>
+                  <span className="font-bold text-yellow-300">
+                    {homeName} y {awayName}
+                  </span>
+                </div>
+              }
             >
-              {(prob.matchupProb * 100).toFixed(0)}%
-            </span>
-          </Tooltip>
-        )}
+              <span
+                className={clsx(
+                  "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
+                  prob.matchupProb > 0.8
+                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                    : prob.matchupProb > 0.5
+                    ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                    : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
+                )}
+              >
+                {(prob.matchupProb * 100).toFixed(0)}%
+              </span>
+            </Tooltip>
+          )}
       </div>
       {isPenaltyTied && (
         <div
@@ -221,11 +226,12 @@ function MatchCard({
                 </Tooltip>
               )}
             </div>
-            {isHomeProjected && (
-              <span className="text-[10px] text-blue-500/70 dark:text-blue-400/70 font-mono whitespace-nowrap shrink-0">
-                {(prob!.homeTeamProb * 100).toFixed(0)}%
-              </span>
-            )}
+            {isHomeProjected &&
+              (prob!.homeTeamProb * 100).toFixed(0) !== "100" && (
+                <span className="text-[10px] text-blue-500/70 dark:text-blue-400/70 font-mono whitespace-nowrap shrink-0">
+                  {(prob!.homeTeamProb * 100).toFixed(0)}%
+                </span>
+              )}
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {isTied && (
@@ -310,11 +316,12 @@ function MatchCard({
                 </Tooltip>
               )}
             </div>
-            {isAwayProjected && (
-              <span className="text-[10px] text-blue-500/70 dark:text-blue-400/70 font-mono whitespace-nowrap shrink-0">
-                {(prob!.awayTeamProb * 100).toFixed(0)}%
-              </span>
-            )}
+            {isAwayProjected &&
+              (prob!.awayTeamProb * 100).toFixed(0) !== "100" && (
+                <span className="text-[10px] text-blue-500/70 dark:text-blue-400/70 font-mono whitespace-nowrap shrink-0">
+                  {(prob!.awayTeamProb * 100).toFixed(0)}%
+                </span>
+              )}
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {isTied && (
