@@ -63,12 +63,19 @@ export function getKnockoutPairings(groups: Group[]) {
   // Get the group names of the best 8 thirds
   const qualifiedGroups = bestThirds.map((t) => t.group).sort();
 
-  // Find matching combination
+  // The THIRD_PLACE_MATRIX provided is for a different tournament structure (likely Euro with 6 groups or old format)
+  // and does not match the 12-group structure of World Cup 2026 where specific groups (like C, F, H, J) have fixed matchups.
+  // We disable the matrix lookup to force the dynamic fallback solver to run, which correctly assigns
+  // the 3rd place teams to the available variable matches respecting constraints.
+  const combination = undefined;
+
+  /*
   const combination = THIRD_PLACE_MATRIX.find((c) => {
     const cGroups = [...c.groups].sort();
     if (cGroups.length !== qualifiedGroups.length) return false;
     return cGroups.every((val, index) => val === qualifiedGroups[index]);
   });
+  */
 
   return {
     qualified,
@@ -78,7 +85,7 @@ export function getKnockoutPairings(groups: Group[]) {
 }
 
 export function generateR32Matches(groups: Group[]) {
-  const { qualified, combination, bestThirds } = getKnockoutPairings(groups);
+  const { qualified, bestThirds } = getKnockoutPairings(groups);
 
   // Helper to check if a group is finished
   const isGroupFinished = (groupName: string) => {
@@ -91,8 +98,9 @@ export function generateR32Matches(groups: Group[]) {
   );
 
   // Fallback assignment logic if combination is missing but we have 8 thirds
+  // (Since we disabled matrix lookup, this is now the MAIN logic)
   let fallbackAssignments: { [key: string]: Team } = {};
-  if (!combination && bestThirds.length === 8) {
+  if (bestThirds.length === 8) {
     // We need to assign bestThirds to the variable matches.
     // Variable matches home teams groups:
     const variableHomeGroups = R32_MATCHES.filter(
@@ -190,37 +198,20 @@ export function generateR32Matches(groups: Group[]) {
       }
     } else if (match.type === "variable") {
       // match.away is "3?"
-      // We need the combination logic
       // Only assign 3rd place teams if ALL groups are finished
       if (allGroupsFinished) {
-        if (combination) {
-          const homeGroup = match.home.charAt(1); // e.g. "E" from "1E"
-          const opponentGroup = combination.matchups[homeGroup]; // e.g. "L"
-          if (opponentGroup) {
-            awayTeam = qualified[opponentGroup].third;
-          } else {
-            if (match.possibilities) {
-              awayTeam = {
-                placeholder: `3° (${match.possibilities.join("/")})`,
-              };
-            } else {
-              awayTeam = { placeholder: `3° ?` };
-            }
-          }
+        // Fallback: Check if we have a calculated assignment
+        const homeGroup = match.home.charAt(1);
+        if (fallbackAssignments[homeGroup]) {
+          awayTeam = fallbackAssignments[homeGroup];
         } else {
-          // Fallback: Check if we have a calculated assignment
-          const homeGroup = match.home.charAt(1);
-          if (fallbackAssignments[homeGroup]) {
-            awayTeam = fallbackAssignments[homeGroup];
+          // Fallback if no assignment found (should not happen if solver works)
+          if (match.possibilities) {
+            awayTeam = {
+              placeholder: `3° (${match.possibilities.join("/")})`,
+            };
           } else {
-            // Fallback if no combination matches yet (e.g. not enough games played)
-            if (match.possibilities) {
-              awayTeam = {
-                placeholder: `3° (${match.possibilities.join("/")})`,
-              };
-            } else {
-              awayTeam = { placeholder: match.away };
-            }
+            awayTeam = { placeholder: match.away };
           }
         }
       } else {
