@@ -291,6 +291,23 @@ export const runKnockoutSimulation = (
             } else {
               winner = match.awayTeam as Team;
             }
+          } else {
+            // Tied but no penalties entered yet. Simulate them to determine a winner for progression.
+            let homePens = 0;
+            let awayPens = 0;
+            do {
+              homePens = Math.floor(Math.random() * 5) + 3;
+              awayPens = Math.floor(Math.random() * 5) + 3;
+            } while (homePens === awayPens);
+
+            // We only set these for the simulation instance
+            // If this is the "Simulate" button, these values will be saved.
+            // If this is probability calc, they are transient.
+            match.homePenalties = homePens;
+            match.awayPenalties = awayPens;
+
+            if (homePens > awayPens) winner = match.homeTeam as Team;
+            else winner = match.awayTeam as Team;
           }
           match.winner = winner;
         }

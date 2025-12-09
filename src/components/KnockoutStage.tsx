@@ -7,7 +7,7 @@ import { clsx } from "clsx";
 import { motion } from "framer-motion";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { TeamFlag } from "@/components/ui/TeamFlag";
-import { Info } from "lucide-react";
+import { Info, Trash2 } from "lucide-react";
 import { useTournament } from "@/context/TournamentContext";
 
 interface KnockoutStageProps {
@@ -507,7 +507,7 @@ export function KnockoutStage({
   matches,
   onMatchUpdate,
 }: KnockoutStageProps) {
-  const { simulateKnockout, simulateAll } = useTournament();
+  const { simulateKnockout, simulateAll, resetTournament } = useTournament();
   const { thirdPlaceTeams } = getGroupStandings(groups);
   const sortedThirds = getSortedThirdPlaceTeams(thirdPlaceTeams);
 
@@ -818,6 +818,15 @@ export function KnockoutStage({
             />
           </svg>
           Simular Todo
+        </button>
+
+        <button
+          onClick={resetTournament}
+          className="bg-red-600 hover:bg-red-700 text-white text-sm px-5 py-2.5 rounded-full font-medium transition-all shadow-xl flex items-center gap-2 hover:scale-105 hover:shadow-2xl"
+          title="Limpiar todos los resultados"
+        >
+          <Trash2 size={18} />
+          Limpiar
         </button>
       </div>
     </motion.div>

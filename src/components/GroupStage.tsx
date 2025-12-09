@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { GroupCard } from "./GroupCard";
 import { Group } from "@/data/types";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Trash2 } from "lucide-react";
 import { useTournament } from "@/context/TournamentContext";
 
 interface GroupStageProps {
@@ -15,7 +15,7 @@ interface GroupStageProps {
 }
 
 export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
-  const { simulateGroups } = useTournament();
+  const { simulateGroups, resetTournament } = useTournament();
   // Store which groups have their matches HIDDEN.
   // We initialize with all groups hidden by default as requested.
   const [hiddenGroups, setHiddenGroups] = useState<Record<string, boolean>>(
@@ -76,7 +76,9 @@ export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
           }
         >
           {allHidden ? <Eye size={18} /> : <EyeOff size={18} />}
-          <span>{allHidden ? "Mostrar partidos" : "Ocultar partidos"}</span>
+          <span>
+            {allHidden ? "Mostrar los Partidos" : "Ocultar los Partidos"}
+          </span>
         </button>
 
         <button
@@ -98,6 +100,15 @@ export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
             />
           </svg>
           Simular Grupos
+        </button>
+
+        <button
+          onClick={resetTournament}
+          className="bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-full font-medium transition-colors shadow-xl flex items-center gap-2 hover:scale-105 transform duration-200"
+          title="Limpiar todos los resultados"
+        >
+          <Trash2 size={18} />
+          Limpiar
         </button>
       </div>
     </div>
