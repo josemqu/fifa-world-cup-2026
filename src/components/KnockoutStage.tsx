@@ -822,7 +822,7 @@ export function KnockoutStage({
 
         <button
           onClick={resetTournament}
-          className="bg-red-600 hover:bg-red-700 text-white text-sm px-5 py-2.5 rounded-full font-medium transition-all shadow-xl flex items-center gap-2 hover:scale-105 hover:shadow-2xl"
+          className="bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-full font-medium transition-colors shadow-xl flex items-center gap-2 hover:scale-105 transform duration-200"
           title="Limpiar todos los resultados"
         >
           <Trash2 size={18} />
