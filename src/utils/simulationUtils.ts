@@ -125,6 +125,12 @@ export const getInitialKnockoutMatches = (): KnockoutMatch[] => {
       homeTeam: { placeholder: `W${m.home.replace("W", "")}` },
       awayTeam: { placeholder: `W${m.away.replace("W", "")}` },
       nextMatchId: m.next,
+      // @ts-ignore
+      date: m.date,
+      // @ts-ignore
+      time: m.time,
+      // @ts-ignore
+      location: m.location,
     });
   });
 
@@ -136,6 +142,12 @@ export const getInitialKnockoutMatches = (): KnockoutMatch[] => {
       homeTeam: { placeholder: `W${m.home.replace("W", "")}` },
       awayTeam: { placeholder: `W${m.away.replace("W", "")}` },
       nextMatchId: m.next,
+      // @ts-ignore
+      date: m.date,
+      // @ts-ignore
+      time: m.time,
+      // @ts-ignore
+      location: m.location,
     });
   });
 
@@ -147,6 +159,12 @@ export const getInitialKnockoutMatches = (): KnockoutMatch[] => {
       homeTeam: { placeholder: `W${m.home.replace("W", "")}` },
       awayTeam: { placeholder: `W${m.away.replace("W", "")}` },
       nextMatchId: m.next,
+      // @ts-ignore
+      date: m.date,
+      // @ts-ignore
+      time: m.time,
+      // @ts-ignore
+      location: m.location,
     });
   });
 
@@ -166,6 +184,12 @@ export const getInitialKnockoutMatches = (): KnockoutMatch[] => {
           : `L${m.away.replace("L", "")}`,
       },
       nextMatchId: m.next || undefined,
+      // @ts-ignore
+      date: m.date,
+      // @ts-ignore
+      time: m.time,
+      // @ts-ignore
+      location: m.location,
     });
   });
 
@@ -175,16 +199,33 @@ export const getInitialKnockoutMatches = (): KnockoutMatch[] => {
 export const runKnockoutSimulation = (
   matches: KnockoutMatch[]
 ): KnockoutMatch[] => {
-  const newMatches = [...matches];
-  // Sort by ID to ensure we process stages in order (R32 -> R16 -> ... -> Final)
-  newMatches.sort((a, b) => Number(a.id) - Number(b.id));
-
   const allStaticMatches = [
     ...R16_MATCHES,
     ...QF_MATCHES,
     ...SF_MATCHES,
     ...FINAL_MATCHES,
   ];
+
+  let newMatches = matches.map((m) => {
+    // Update metadata for non-R32 matches (or all, but R32 is usually from generator)
+    // We check if it exists in static definitions
+    const def = allStaticMatches.find((d) => d.id === m.id);
+    if (def) {
+      return {
+        ...m,
+        // @ts-ignore
+        date: def.date,
+        // @ts-ignore
+        time: def.time,
+        // @ts-ignore
+        location: def.location,
+      };
+    }
+    return m;
+  });
+
+  // Sort by ID to ensure we process stages in order (R32 -> R16 -> ... -> Final)
+  newMatches.sort((a, b) => Number(a.id) - Number(b.id));
 
   for (let i = 0; i < newMatches.length; i++) {
     const match = newMatches[i];

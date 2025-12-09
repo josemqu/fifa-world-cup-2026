@@ -121,7 +121,30 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       });
 
       // Filter out old R32s and add new ones
-      const nonR32 = currentMatches.filter((m) => m.stage !== "R32");
+      const nonR32 = currentMatches
+        .filter((m) => m.stage !== "R32")
+        .map((m) => {
+          const allDefs = [
+            ...R16_MATCHES,
+            ...QF_MATCHES,
+            ...SF_MATCHES,
+            ...FINAL_MATCHES,
+          ];
+          const def = allDefs.find((d) => d.id === m.id);
+          if (def) {
+            return {
+              ...m,
+              // @ts-ignore
+              date: def.date,
+              // @ts-ignore
+              time: def.time,
+              // @ts-ignore
+              location: def.location,
+            };
+          }
+          return m;
+        });
+
       return [...updatedR32, ...nonR32].sort(
         (a, b) => Number(a.id) - Number(b.id)
       );

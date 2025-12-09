@@ -152,8 +152,43 @@ function MatchCard({
           : "border-slate-200 dark:border-slate-700"
       )}
     >
-      <div className="text-xs text-slate-400 mb-2 flex justify-between items-center">
-        <span>Match {match.id}</span>
+      <div className="text-xs text-slate-400 mb-2 flex justify-between items-start leading-none">
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-slate-500 dark:text-slate-400 text-[10px]">
+              {match.date}
+            </span>
+            <span className="text-slate-300 dark:text-slate-600">|</span>
+            <span className="font-mono text-slate-400 text-[10px]">
+              #{match.id}
+            </span>
+          </div>
+          {match.time && (
+            <span className="text-[9px] text-slate-400 dark:text-slate-500">
+              {match.time}
+            </span>
+          )}
+        </div>
+        {match.location && (
+          <div className="flex flex-col items-end max-w-[140px] gap-0.5">
+            <span
+              className="truncate w-full text-right font-medium text-slate-500 dark:text-slate-400 text-[10px]"
+              title={match.location}
+            >
+              {match.location.split(" - ")[0]}
+            </span>
+            {match.location.includes(" - ") && (
+              <span
+                className="text-[9px] text-slate-400 dark:text-slate-500 truncate w-full text-right"
+                title={match.location.split(" - ")[1]}
+              >
+                {match.location.split(" - ")[1]}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="flex justify-between items-center mb-2">
         {prob &&
           prob.matchupProb > 0 &&
           (prob.matchupProb * 100).toFixed(0) !== "100" &&

@@ -52,6 +52,9 @@ export type KnockoutMatch = {
   awayPenalties?: number | null;
   winner?: Team | null;
   nextMatchId?: string; // Where the winner goes
+  date?: string;
+  time?: string;
+  location?: string;
   probabilisticData?: {
     homeTeamProb: number; // 0-1
     awayTeamProb: number; // 0-1
