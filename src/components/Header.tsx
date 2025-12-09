@@ -109,7 +109,7 @@ export function Header() {
                   )}
                   <div className="hidden lg:block text-xs font-medium">
                     <p className="text-slate-900 dark:text-slate-100 max-w-[100px] truncate">
-                      {user.displayName}
+                      {user.displayName?.split(" ")[0]}
                     </p>
                   </div>
                   <button
