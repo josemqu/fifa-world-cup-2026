@@ -7,7 +7,10 @@ export function Footer() {
         <div className="text-slate-500 dark:text-slate-400 text-xs text-center md:text-left">
           <p>© {new Date().getFullYear()} FIFA World Cup 2026 Simulator.</p>
           <p className="mt-0.5 opacity-75">
-            Hecho con ❤️ por Jose. No oficial.
+            Hecho con ❤️ por{" "}
+            <a className="underline" href="https://github.com/josemqu">
+              josemqu
+            </a>
           </p>
         </div>
 

@@ -200,7 +200,7 @@ export default function PredictionsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 animate-fade-in-up">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 md:p-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
