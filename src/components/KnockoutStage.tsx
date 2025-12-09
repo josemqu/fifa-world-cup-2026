@@ -3,11 +3,12 @@ import {
   getGroupStandings,
   getSortedThirdPlaceTeams,
 } from "@/utils/knockoutUtils";
+import { predictMatchScore } from "@/utils/simulationUtils";
 import { clsx } from "clsx";
 import { motion } from "framer-motion";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { TeamFlag } from "@/components/ui/TeamFlag";
-import { Info, Trash2 } from "lucide-react";
+import { Info, Trash2, Play, RotateCcw } from "lucide-react";
 import { useTournament } from "@/context/TournamentContext";
 
 interface KnockoutStageProps {
@@ -80,6 +81,8 @@ function MatchCard({
   match,
   roundName,
   onUpdate,
+  onSimulate,
+  onReset,
   tooltipPlacement = "top",
 }: {
   match: KnockoutMatch;
@@ -91,6 +94,8 @@ function MatchCard({
     hp?: number | null,
     ap?: number | null
   ) => void;
+  onSimulate?: (match: KnockoutMatch) => void;
+  onReset?: (match: KnockoutMatch) => void;
   tooltipPlacement?: "top" | "right" | "bottom" | "left";
 }) {
   const homeTeam = match.homeTeam;
@@ -143,271 +148,308 @@ function MatchCard({
     match.awayPenalties !== undefined &&
     match.homePenalties === match.awayPenalties;
 
+  const hasResult = match.homeScore !== null && match.awayScore !== null;
+
   return (
     <div
       className={clsx(
-        "bg-white dark:bg-slate-800 border rounded-lg p-3 shadow-sm min-w-[220px] relative z-10 transition-colors",
+        "bg-white dark:bg-slate-800 border rounded-lg shadow-sm min-w-[220px] relative z-10 transition-colors flex flex-col",
         isPenaltyTied
           ? "border-red-300 dark:border-red-900/50"
           : "border-slate-200 dark:border-slate-700"
       )}
     >
-      <div className="text-xs text-slate-400 mb-2 flex justify-between items-start leading-none uppercase tracking-wide">
-        <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-slate-500 dark:text-slate-400 text-[10px]">
-              {match.date}
-            </span>
-            <span className="text-slate-300 dark:text-slate-600">|</span>
-            <span className="font-mono text-slate-400 text-[10px]">
-              #{match.id}
-            </span>
-          </div>
-          {match.time && (
-            <span className="text-[9px] text-slate-400 dark:text-slate-500">
-              {match.time}
-            </span>
-          )}
-        </div>
-        {match.location && (
-          <div className="flex flex-col items-end max-w-[140px] gap-0.5">
-            <span
-              className="truncate w-full text-right font-medium text-slate-500 dark:text-slate-400 text-[10px]"
-              title={match.location}
-            >
-              {match.location.split(" - ")[0]}
-            </span>
-            {match.location.includes(" - ") && (
-              <span
-                className="text-[9px] text-slate-400 dark:text-slate-500 truncate w-full text-right"
-                title={match.location.split(" - ")[1]}
-              >
-                {match.location.split(" - ")[1]}
+      <div className="p-3 pb-2">
+        <div className="text-xs text-slate-400 mb-2 flex justify-between items-start leading-none uppercase tracking-wide">
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-slate-500 dark:text-slate-400 text-[10px]">
+                {match.date}
+              </span>
+              <span className="text-slate-300 dark:text-slate-600">|</span>
+              <span className="font-mono text-slate-400 text-[10px]">
+                #{match.id}
+              </span>
+            </div>
+            {match.time && (
+              <span className="text-[9px] text-slate-400 dark:text-slate-500">
+                {match.time}
               </span>
             )}
           </div>
-        )}
-      </div>
-      <div className="flex justify-between items-center mb-2">
-        {prob &&
-          prob.matchupProb > 0 &&
-          (prob.matchupProb * 100).toFixed(0) !== "100" &&
-          !isMatchupDetermined && (
-            <Tooltip
-              placement={tooltipPlacement}
-              content={
-                <div className="flex gap-1 whitespace-nowrap">
-                  <span>Probabilidad de cruce entre</span>
-                  <span className="font-bold text-yellow-300">
-                    {homeName}
-                  </span>{" "}
-                  y{" "}
-                  <span className="font-bold text-yellow-300">{awayName}</span>
-                </div>
-              }
-            >
+          {match.location && (
+            <div className="flex flex-col items-end max-w-[140px] gap-0.5">
               <span
-                className={clsx(
-                  "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-                  prob.matchupProb > 0.8
-                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                    : prob.matchupProb > 0.5
-                    ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                    : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
-                )}
+                className="truncate w-full text-right font-medium text-slate-500 dark:text-slate-400 text-[10px]"
+                title={match.location}
               >
-                {(prob.matchupProb * 100).toFixed(0)}%
+                {match.location.split(" - ")[0]}
               </span>
-            </Tooltip>
-          )}
-      </div>
-      {isPenaltyTied && (
-        <div
-          className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-bold shadow-sm z-20"
-          title="Penalties cannot be tied"
-        >
-          !
-        </div>
-      )}
-      <div className="flex flex-col gap-2">
-        {/* Home Team */}
-        <div className="flex justify-between items-center gap-2">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <div className="flex items-center gap-1 min-w-0">
-              <TeamFlag
-                teamName={homeName || ""}
-                className="w-5 h-3.5 shrink-0"
-              />
-              <span
-                className={clsx(
-                  "font-medium text-sm",
-                  isHomePlaceholder
-                    ? "text-slate-400 italic"
-                    : "text-slate-900 dark:text-slate-100",
-                  isHomeProjected && "text-blue-600 dark:text-blue-400"
-                )}
-                title={homeName}
-              >
-                {homeName}
-              </span>
-              {isHomeProjected && (
-                <Tooltip
-                  placement={tooltipPlacement}
-                  content={
-                    <CandidatesTooltip
-                      candidates={prob?.homeCandidates || []}
-                    />
-                  }
+              {match.location.includes(" - ") && (
+                <span
+                  className="text-[9px] text-slate-400 dark:text-slate-500 truncate w-full text-right"
+                  title={match.location.split(" - ")[1]}
                 >
-                  <Info className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0 cursor-help" />
-                </Tooltip>
-              )}
-            </div>
-            {isHomeProjected &&
-              (prob!.homeTeamProb * 100).toFixed(0) !== "100" && (
-                <span className="text-[10px] text-blue-500/70 dark:text-blue-400/70 font-mono whitespace-nowrap shrink-0">
-                  {(prob!.homeTeamProb * 100).toFixed(0)}%
+                  {match.location.split(" - ")[1]}
                 </span>
               )}
+            </div>
+          )}
+        </div>
+
+        {isPenaltyTied && (
+          <div
+            className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-bold shadow-sm z-20"
+            title="Penalties cannot be tied"
+          >
+            !
           </div>
-          <div className="flex items-center gap-1 shrink-0">
-            {isTied && (
+        )}
+        <div className="flex flex-col gap-2">
+          {/* Home Team */}
+          <div className="flex justify-between items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <div className="flex items-center gap-1 min-w-0">
+                <TeamFlag
+                  teamName={homeName || ""}
+                  className="w-5 h-3.5 shrink-0"
+                />
+                <span
+                  className={clsx(
+                    "font-medium text-sm",
+                    isHomePlaceholder
+                      ? "text-slate-400 italic"
+                      : "text-slate-900 dark:text-slate-100",
+                    isHomeProjected && "text-blue-600 dark:text-blue-400"
+                  )}
+                  title={homeName}
+                >
+                  {homeName}
+                </span>
+                {isHomeProjected && (
+                  <Tooltip
+                    placement={tooltipPlacement}
+                    content={
+                      <CandidatesTooltip
+                        candidates={prob?.homeCandidates || []}
+                      />
+                    }
+                  >
+                    <Info className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0 cursor-help" />
+                  </Tooltip>
+                )}
+              </div>
+              {isHomeProjected &&
+                (prob!.homeTeamProb * 100).toFixed(0) !== "100" && (
+                  <span className="text-[10px] text-blue-500/70 dark:text-blue-400/70 font-mono whitespace-nowrap shrink-0">
+                    {(prob!.homeTeamProb * 100).toFixed(0)}%
+                  </span>
+                )}
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              {isTied && (
+                <input
+                  type="number"
+                  min="0"
+                  className={clsx(
+                    "w-5 h-5 text-center text-[10px] font-medium border rounded focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50",
+                    isPenaltyTied
+                      ? "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800 text-red-600 focus:ring-red-500 focus:border-red-500"
+                      : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:ring-blue-500 focus:border-transparent"
+                  )}
+                  value={match.homePenalties ?? ""}
+                  onChange={(e) => {
+                    const val =
+                      e.target.value === "" ? null : parseInt(e.target.value);
+                    onUpdate(
+                      match.id,
+                      match.homeScore ?? null,
+                      match.awayScore ?? null,
+                      val,
+                      match.awayPenalties ?? null
+                    );
+                  }}
+                  placeholder="P"
+                  disabled={!canEdit}
+                />
+              )}
               <input
                 type="number"
                 min="0"
-                className={clsx(
-                  "w-5 h-5 text-center text-[10px] font-medium border rounded focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50",
-                  isPenaltyTied
-                    ? "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800 text-red-600 focus:ring-red-500 focus:border-red-500"
-                    : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:ring-blue-500 focus:border-transparent"
-                )}
-                value={match.homePenalties ?? ""}
+                className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
+                value={match.homeScore ?? ""}
                 onChange={(e) => {
                   const val =
                     e.target.value === "" ? null : parseInt(e.target.value);
                   onUpdate(
                     match.id,
-                    match.homeScore ?? null,
-                    match.awayScore ?? null,
                     val,
+                    match.awayScore ?? null,
+                    match.homePenalties ?? null,
                     match.awayPenalties ?? null
                   );
                 }}
-                placeholder="P"
+                placeholder="-"
                 disabled={!canEdit}
               />
-            )}
-            <input
-              type="number"
-              min="0"
-              className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
-              value={match.homeScore ?? ""}
-              onChange={(e) => {
-                const val =
-                  e.target.value === "" ? null : parseInt(e.target.value);
-                onUpdate(
-                  match.id,
-                  val,
-                  match.awayScore ?? null,
-                  match.homePenalties ?? null,
-                  match.awayPenalties ?? null
-                );
-              }}
-              placeholder="-"
-              disabled={!canEdit}
-            />
-          </div>
-        </div>
-
-        {/* Away Team */}
-        <div className="flex justify-between items-center gap-2">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <div className="flex items-center gap-1 min-w-0">
-              <TeamFlag
-                teamName={awayName || ""}
-                className="w-5 h-3.5 shrink-0"
-                showPlaceholder={false}
-              />
-              <span
-                className={clsx(
-                  "font-medium text-sm",
-                  isAwayPlaceholder
-                    ? "text-slate-400 italic"
-                    : "text-slate-900 dark:text-slate-100",
-                  isAwayProjected && "text-blue-600 dark:text-blue-400"
-                )}
-                title={awayName}
-              >
-                {awayName}
-              </span>
-              {isAwayProjected && (
-                <Tooltip
-                  placement={tooltipPlacement}
-                  content={
-                    <CandidatesTooltip
-                      candidates={prob?.awayCandidates || []}
-                    />
-                  }
-                >
-                  <Info className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0 cursor-help" />
-                </Tooltip>
-              )}
             </div>
-            {isAwayProjected &&
-              (prob!.awayTeamProb * 100).toFixed(0) !== "100" && (
-                <span className="text-[10px] text-blue-500/70 dark:text-blue-400/70 font-mono whitespace-nowrap shrink-0">
-                  {(prob!.awayTeamProb * 100).toFixed(0)}%
-                </span>
-              )}
           </div>
-          <div className="flex items-center gap-1 shrink-0">
-            {isTied && (
+
+          {/* Away Team */}
+          <div className="flex justify-between items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <div className="flex items-center gap-1 min-w-0">
+                <TeamFlag
+                  teamName={awayName || ""}
+                  className="w-5 h-3.5 shrink-0"
+                  showPlaceholder={false}
+                />
+                <span
+                  className={clsx(
+                    "font-medium text-sm",
+                    isAwayPlaceholder
+                      ? "text-slate-400 italic"
+                      : "text-slate-900 dark:text-slate-100",
+                    isAwayProjected && "text-blue-600 dark:text-blue-400"
+                  )}
+                  title={awayName}
+                >
+                  {awayName}
+                </span>
+                {isAwayProjected && (
+                  <Tooltip
+                    placement={tooltipPlacement}
+                    content={
+                      <CandidatesTooltip
+                        candidates={prob?.awayCandidates || []}
+                      />
+                    }
+                  >
+                    <Info className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0 cursor-help" />
+                  </Tooltip>
+                )}
+              </div>
+              {isAwayProjected &&
+                (prob!.awayTeamProb * 100).toFixed(0) !== "100" && (
+                  <span className="text-[10px] text-blue-500/70 dark:text-blue-400/70 font-mono whitespace-nowrap shrink-0">
+                    {(prob!.awayTeamProb * 100).toFixed(0)}%
+                  </span>
+                )}
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              {isTied && (
+                <input
+                  type="number"
+                  min="0"
+                  className={clsx(
+                    "w-5 h-5 text-center text-[10px] font-medium border rounded focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50",
+                    isPenaltyTied
+                      ? "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800 text-red-600 focus:ring-red-500 focus:border-red-500"
+                      : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:ring-blue-500 focus:border-transparent"
+                  )}
+                  value={match.awayPenalties ?? ""}
+                  onChange={(e) => {
+                    const val =
+                      e.target.value === "" ? null : parseInt(e.target.value);
+                    onUpdate(
+                      match.id,
+                      match.homeScore ?? null,
+                      match.awayScore ?? null,
+                      match.homePenalties ?? null,
+                      val
+                    );
+                  }}
+                  placeholder="P"
+                  disabled={!canEdit}
+                />
+              )}
               <input
                 type="number"
                 min="0"
-                className={clsx(
-                  "w-5 h-5 text-center text-[10px] font-medium border rounded focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50",
-                  isPenaltyTied
-                    ? "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800 text-red-600 focus:ring-red-500 focus:border-red-500"
-                    : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:ring-blue-500 focus:border-transparent"
-                )}
-                value={match.awayPenalties ?? ""}
+                className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
+                value={match.awayScore ?? ""}
                 onChange={(e) => {
                   const val =
                     e.target.value === "" ? null : parseInt(e.target.value);
                   onUpdate(
                     match.id,
                     match.homeScore ?? null,
-                    match.awayScore ?? null,
+                    val,
                     match.homePenalties ?? null,
-                    val
+                    match.awayPenalties ?? null
                   );
                 }}
-                placeholder="P"
+                placeholder="-"
                 disabled={!canEdit}
               />
-            )}
-            <input
-              type="number"
-              min="0"
-              className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
-              value={match.awayScore ?? ""}
-              onChange={(e) => {
-                const val =
-                  e.target.value === "" ? null : parseInt(e.target.value);
-                onUpdate(
-                  match.id,
-                  match.homeScore ?? null,
-                  val,
-                  match.homePenalties ?? null,
-                  match.awayPenalties ?? null
-                );
-              }}
-              placeholder="-"
-              disabled={!canEdit}
-            />
+            </div>
           </div>
         </div>
+      </div>
+
+      {/* Footer Section: Probability & Controls */}
+      <div className="border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/30 px-3 py-1.5 flex justify-between items-center mt-auto rounded-b-lg gap-2 min-h-[32px]">
+        <div className="flex items-center">
+          {prob &&
+            prob.matchupProb > 0 &&
+            (prob.matchupProb * 100).toFixed(0) !== "100" &&
+            !isMatchupDetermined && (
+              <Tooltip
+                placement={tooltipPlacement}
+                content={
+                  <div className="flex gap-1 whitespace-nowrap">
+                    <span>Probabilidad de cruce entre</span>
+                    <span className="font-bold text-yellow-300">
+                      {homeName}
+                    </span>{" "}
+                    y{" "}
+                    <span className="font-bold text-yellow-300">
+                      {awayName}
+                    </span>
+                  </div>
+                }
+              >
+                <div className="flex items-center gap-1.5 cursor-help">
+                  <span className="text-[9px] font-medium text-slate-400 uppercase tracking-tight">
+                    Cruce:
+                  </span>
+                  <span
+                    className={clsx(
+                      "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
+                      prob.matchupProb > 0.8
+                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                        : prob.matchupProb > 0.5
+                        ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                        : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
+                    )}
+                  >
+                    {(prob.matchupProb * 100).toFixed(0)}%
+                  </span>
+                </div>
+              </Tooltip>
+            )}
+        </div>
+
+        {canEdit && (
+          <div className="flex items-center gap-1">
+            {hasResult && (
+              <button
+                onClick={() => onReset?.(match)}
+                className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                title="Resetear resultado"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+            )}
+            <button
+              onClick={() => onSimulate?.(match)}
+              className="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+              title="Simular este partido"
+            >
+              <Play className="w-3.5 h-3.5 fill-current opacity-80" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -419,6 +461,8 @@ function MatchPair({
   match2,
   roundName,
   onUpdate,
+  onSimulate,
+  onReset,
   tooltipPlacement,
 }: {
   match1: KnockoutMatch;
@@ -431,6 +475,8 @@ function MatchPair({
     hp?: number | null,
     ap?: number | null
   ) => void;
+  onSimulate?: (match: KnockoutMatch) => void;
+  onReset?: (match: KnockoutMatch) => void;
   tooltipPlacement?: "top" | "right" | "bottom" | "left";
 }) {
   return (
@@ -439,12 +485,16 @@ function MatchPair({
         match={match1}
         roundName={roundName}
         onUpdate={onUpdate}
+        onSimulate={onSimulate}
+        onReset={onReset}
         tooltipPlacement={tooltipPlacement}
       />
       <MatchCard
         match={match2}
         roundName={roundName}
         onUpdate={onUpdate}
+        onSimulate={onSimulate}
+        onReset={onReset}
         tooltipPlacement={tooltipPlacement}
       />
 
@@ -518,6 +568,37 @@ export function KnockoutStage({
       pairs.push({ m1: matchList[i], m2: matchList[i + 1] });
     }
     return pairs;
+  };
+
+  const handleSimulateMatch = (match: KnockoutMatch) => {
+    if (
+      match.homeTeam &&
+      !("placeholder" in match.homeTeam) &&
+      match.awayTeam &&
+      !("placeholder" in match.awayTeam)
+    ) {
+      const { home, away } = predictMatchScore(
+        match.homeTeam as Team,
+        match.awayTeam as Team
+      );
+
+      let homePen: number | null = null;
+      let awayPen: number | null = null;
+
+      // If draw, simulate penalties
+      if (home === away) {
+        do {
+          homePen = Math.floor(Math.random() * 5) + 3;
+          awayPen = Math.floor(Math.random() * 5) + 3;
+        } while (homePen === awayPen);
+      }
+
+      onMatchUpdate(match.id, home, away, homePen, awayPen);
+    }
+  };
+
+  const handleResetMatch = (match: KnockoutMatch) => {
+    onMatchUpdate(match.id, null, null, null, null);
   };
 
   const r32Matches = matches
@@ -612,6 +693,8 @@ export function KnockoutStage({
                 match2={pair.m2}
                 roundName="R32"
                 onUpdate={onMatchUpdate}
+                onSimulate={handleSimulateMatch}
+                onReset={handleResetMatch}
                 tooltipPlacement="right"
               />
             </div>
@@ -629,6 +712,8 @@ export function KnockoutStage({
                 match2={pair.m2}
                 roundName="R16"
                 onUpdate={onMatchUpdate}
+                onSimulate={handleSimulateMatch}
+                onReset={handleResetMatch}
               />
             </div>
           ))}
@@ -645,6 +730,8 @@ export function KnockoutStage({
                 match2={pair.m2}
                 roundName="QF"
                 onUpdate={onMatchUpdate}
+                onSimulate={handleSimulateMatch}
+                onReset={handleResetMatch}
               />
             </div>
           ))}
@@ -661,6 +748,8 @@ export function KnockoutStage({
                 match2={pair.m2}
                 roundName="SF"
                 onUpdate={onMatchUpdate}
+                onSimulate={handleSimulateMatch}
+                onReset={handleResetMatch}
               />
             </div>
           ))}
@@ -680,6 +769,8 @@ export function KnockoutStage({
                   match={finalMatch}
                   roundName="Final"
                   onUpdate={onMatchUpdate}
+                  onSimulate={handleSimulateMatch}
+                  onReset={handleResetMatch}
                   tooltipPlacement="left"
                 />
                 {/* Incoming Line Connector */}
@@ -697,6 +788,8 @@ export function KnockoutStage({
                   match={thirdPlaceMatch}
                   roundName="3rdPlace"
                   onUpdate={onMatchUpdate}
+                  onSimulate={handleSimulateMatch}
+                  onReset={handleResetMatch}
                   tooltipPlacement="left"
                 />
               </div>
