@@ -23,9 +23,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       setLoading(false);
+
+      if (currentUser) {
+        try {
+          await fetch("/api/user", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              firebaseUid: currentUser.uid,
+              email: currentUser.email,
+              displayName: currentUser.displayName,
+            }),
+          });
+        } catch (error) {
+          console.error("Error syncing user with DB:", error);
+        }
+      }
     });
 
     return () => unsubscribe();
