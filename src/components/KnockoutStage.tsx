@@ -161,11 +161,13 @@ function MatchCard({
             <Tooltip
               placement={tooltipPlacement}
               content={
-                <div className="flex flex-col gap-1">
+                <div className="flex gap-1 whitespace-nowrap">
                   <span>Probabilidad de cruce entre</span>
                   <span className="font-bold text-yellow-300">
-                    {homeName} y {awayName}
-                  </span>
+                    {homeName}
+                  </span>{" "}
+                  y{" "}
+                  <span className="font-bold text-yellow-300">{awayName}</span>
                 </div>
               }
             >
@@ -643,6 +645,7 @@ export function KnockoutStage({
                   match={finalMatch}
                   roundName="Final"
                   onUpdate={onMatchUpdate}
+                  tooltipPlacement="left"
                 />
                 {/* Incoming Line Connector */}
                 <div className="absolute top-1/2 left-0 w-4 h-[2px] bg-slate-300 dark:bg-slate-600 transform -translate-y-1/2 -translate-x-full" />
@@ -659,6 +662,7 @@ export function KnockoutStage({
                   match={thirdPlaceMatch}
                   roundName="3rdPlace"
                   onUpdate={onMatchUpdate}
+                  tooltipPlacement="left"
                 />
               </div>
             )}
