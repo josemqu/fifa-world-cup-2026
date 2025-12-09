@@ -24,7 +24,7 @@ export function FloatingContainer({
   return createPortal(
     <div
       className={clsx(
-        "fixed bottom-36 md:bottom-24 right-4 z-[60] flex flex-col gap-3 items-end",
+        "fixed bottom-36 md:bottom-24 right-4 z-60 flex flex-col gap-3 items-end",
         className
       )}
     >
