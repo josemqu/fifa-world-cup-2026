@@ -10,6 +10,7 @@ interface MatchStats {
 
 export const calculateKnockoutProbabilities = async (
   currentGroups: Group[],
+  currentKnockoutMatches: KnockoutMatch[] = [],
   iterations: number = 200
 ): Promise<
   Map<
@@ -44,7 +45,10 @@ export const calculateKnockoutProbabilities = async (
   for (let i = 0; i < iterations; i++) {
     // We can run this synchronously as it's just math
     // But in a real app might want to yield to event loop if N is large
-    const { knockoutMatches } = simulateTournament(currentGroups);
+    const { knockoutMatches } = simulateTournament(
+      currentGroups,
+      currentKnockoutMatches
+    );
 
     knockoutMatches.forEach((match) => {
       const stats = getStats(match.id);

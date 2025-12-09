@@ -196,41 +196,64 @@ export const runKnockoutSimulation = (
       match.awayTeam &&
       !("placeholder" in match.awayTeam)
     ) {
-      // Generate realistic scores based on ranking
-      const hTeam = match.homeTeam as Team;
-      const aTeam = match.awayTeam as Team;
+      let winner: Team | null = match.winner || null;
 
-      const { home, away } = predictMatchScore(hTeam, aTeam);
+      // Check if match is already played/simulated (has scores)
+      const isPlayed = match.homeScore != null && match.awayScore != null;
 
-      const homeScore = home;
-      const awayScore = away;
-      match.homeScore = homeScore;
-      match.awayScore = awayScore;
+      if (!isPlayed) {
+        // Generate realistic scores based on ranking
+        const hTeam = match.homeTeam as Team;
+        const aTeam = match.awayTeam as Team;
 
-      let winner: Team | null = null;
-      match.homePenalties = null;
-      match.awayPenalties = null;
+        const { home, away } = predictMatchScore(hTeam, aTeam);
 
-      if (homeScore > awayScore) {
-        winner = match.homeTeam as Team;
-      } else if (awayScore > homeScore) {
-        winner = match.awayTeam as Team;
+        match.homeScore = home;
+        match.awayScore = away;
+
+        // Determine winner
+        if (home > away) {
+          winner = match.homeTeam as Team;
+        } else if (away > home) {
+          winner = match.awayTeam as Team;
+        } else {
+          // Penalties
+          let homePens = 0;
+          let awayPens = 0;
+          do {
+            homePens = Math.floor(Math.random() * 5) + 3;
+            awayPens = Math.floor(Math.random() * 5) + 3;
+          } while (homePens === awayPens);
+
+          match.homePenalties = homePens;
+          match.awayPenalties = awayPens;
+
+          if (homePens > awayPens) winner = match.homeTeam as Team;
+          else winner = match.awayTeam as Team;
+        }
+        match.winner = winner;
       } else {
-        // Penalties
-        let homePens = 0;
-        let awayPens = 0;
-        do {
-          homePens = Math.floor(Math.random() * 5) + 3;
-          awayPens = Math.floor(Math.random() * 5) + 3;
-        } while (homePens === awayPens);
-
-        match.homePenalties = homePens;
-        match.awayPenalties = awayPens;
-
-        if (homePens > awayPens) winner = match.homeTeam as Team;
-        else winner = match.awayTeam as Team;
+        // If played but winner not set (shouldn't happen if merged correctly, but safety check)
+        if (!winner) {
+          if ((match.homeScore as number) > (match.awayScore as number)) {
+            winner = match.homeTeam as Team;
+          } else if (
+            (match.awayScore as number) > (match.homeScore as number)
+          ) {
+            winner = match.awayTeam as Team;
+          } else if (
+            match.homePenalties != null &&
+            match.awayPenalties != null
+          ) {
+            if (match.homePenalties > match.awayPenalties) {
+              winner = match.homeTeam as Team;
+            } else {
+              winner = match.awayTeam as Team;
+            }
+          }
+          match.winner = winner;
+        }
       }
-      match.winner = winner;
 
       // Propagate to next match
       if (match.nextMatchId) {
@@ -318,7 +341,8 @@ export const runKnockoutSimulation = (
 };
 
 export const simulateTournament = (
-  initialGroups: Group[]
+  initialGroups: Group[],
+  currentKnockoutMatches: KnockoutMatch[] = []
 ): { groups: Group[]; knockoutMatches: KnockoutMatch[] } => {
   // 1. Simulate Groups locally (respecting existing results)
   // Deep clone to avoid mutating input
@@ -355,8 +379,43 @@ export const simulateTournament = (
     (a, b) => Number(a.id) - Number(b.id)
   );
 
-  // 4. Run Knockout Simulation
-  const simulatedKnockoutMatches = runKnockoutSimulation(allMatches);
+  // 4. Merge with current knockout state (overlay user results)
+  const mergedMatches = allMatches.map((generatedMatch) => {
+    const existingMatch = currentKnockoutMatches.find(
+      (m) => m.id === generatedMatch.id
+    );
+
+    if (
+      existingMatch &&
+      existingMatch.homeScore != null &&
+      existingMatch.awayScore != null
+    ) {
+      // Check if teams match
+      const hTeamGen = generatedMatch.homeTeam as Team;
+      const aTeamGen = generatedMatch.awayTeam as Team;
+      const hTeamEx = existingMatch.homeTeam as Team;
+      const aTeamEx = existingMatch.awayTeam as Team;
+
+      // Ensure teams are defined and IDs match
+      const homeMatches = hTeamGen && hTeamEx && hTeamGen.id === hTeamEx.id;
+      const awayMatches = aTeamGen && aTeamEx && aTeamGen.id === aTeamEx.id;
+
+      if (homeMatches && awayMatches) {
+        return {
+          ...generatedMatch,
+          homeScore: existingMatch.homeScore,
+          awayScore: existingMatch.awayScore,
+          homePenalties: existingMatch.homePenalties,
+          awayPenalties: existingMatch.awayPenalties,
+          winner: existingMatch.winner,
+        };
+      }
+    }
+    return generatedMatch;
+  });
+
+  // 5. Run Knockout Simulation
+  const simulatedKnockoutMatches = runKnockoutSimulation(mergedMatches);
 
   return {
     groups: simulatedGroups,

@@ -6,6 +6,7 @@ import React, {
   useState,
   ReactNode,
   useEffect,
+  useMemo,
 } from "react";
 import { Group, Team, KnockoutMatch } from "@/data/types";
 import { INITIAL_GROUPS } from "@/data/initialData";
@@ -52,6 +53,10 @@ const TournamentContext = createContext<TournamentContextType | undefined>(
 export function TournamentProvider({ children }: { children: ReactNode }) {
   const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
   const [knockoutMatches, setKnockoutMatches] = useState<KnockoutMatch[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [probabilities, setProbabilities] = useState<Map<string, any>>(
+    new Map()
+  );
 
   // Fetch live rankings
   useEffect(() => {
@@ -131,40 +136,20 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         "@/utils/probabilityUtils"
       );
 
-      // Check if any group is unfinished
-      const anyUnfinished = groups.some((g) =>
-        g.matches.some((m) => !m.finished)
-      );
-
-      if (anyUnfinished) {
-        const probabilities = await calculateKnockoutProbabilities(groups);
-
-        setKnockoutMatches((prev) =>
-          prev.map((m) => {
-            const prob = probabilities.get(m.id);
-            if (prob) {
-              return { ...m, probabilisticData: prob };
-            }
-            return m;
-          })
+      // We run probability calculation if there are matches
+      // The util handles skipping simulation for finished matches, effectively giving 100% prob
+      if (groups.length > 0) {
+        const newProbabilities = await calculateKnockoutProbabilities(
+          groups,
+          knockoutMatches
         );
-      } else {
-        // Clear probabilities if tournament is fully deterministic
-        setKnockoutMatches((prev) =>
-          prev.map((m) => {
-            if (m.probabilisticData) {
-              const { probabilisticData, ...rest } = m;
-              return rest;
-            }
-            return m;
-          })
-        );
+        setProbabilities(newProbabilities);
       }
     };
 
     const timer = setTimeout(runProbabilityCalc, 500);
     return () => clearTimeout(timer);
-  }, [groups]);
+  }, [groups, knockoutMatches]);
 
   const updateMatch = (
     groupId: string,
@@ -455,11 +440,21 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     setKnockoutMatches(simulatedKnockoutMatches);
   };
 
+  const exposedKnockoutMatches = useMemo(() => {
+    return knockoutMatches.map((m) => {
+      const prob = probabilities.get(m.id);
+      if (prob) {
+        return { ...m, probabilisticData: prob };
+      }
+      return m;
+    });
+  }, [knockoutMatches, probabilities]);
+
   return (
     <TournamentContext.Provider
       value={{
         groups,
-        knockoutMatches,
+        knockoutMatches: exposedKnockoutMatches,
         updateMatch,
         updateKnockoutMatch,
         simulateGroups,
