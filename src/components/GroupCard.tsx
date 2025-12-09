@@ -205,12 +205,34 @@ export function GroupCard({
                     key={match.id}
                     className="text-xs border border-slate-200 dark:border-slate-700 rounded-md p-1.5 bg-white dark:bg-slate-800 shadow-sm"
                   >
-                    <div className="flex justify-between items-center text-[10px] text-slate-400 dark:text-slate-500 mb-1 uppercase tracking-wide leading-none">
-                      <span>{match.date}</span>
-                      {match.location && (
-                        <span className="truncate max-w-[120px]">
-                          {match.location}
+                    <div className="flex justify-between items-center text-[10px] text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-wide leading-none">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-medium text-slate-500 dark:text-slate-400">
+                          {match.date}
                         </span>
+                        {match.time && (
+                          <span className="text-[9px] text-slate-400 dark:text-slate-500">
+                            {match.time}
+                          </span>
+                        )}
+                      </div>
+                      {match.location && (
+                        <div className="flex flex-col items-end max-w-[240px] leading-tight">
+                          <span
+                            className="truncate w-full text-right font-medium text-slate-500 dark:text-slate-400"
+                            title={match.location}
+                          >
+                            {match.location.split(" - ")[0]}
+                          </span>
+                          {match.location.includes(" - ") && (
+                            <span
+                              className="text-[9px] text-slate-400 dark:text-slate-500 truncate w-full text-right"
+                              title={match.location.split(" - ")[1]}
+                            >
+                              {match.location.split(" - ")[1]}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                     <div className="flex justify-between items-center">
