@@ -5,6 +5,7 @@ import { useTournament } from "@/context/TournamentContext";
 import { runMonteCarloSimulation, PredictionResult } from "@/utils/monteCarlo";
 import { simulateTournament } from "@/utils/simulationUtils";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { TeamFlag } from "@/components/ui/TeamFlag";
 import { Info, Timer, CheckCircle2, X } from "lucide-react";
 import { clsx } from "clsx";
 import { Team, KnockoutMatch } from "@/data/types";
@@ -356,7 +357,13 @@ export default function PredictionsPage() {
                           {index + 1}
                         </td>
                         <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
-                          {team.teamName}
+                          <div className="flex items-center gap-2">
+                            <TeamFlag
+                              teamName={team.teamName}
+                              className="w-5 h-3.5 shadow-sm"
+                            />
+                            {team.teamName}
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-right text-slate-500 dark:text-slate-400 font-mono">
                           {team.teamRanking ?? "-"}
@@ -500,6 +507,10 @@ export default function PredictionsPage() {
                             )}
                           </div>
                           <div className="flex-1 flex items-center justify-between sm:justify-start gap-2 text-left">
+                            <TeamFlag
+                              teamName={(m.awayTeam as Team).name}
+                              className="w-5 h-3.5 shadow-sm shrink-0"
+                            />
                             <span
                               className={clsx(
                                 "font-medium",

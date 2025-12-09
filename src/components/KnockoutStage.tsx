@@ -194,7 +194,6 @@ function MatchCard({
               <TeamFlag
                 teamName={homeName || ""}
                 className="w-5 h-3.5 shrink-0"
-                showPlaceholder={false}
               />
               <span
                 className={clsx(
@@ -283,6 +282,7 @@ function MatchCard({
               <TeamFlag
                 teamName={awayName || ""}
                 className="w-5 h-3.5 shrink-0"
+                showPlaceholder={false}
               />
               <span
                 className={clsx(
