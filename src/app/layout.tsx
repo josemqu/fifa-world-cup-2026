@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { TournamentProvider } from "@/context/TournamentContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { JsonLd } from "@/components/JsonLd";
@@ -92,11 +93,13 @@ export default function RootLayout({
         className={`${inter.className} bg-slate-50 dark:bg-slate-900 min-h-screen flex flex-col text-slate-900 dark:text-slate-100`}
       >
         <TournamentProvider>
-          <Header />
-          <main id="main" className="flex-1 pb-32">
-            {children}
-          </main>
-          <Footer />
+          <LanguageProvider>
+            <Header />
+            <main id="main" className="flex-1 pb-32">
+              {children}
+            </main>
+            <Footer />
+          </LanguageProvider>
         </TournamentProvider>
         <Analytics />
         <JsonLd />

@@ -6,6 +6,7 @@ import {
 import { clsx } from "clsx";
 import { motion } from "framer-motion";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { TeamFlag } from "@/components/ui/TeamFlag";
 import { Info } from "lucide-react";
 
 interface KnockoutStageProps {
@@ -156,7 +157,7 @@ function MatchCard({
             content={
               <div className="flex flex-col gap-1">
                 <span>Probabilidad de cruce entre</span>
-                <span className="font-bold text-yellow-300 dark:text-yellow-600">
+                <span className="font-bold text-yellow-300">
                   {homeName} y {awayName}
                 </span>
               </div>
@@ -190,6 +191,11 @@ function MatchCard({
         <div className="flex justify-between items-center gap-2">
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <div className="flex items-center gap-1 min-w-0">
+              <TeamFlag
+                teamName={homeName || ""}
+                className="w-5 h-3.5 shrink-0"
+                showPlaceholder={false}
+              />
               <span
                 className={clsx(
                   "font-medium text-sm truncate",
@@ -274,6 +280,10 @@ function MatchCard({
         <div className="flex justify-between items-center gap-2">
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <div className="flex items-center gap-1 min-w-0">
+              <TeamFlag
+                teamName={awayName || ""}
+                className="w-5 h-3.5 shrink-0"
+              />
               <span
                 className={clsx(
                   "font-medium text-sm truncate",
@@ -691,6 +701,10 @@ export function KnockoutStage({
                     </td>
                     <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
                       <div className="flex items-center gap-2">
+                        <TeamFlag
+                          teamName={team.name}
+                          className="w-5 h-3.5 shadow-sm"
+                        />
                         {team.code && (
                           <span className="font-mono text-xs text-slate-400 w-8">
                             {team.code}

@@ -146,7 +146,7 @@ export function Tooltip({
             >
               <div
                 className={twMerge(
-                  "relative px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 dark:bg-slate-100 dark:text-slate-900 rounded-lg shadow-xl border border-slate-700/50 dark:border-slate-200/50 backdrop-blur-sm text-center",
+                  "relative px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 dark:bg-slate-950 dark:text-slate-200 rounded-lg shadow-xl border border-slate-700/50 dark:border-slate-800 backdrop-blur-sm text-center",
                   className
                 )}
               >
@@ -154,7 +154,7 @@ export function Tooltip({
                 {/* Arrow */}
                 <div
                   className={clsx(
-                    "absolute w-2 h-2 bg-slate-900 dark:bg-slate-100 rotate-45 border-slate-700/50 dark:border-slate-200/50",
+                    "absolute w-2 h-2 bg-slate-900 dark:bg-slate-950 rotate-45 border-slate-700/50 dark:border-slate-800",
                     arrowClasses[placement]
                   )}
                 />

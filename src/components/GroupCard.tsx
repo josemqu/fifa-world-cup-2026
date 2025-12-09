@@ -2,6 +2,7 @@ import { Group, Team, Match } from "@/data/types";
 import { clsx } from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { TeamFlag } from "@/components/ui/TeamFlag";
 import { getTeamAbbreviation } from "@/utils/teamAbbreviations";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
@@ -142,7 +143,11 @@ export function GroupCard({
                         : "bg-transparent"
                     )}
                   />
-                  <Tooltip content={team.name}>
+                  <TeamFlag
+                    teamName={team.name}
+                    className="w-5 h-3.5 mr-2 shadow-sm"
+                  />
+                  <Tooltip content={team.name} placement="right">
                     <span className="cursor-help">
                       {getTeamAbbreviation(team.name)}
                     </span>
@@ -213,6 +218,10 @@ export function GroupCard({
                         <span className="font-medium text-sm truncate max-w-[120px] text-slate-900 dark:text-slate-100">
                           {getTeamName(match.homeTeamId)}
                         </span>
+                        <TeamFlag
+                          teamName={getTeamName(match.homeTeamId)}
+                          className="w-5 h-3.5 shrink-0"
+                        />
                       </div>
 
                       <div className="flex items-center gap-1.5 mx-2">
@@ -256,6 +265,10 @@ export function GroupCard({
                       </div>
 
                       <div className="flex items-center gap-2 flex-1 min-w-0 justify-start">
+                        <TeamFlag
+                          teamName={getTeamName(match.awayTeamId)}
+                          className="w-5 h-3.5 shrink-0"
+                        />
                         <span className="font-medium text-sm truncate max-w-[120px] text-slate-900 dark:text-slate-100">
                           {getTeamName(match.awayTeamId)}
                         </span>
