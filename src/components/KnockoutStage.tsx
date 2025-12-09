@@ -801,7 +801,7 @@ export function KnockoutStage({
 
         <button
           onClick={simulateAll}
-          className="bg-purple-600 hover:bg-purple-700 text-white text-sm px-5 py-2.5 rounded-full font-medium transition-all shadow-xl flex items-center gap-2 hover:scale-105 hover:shadow-2xl"
+          className="bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2 rounded-full font-medium transition-all shadow-xl flex items-center gap-2 hover:scale-105 hover:shadow-2xl"
           title="Simular todo el torneo"
         >
           <svg
