@@ -4,6 +4,12 @@ export interface IUser extends Document {
   firebaseUid: string;
   email: string;
   displayName: string;
+  nickname?: string;
+  country?: string;
+  favoriteTeam?: string;
+  gender?: string;
+  age?: number;
+  birthDate?: string;
   preferences: {
     language: string;
   };
@@ -16,6 +22,12 @@ const UserSchema: Schema = new Schema(
     firebaseUid: { type: String, required: true, unique: true },
     email: { type: String },
     displayName: { type: String },
+    nickname: { type: String },
+    country: { type: String },
+    favoriteTeam: { type: String },
+    gender: { type: String },
+    age: { type: Number },
+    birthDate: { type: String },
     preferences: {
       language: { type: String, default: "es" },
     },

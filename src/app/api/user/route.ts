@@ -6,7 +6,18 @@ export async function POST(request: Request) {
   try {
     await connectDB();
     const body = await request.json();
-    const { firebaseUid, email, displayName, preferences } = body;
+    const {
+      firebaseUid,
+      email,
+      displayName,
+      nickname,
+      country,
+      favoriteTeam,
+      gender,
+      age,
+      birthDate,
+      preferences,
+    } = body;
 
     if (!firebaseUid) {
       return NextResponse.json(
@@ -22,6 +33,12 @@ export async function POST(request: Request) {
         $set: {
           email,
           displayName,
+          nickname,
+          country,
+          favoriteTeam,
+          gender,
+          age,
+          birthDate,
           preferences,
           updatedAt: new Date(),
         },
@@ -29,8 +46,20 @@ export async function POST(request: Request) {
           createdAt: new Date(),
         },
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
+      { upsert: true, new: true, setDefaultsOnInsert: true, strict: false }
+    ).lean();
+
+    // Debug log to verify fields are being saved
+    console.log("Updated user profile:", {
+      // @ts-ignore - access fields that might not be in typed schema yet
+      id: user._id,
+      // @ts-ignore
+      nickname: user.nickname,
+      // @ts-ignore
+      country: user.country,
+      // @ts-ignore
+      savedAge: user.age,
+    });
 
     return NextResponse.json({ success: true, data: user });
   } catch (error) {
@@ -55,7 +84,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const user = await User.findOne({ firebaseUid });
+    const user = await User.findOne({ firebaseUid }).lean();
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });

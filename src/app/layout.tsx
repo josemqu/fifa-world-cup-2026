@@ -6,6 +6,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { UserProfileModal } from "@/components/auth/UserProfileModal";
 import { JsonLd } from "@/components/JsonLd";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -101,6 +102,7 @@ export default function RootLayout({
                 {children}
               </main>
               <Footer />
+              <UserProfileModal />
             </LanguageProvider>
           </TournamentProvider>
         </AuthProvider>
