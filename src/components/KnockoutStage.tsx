@@ -152,7 +152,7 @@ function MatchCard({
           : "border-slate-200 dark:border-slate-700"
       )}
     >
-      <div className="text-xs text-slate-400 mb-2 flex justify-between items-start leading-none">
+      <div className="text-xs text-slate-400 mb-2 flex justify-between items-start leading-none uppercase tracking-wide">
         <div className="flex flex-col gap-0.5">
           <div className="flex items-center gap-2">
             <span className="font-medium text-slate-500 dark:text-slate-400 text-[10px]">
