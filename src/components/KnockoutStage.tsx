@@ -5,7 +5,6 @@ import {
 } from "@/utils/knockoutUtils";
 import { predictMatchScore } from "@/utils/simulationUtils";
 import { clsx } from "clsx";
-import { motion } from "framer-motion";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { Info, Trash2, Play, RotateCcw } from "lucide-react";
@@ -623,11 +622,7 @@ export function KnockoutStage({
   const sfPairs = pairMatches(sfMatches);
 
   return (
-    <motion.div
-      className="flex flex-col gap-4"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
+    <div className="flex flex-col gap-4 animate-fade-in-up">
       <div className="overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
         <div
           className="grid gap-x-12 gap-y-4 min-w-max px-4"
@@ -922,6 +917,6 @@ export function KnockoutStage({
           Limpiar
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }

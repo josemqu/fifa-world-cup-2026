@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -128,41 +127,38 @@ export function Tooltip({
       className="inline-block relative cursor-help mx-0"
     >
       {children}
-      <AnimatePresence>
-        {isVisible && (
-          <Portal>
-            <motion.div
-              initial={variants[placement].initial}
-              animate={variants[placement].animate}
-              exit={variants[placement].exit}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              style={{
-                top: position.top,
-                left: position.left,
-                position: "fixed",
-                zIndex: 9999,
-              }}
-              className={clsx("pointer-events-none", baseClasses[placement])}
+      {isVisible && (
+        <Portal>
+          <div
+            style={{
+              top: position.top,
+              left: position.left,
+              position: "fixed",
+              zIndex: 9999,
+            }}
+            className={clsx(
+              "pointer-events-none animate-fade-in-up",
+              baseClasses[placement]
+            )}
+          >
+            <div
+              className={twMerge(
+                "relative px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 dark:bg-slate-950 dark:text-slate-200 rounded-lg shadow-xl border border-slate-700/50 dark:border-slate-800 backdrop-blur-sm text-center",
+                className
+              )}
             >
+              {content}
+              {/* Arrow */}
               <div
-                className={twMerge(
-                  "relative px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 dark:bg-slate-950 dark:text-slate-200 rounded-lg shadow-xl border border-slate-700/50 dark:border-slate-800 backdrop-blur-sm text-center",
-                  className
+                className={clsx(
+                  "absolute w-2 h-2 bg-slate-900 dark:bg-slate-950 rotate-45 border-slate-700/50 dark:border-slate-800",
+                  arrowClasses[placement]
                 )}
-              >
-                {content}
-                {/* Arrow */}
-                <div
-                  className={clsx(
-                    "absolute w-2 h-2 bg-slate-900 dark:bg-slate-950 rotate-45 border-slate-700/50 dark:border-slate-800",
-                    arrowClasses[placement]
-                  )}
-                />
-              </div>
-            </motion.div>
-          </Portal>
-        )}
-      </AnimatePresence>
+              />
+            </div>
+          </div>
+        </Portal>
+      )}
     </div>
   );
 }

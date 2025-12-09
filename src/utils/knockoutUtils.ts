@@ -5,6 +5,18 @@ import {
   ThirdPlaceCombination,
 } from "@/data/knockoutData";
 
+interface R32MatchDefinition {
+  id: string;
+  type: string;
+  home: string;
+  away: string;
+  next: string;
+  possibilities?: string[];
+  date?: string;
+  time?: string;
+  location?: string;
+}
+
 export function getGroupStandings(groups: Group[]) {
   const qualified: {
     [key: string]: { first: Team; second: Team; third: Team };
@@ -146,7 +158,7 @@ export function generateR32Matches(groups: Group[]) {
     }
   }
 
-  return R32_MATCHES.map((match) => {
+  return (R32_MATCHES as R32MatchDefinition[]).map((match) => {
     let homeTeam: Team | { placeholder: string } = { placeholder: match.home };
     let awayTeam: Team | { placeholder: string } = { placeholder: match.away };
 
@@ -187,9 +199,7 @@ export function generateR32Matches(groups: Group[]) {
           if (opponentGroup) {
             awayTeam = qualified[opponentGroup].third;
           } else {
-            // @ts-ignore
             if (match.possibilities) {
-              // @ts-ignore
               awayTeam = {
                 placeholder: `3° (${match.possibilities.join("/")})`,
               };
@@ -204,9 +214,7 @@ export function generateR32Matches(groups: Group[]) {
             awayTeam = fallbackAssignments[homeGroup];
           } else {
             // Fallback if no combination matches yet (e.g. not enough games played)
-            // @ts-ignore
             if (match.possibilities) {
-              // @ts-ignore
               awayTeam = {
                 placeholder: `3° (${match.possibilities.join("/")})`,
               };
@@ -217,9 +225,7 @@ export function generateR32Matches(groups: Group[]) {
         }
       } else {
         // If not all groups finished, show placeholder
-        // @ts-ignore
         if (match.possibilities) {
-          // @ts-ignore
           awayTeam = { placeholder: `3° (${match.possibilities.join("/")})` };
         } else {
           awayTeam = { placeholder: match.away };

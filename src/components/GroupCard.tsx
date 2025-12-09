@@ -1,6 +1,5 @@
 import { Group, Team, Match } from "@/data/types";
 import { clsx } from "clsx";
-import { motion, AnimatePresence } from "framer-motion";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { getTeamAbbreviation } from "@/utils/teamAbbreviations";
@@ -37,11 +36,7 @@ export function GroupCard({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col"
-    >
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col animate-fade-in-up">
       <div className="bg-slate-50 dark:bg-slate-900/50 px-3 py-2 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
         <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">
           Grupo {group.name}
@@ -186,123 +181,115 @@ export function GroupCard({
       </div>
 
       {/* Matches List */}
-      <AnimatePresence initial={false}>
-        {showMatches && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="bg-slate-50/30 dark:bg-slate-900/20 p-2 border-t border-slate-200 dark:border-slate-700">
-              <h4 className="font-semibold text-[10px] uppercase text-slate-500 dark:text-slate-400 mb-2 tracking-wider">
-                Partidos
-              </h4>
-              <div className="space-y-1.5">
-                {group.matches.map((match) => (
-                  <div
-                    key={match.id}
-                    className="text-xs border border-slate-200 dark:border-slate-700 rounded-md p-1.5 bg-white dark:bg-slate-800 shadow-sm"
-                  >
-                    <div className="flex justify-between items-center text-[10px] text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-wide leading-none">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="font-medium text-slate-500 dark:text-slate-400">
-                          {match.date}
+      {showMatches && (
+        <div className="overflow-hidden animate-fade-in-up">
+          <div className="bg-slate-50/30 dark:bg-slate-900/20 p-2 border-t border-slate-200 dark:border-slate-700">
+            <h4 className="font-semibold text-[10px] uppercase text-slate-500 dark:text-slate-400 mb-2 tracking-wider">
+              Partidos
+            </h4>
+            <div className="space-y-1.5">
+              {group.matches.map((match) => (
+                <div
+                  key={match.id}
+                  className="text-xs border border-slate-200 dark:border-slate-700 rounded-md p-1.5 bg-white dark:bg-slate-800 shadow-sm"
+                >
+                  <div className="flex justify-between items-center text-[10px] text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-wide leading-none">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-medium text-slate-500 dark:text-slate-400">
+                        {match.date}
+                      </span>
+                      {match.time && (
+                        <span className="text-[9px] text-slate-400 dark:text-slate-500">
+                          {match.time}
                         </span>
-                        {match.time && (
-                          <span className="text-[9px] text-slate-400 dark:text-slate-500">
-                            {match.time}
+                      )}
+                    </div>
+                    {match.location && (
+                      <div className="flex flex-col items-end max-w-[240px] leading-tight">
+                        <span
+                          className="truncate w-full text-right font-medium text-slate-500 dark:text-slate-400"
+                          title={match.location}
+                        >
+                          {match.location.split(" - ")[0]}
+                        </span>
+                        {match.location.includes(" - ") && (
+                          <span
+                            className="text-[9px] text-slate-400 dark:text-slate-500 truncate w-full text-right"
+                            title={match.location.split(" - ")[1]}
+                          >
+                            {match.location.split(" - ")[1]}
                           </span>
                         )}
                       </div>
-                      {match.location && (
-                        <div className="flex flex-col items-end max-w-[240px] leading-tight">
-                          <span
-                            className="truncate w-full text-right font-medium text-slate-500 dark:text-slate-400"
-                            title={match.location}
-                          >
-                            {match.location.split(" - ")[0]}
-                          </span>
-                          {match.location.includes(" - ") && (
-                            <span
-                              className="text-[9px] text-slate-400 dark:text-slate-500 truncate w-full text-right"
-                              title={match.location.split(" - ")[1]}
-                            >
-                              {match.location.split(" - ")[1]}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                    )}
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                      <span className="font-medium text-sm truncate max-w-[120px] text-slate-900 dark:text-slate-100">
+                        {getTeamName(match.homeTeamId)}
+                      </span>
+                      <TeamFlag
+                        teamName={getTeamName(match.homeTeamId)}
+                        className="w-5 h-3.5 shrink-0"
+                      />
                     </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-                        <span className="font-medium text-sm truncate max-w-[120px] text-slate-900 dark:text-slate-100">
-                          {getTeamName(match.homeTeamId)}
-                        </span>
-                        <TeamFlag
-                          teamName={getTeamName(match.homeTeamId)}
-                          className="w-5 h-3.5 shrink-0"
-                        />
-                      </div>
 
-                      <div className="flex items-center gap-1.5 mx-2">
-                        <input
-                          type="number"
-                          min="0"
-                          className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                          value={match.homeScore ?? ""}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            const newScore = val === "" ? null : parseInt(val);
-                            onMatchUpdate(
-                              group.name,
-                              match.id,
-                              newScore,
-                              match.awayScore ?? null
-                            );
-                          }}
-                          placeholder="-"
-                        />
-                        <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
-                          :
-                        </span>
-                        <input
-                          type="number"
-                          min="0"
-                          className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                          value={match.awayScore ?? ""}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            const newScore = val === "" ? null : parseInt(val);
-                            onMatchUpdate(
-                              group.name,
-                              match.id,
-                              match.homeScore ?? null,
-                              newScore
-                            );
-                          }}
-                          placeholder="-"
-                        />
-                      </div>
+                    <div className="flex items-center gap-1.5 mx-2">
+                      <input
+                        type="number"
+                        min="0"
+                        className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        value={match.homeScore ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const newScore = val === "" ? null : parseInt(val);
+                          onMatchUpdate(
+                            group.name,
+                            match.id,
+                            newScore,
+                            match.awayScore ?? null
+                          );
+                        }}
+                        placeholder="-"
+                      />
+                      <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
+                        :
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        value={match.awayScore ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const newScore = val === "" ? null : parseInt(val);
+                          onMatchUpdate(
+                            group.name,
+                            match.id,
+                            match.homeScore ?? null,
+                            newScore
+                          );
+                        }}
+                        placeholder="-"
+                      />
+                    </div>
 
-                      <div className="flex items-center gap-2 flex-1 min-w-0 justify-start">
-                        <TeamFlag
-                          teamName={getTeamName(match.awayTeamId)}
-                          className="w-5 h-3.5 shrink-0"
-                        />
-                        <span className="font-medium text-sm truncate max-w-[120px] text-slate-900 dark:text-slate-100">
-                          {getTeamName(match.awayTeamId)}
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-2 flex-1 min-w-0 justify-start">
+                      <TeamFlag
+                        teamName={getTeamName(match.awayTeamId)}
+                        className="w-5 h-3.5 shrink-0"
+                      />
+                      <span className="font-medium text-sm truncate max-w-[120px] text-slate-900 dark:text-slate-100">
+                        {getTeamName(match.awayTeamId)}
+                      </span>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
