@@ -4,9 +4,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
+import { LogOut, User as UserIcon } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export function Header() {
   const pathname = usePathname();
+  const { user, loginWithGoogle, logout, loading } = useAuth();
 
   const isGroups = pathname === "/groups" || pathname === "/";
   const isKnockout = pathname === "/knockout";
@@ -84,6 +87,51 @@ export function Header() {
             Predicciones
           </Link>
         </nav>
+
+        {/* User Section */}
+        <div className="flex items-center gap-2">
+          {!loading && (
+            <>
+              {user ? (
+                <div className="flex items-center gap-3 bg-white dark:bg-slate-800 p-1.5 pr-3 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">
+                  {user.photoURL ? (
+                    <Image
+                      src={user.photoURL}
+                      alt={user.displayName || "User"}
+                      width={32}
+                      height={32}
+                      className="rounded-full"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                      <UserIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                  )}
+                  <div className="hidden lg:block text-xs font-medium">
+                    <p className="text-slate-900 dark:text-slate-100 max-w-[100px] truncate">
+                      {user.displayName}
+                    </p>
+                  </div>
+                  <button
+                    onClick={logout}
+                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400"
+                    title="Cerrar sesión"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={loginWithGoogle}
+                  className="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors flex items-center gap-2"
+                >
+                  <UserIcon className="w-4 h-4" />
+                  <span className="hidden sm:inline">Ingresar</span>
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </header>
   );
