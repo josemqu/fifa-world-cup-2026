@@ -1,9 +1,12 @@
-import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
+import { useState } from "react";
 import { GroupCard } from "./GroupCard";
 import { Group } from "@/data/types";
 import { Eye, EyeOff, Trash2 } from "lucide-react";
 import { useTournament } from "@/context/TournamentContext";
+import {
+  FloatingContainer,
+  FloatingButton,
+} from "@/components/ui/FloatingActions";
 
 interface GroupStageProps {
   groups: Group[];
@@ -17,11 +20,6 @@ interface GroupStageProps {
 
 export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
   const { simulateGroups, resetTournament } = useTournament();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Store which groups have their matches HIDDEN.
   // We initialize with all groups hidden by default as requested.
@@ -72,56 +70,52 @@ export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
         ))}
       </div>
 
-      {mounted &&
-        createPortal(
-          <div className="fixed bottom-36 md:bottom-24 right-4 z-[60] flex flex-col gap-3 items-end">
-            <button
-              onClick={toggleAll}
-              className="bg-slate-400 hover:bg-slate-500 dark:bg-slate-600 dark:hover:bg-slate-500 text-white text-sm px-4 py-2 rounded-full font-medium transition-all shadow-xl flex items-center gap-2 hover:scale-105 hover:shadow-2xl"
-              title={
-                allHidden
-                  ? "Mostrar todos los partidos"
-                  : "Ocultar todos los partidos"
-              }
-            >
-              {allHidden ? <Eye size={18} /> : <EyeOff size={18} />}
-              <span>
-                {allHidden ? "Mostrar los Partidos" : "Ocultar los Partidos"}
-              </span>
-            </button>
+      <FloatingContainer>
+        <FloatingButton
+          onClick={toggleAll}
+          className="bg-slate-400 hover:bg-slate-500 dark:bg-slate-600 dark:hover:bg-slate-500"
+          title={
+            allHidden
+              ? "Mostrar todos los partidos"
+              : "Ocultar todos los partidos"
+          }
+        >
+          {allHidden ? <Eye size={18} /> : <EyeOff size={18} />}
+          <span>
+            {allHidden ? "Mostrar los Partidos" : "Ocultar los Partidos"}
+          </span>
+        </FloatingButton>
 
-            <button
-              onClick={simulateGroups}
-              className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-full font-medium transition-colors shadow-xl flex items-center gap-2 hover:scale-105 transform duration-200"
-              title="Simular resultados de la Fase de Grupos"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                className="w-5 h-5"
-                aria-hidden="true"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.242a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm1.23-3.723a.75.75 0 00.219-.53V2.929a.75.75 0 00-1.5 0v2.433l-.312-.312a7 7 0 00-11.712 3.139.75.75 0 001.449.39 5.5 5.5 0 019.201-2.466l.312.312h-2.433a.75.75 0 000 1.5h4.242z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Simular Grupos
-            </button>
+        <FloatingButton
+          onClick={simulateGroups}
+          className="bg-blue-600 hover:bg-blue-700"
+          title="Simular resultados de la Fase de Grupos"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="w-5 h-5"
+            aria-hidden="true"
+          >
+            <path
+              fillRule="evenodd"
+              d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.242a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm1.23-3.723a.75.75 0 00.219-.53V2.929a.75.75 0 00-1.5 0v2.433l-.312-.312a7 7 0 00-11.712 3.139.75.75 0 001.449.39 5.5 5.5 0 019.201-2.466l.312.312h-2.433a.75.75 0 000 1.5h4.242z"
+              clipRule="evenodd"
+            />
+          </svg>
+          Simular Grupos
+        </FloatingButton>
 
-            <button
-              onClick={resetTournament}
-              className="bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-full font-medium transition-colors shadow-xl flex items-center gap-2 hover:scale-105 transform duration-200"
-              title="Limpiar todos los resultados"
-            >
-              <Trash2 size={18} />
-              Limpiar
-            </button>
-          </div>,
-          document.body
-        )}
+        <FloatingButton
+          onClick={resetTournament}
+          className="bg-red-600 hover:bg-red-700"
+          title="Limpiar todos los resultados"
+        >
+          <Trash2 size={18} />
+          Limpiar
+        </FloatingButton>
+      </FloatingContainer>
     </div>
   );
 }

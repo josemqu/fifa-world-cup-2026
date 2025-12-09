@@ -1,5 +1,3 @@
-import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { Group, KnockoutMatch, Team } from "@/data/types";
 import {
   getGroupStandings,
@@ -11,6 +9,10 @@ import { Tooltip } from "@/components/ui/Tooltip";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { Info, Trash2, Play, RotateCcw } from "lucide-react";
 import { useTournament } from "@/context/TournamentContext";
+import {
+  FloatingContainer,
+  FloatingButton,
+} from "@/components/ui/FloatingActions";
 
 interface KnockoutStageProps {
   groups: Group[];
@@ -559,12 +561,6 @@ export function KnockoutStage({
   onMatchUpdate,
 }: KnockoutStageProps) {
   const { simulateKnockout, simulateAll, resetTournament } = useTournament();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const { thirdPlaceTeams } = getGroupStandings(groups);
   const sortedThirds = getSortedThirdPlaceTeams(thirdPlaceTeams);
 
@@ -873,62 +869,58 @@ export function KnockoutStage({
           </table>
         </div>
       </div>
-      {mounted &&
-        createPortal(
-          <div className="fixed bottom-36 md:bottom-24 right-4 z-[60] flex flex-col gap-3 items-end">
-            <button
-              onClick={simulateKnockout}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-5 py-2.5 rounded-full font-medium transition-all shadow-xl flex items-center gap-2 hover:scale-105 hover:shadow-2xl"
-              title="Simular resultados de la Fase Eliminatoria"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                className="w-5 h-5"
-                aria-hidden="true"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Simular Eliminatoria
-            </button>
+      <FloatingContainer>
+        <FloatingButton
+          onClick={simulateKnockout}
+          className="bg-indigo-600 hover:bg-indigo-700"
+          title="Simular resultados de la Fase Eliminatoria"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="w-5 h-5"
+            aria-hidden="true"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+              clipRule="evenodd"
+            />
+          </svg>
+          Simular Eliminatoria
+        </FloatingButton>
 
-            <button
-              onClick={simulateAll}
-              className="bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2 rounded-full font-medium transition-all shadow-xl flex items-center gap-2 hover:scale-105 hover:shadow-2xl"
-              title="Simular todo el torneo"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                className="w-5 h-5"
-                aria-hidden="true"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M13.5 4.938a7 7 0 11-9.006 1.737c.202-.257.596-.218.797.065a.97.97 0 01-.19 1.316 5.061 5.061 0 00-.754.646.97.97 0 000 1.364l.015.015a.97.97 0 001.364 0l.015-.015a.97.97 0 011.364 0l.646.646a.97.97 0 001.364 0l.015-.015a.97.97 0 000-1.364l-.015-.015a.97.97 0 010-1.364l.646-.646a.97.97 0 000-1.364l-.015-.015a.97.97 0 00-1.364 0l-.015.015a.97.97 0 01-1.364 0l-.646-.646a.97.97 0 00-.22-.168zM10 18a8 8 0 100-16 8 8 0 000 16z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Simular Todo
-            </button>
+        <FloatingButton
+          onClick={simulateAll}
+          className="bg-purple-600 hover:bg-purple-700"
+          title="Simular todo el torneo"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="w-5 h-5"
+            aria-hidden="true"
+          >
+            <path
+              fillRule="evenodd"
+              d="M13.5 4.938a7 7 0 11-9.006 1.737c.202-.257.596-.218.797.065a.97.97 0 01-.19 1.316 5.061 5.061 0 00-.754.646.97.97 0 000 1.364l.015.015a.97.97 0 001.364 0l.015-.015a.97.97 0 011.364 0l.646.646a.97.97 0 001.364 0l.015-.015a.97.97 0 000-1.364l-.015-.015a.97.97 0 010-1.364l.646-.646a.97.97 0 000-1.364l-.015-.015a.97.97 0 00-1.364 0l-.015.015a.97.97 0 01-1.364 0l-.646-.646a.97.97 0 00-.22-.168zM10 18a8 8 0 100-16 8 8 0 000 16z"
+              clipRule="evenodd"
+            />
+          </svg>
+          Simular Todo
+        </FloatingButton>
 
-            <button
-              onClick={resetTournament}
-              className="bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-full font-medium transition-colors shadow-xl flex items-center gap-2 hover:scale-105 transform duration-200"
-              title="Limpiar todos los resultados"
-            >
-              <Trash2 size={18} />
-              Limpiar
-            </button>
-          </div>,
-          document.body
-        )}
+        <FloatingButton
+          onClick={resetTournament}
+          className="bg-red-600 hover:bg-red-700"
+          title="Limpiar todos los resultados"
+        >
+          <Trash2 size={18} />
+          Limpiar
+        </FloatingButton>
+      </FloatingContainer>
     </div>
   );
 }
