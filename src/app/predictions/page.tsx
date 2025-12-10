@@ -29,16 +29,6 @@ export default function PredictionsPage() {
   const { dbUser, loading } = useAuth();
   const { groups } = useTournament();
 
-  useEffect(() => {
-    if (!loading && dbUser?.role !== "admin") {
-      router.push("/");
-    }
-  }, [loading, dbUser, router]);
-
-  if (loading || dbUser?.role !== "admin") {
-    return null; // Or a loading spinner
-  }
-
   const [results, setResults] = useState<PredictionResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [iterations, setIterations] = useState(10000);
@@ -53,6 +43,12 @@ export default function PredictionsPage() {
     finalists: Team[];
     matches: KnockoutMatch[];
   } | null>(null);
+
+  useEffect(() => {
+    if (!loading && dbUser?.role !== "admin") {
+      router.push("/");
+    }
+  }, [loading, dbUser, router]);
 
   const handleRun = async (numIterations: number = iterations) => {
     setIsRunning(true);
@@ -214,6 +210,10 @@ export default function PredictionsPage() {
       </div>
     </th>
   );
+
+  if (loading || dbUser?.role !== "admin") {
+    return null; // Or a loading spinner
+  }
 
   return (
     <PageTransition className="max-w-[1600px] mx-auto p-4 md:p-4">
