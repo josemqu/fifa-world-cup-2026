@@ -663,7 +663,7 @@ export function KnockoutStage({
       },
       {
         threshold: 0,
-        rootMargin: "-40% 0px -40% 0px", // Trigger when element enters the middle 20% of viewport
+        rootMargin: "-15% 0px -40% 0px", // Expand visible area to avoid collision with 3rd place match
       }
     );
 
