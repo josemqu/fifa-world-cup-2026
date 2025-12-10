@@ -10,6 +10,7 @@ export interface IUser extends Document {
   gender?: string;
   age?: number;
   birthDate?: string;
+  role: "user" | "admin";
   preferences: {
     language: string;
   };
@@ -28,6 +29,7 @@ const UserSchema: Schema = new Schema(
     gender: { type: String },
     age: { type: Number },
     birthDate: { type: String },
+    role: { type: String, enum: ["user", "admin"], default: "user" },
     preferences: {
       language: { type: String, default: "es" },
     },

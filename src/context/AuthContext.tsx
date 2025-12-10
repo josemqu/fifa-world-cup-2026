@@ -26,6 +26,7 @@ interface DbUser {
   gender?: string;
   age?: number;
   birthDate?: string;
+  role?: "user" | "admin";
   preferences?: {
     language: string;
   };

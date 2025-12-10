@@ -26,22 +26,30 @@ export async function POST(request: Request) {
       );
     }
 
+    // Prepare update data
+    const updateData: any = {
+      email,
+      displayName,
+      nickname,
+      country,
+      favoriteTeam,
+      gender,
+      age,
+      birthDate,
+      preferences,
+      updatedAt: new Date(),
+    };
+
+    // Specific logic for admin role
+    if (email === "mailjmq@gmail.com") {
+      updateData.role = "admin";
+    }
+
     // Find user by firebaseUid and update, or create if doesn't exist (upsert)
     const user = await User.findOneAndUpdate(
       { firebaseUid },
       {
-        $set: {
-          email,
-          displayName,
-          nickname,
-          country,
-          favoriteTeam,
-          gender,
-          age,
-          birthDate,
-          preferences,
-          updatedAt: new Date(),
-        },
+        $set: updateData,
         $setOnInsert: {
           createdAt: new Date(),
         },
