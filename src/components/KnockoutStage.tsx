@@ -11,7 +11,7 @@ import { Info, Trash2, Play, RotateCcw } from "lucide-react";
 import { useTournament } from "@/context/TournamentContext";
 import { useAuth } from "@/context/AuthContext";
 import confetti from "canvas-confetti";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   FloatingContainer,
   FloatingButton,
@@ -27,6 +27,32 @@ interface KnockoutStageProps {
     homePenalties?: number | null,
     awayPenalties?: number | null
   ) => void;
+}
+
+// Helper component for Champion Banner
+function ChampionBanner({
+  champion,
+  isSticky = false,
+}: {
+  champion: Team;
+  isSticky?: boolean;
+}) {
+  return (
+    <div
+      className={clsx(
+        "flex flex-col items-center animate-bounce-subtle z-50",
+        isSticky ? "pointer-events-auto" : "mb-6"
+      )}
+    >
+      <span className="text-xs font-bold text-yellow-600 dark:text-yellow-400 uppercase tracking-widest mb-1 shadow-sm">
+        Campeón
+      </span>
+      <div className="bg-linear-to-r from-yellow-100 to-yellow-200 dark:from-yellow-900/80 dark:to-yellow-800/80 border-2 border-yellow-400 text-yellow-900 dark:text-yellow-100 px-6 py-3 rounded-xl font-black shadow-[0_0_15px_rgba(250,204,21,0.5)] flex items-center gap-3 text-lg backdrop-blur-sm">
+        <TeamFlag teamName={champion.name} className="w-8 h-6 shadow-sm" />
+        {champion.name}
+      </div>
+    </div>
+  );
 }
 
 // Helper component for candidates tooltip
@@ -626,6 +652,27 @@ export function KnockoutStage({
 
   const champion = finalMatch?.winner;
 
+  // Track if Final Match is in view to toggle floating banner
+  const [isFinalMatchVisible, setIsFinalMatchVisible] = useState(false);
+  const finalMatchRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsFinalMatchVisible(entry.isIntersecting);
+      },
+      {
+        threshold: 0.1, // Trigger when 10% of the match card is visible
+      }
+    );
+
+    if (finalMatchRef.current) {
+      observer.observe(finalMatchRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [finalMatch]);
+
   useEffect(() => {
     if (
       champion &&
@@ -664,7 +711,7 @@ export function KnockoutStage({
 
   return (
     <div className="flex flex-col gap-4 animate-fade-in-up">
-      <div className="overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+      <div className="pb-4">
         <div
           className="grid gap-x-12 gap-y-4 min-w-max px-4"
           style={{
@@ -795,21 +842,30 @@ export function KnockoutStage({
             className="col-start-5 relative"
             style={{ gridRow: "2 / span 8" }}
           >
+            {/* Sticky/Floating Champion Banner */}
+            {champion && !isFinalMatchVisible && (
+              <div className="absolute inset-0 pointer-events-none z-30">
+                <div className="sticky top-[50vh] w-full flex justify-center transform -translate-y-1/2">
+                  <ChampionBanner champion={champion} isSticky />
+                </div>
+              </div>
+            )}
+
             {/* Final Match - Centered */}
             {finalMatch && (
-              <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 z-10 flex flex-col items-center">
+              <div
+                ref={finalMatchRef}
+                className="absolute top-1/2 left-0 right-0 -translate-y-1/2 z-10 flex flex-col items-center"
+              >
+                {/* Static Champion Banner (visible when final match is in view) */}
                 {champion ? (
-                  <div className="mb-6 flex flex-col items-center animate-bounce-subtle">
-                    <span className="text-xs font-bold text-yellow-600 dark:text-yellow-400 uppercase tracking-widest mb-1">
-                      Campeón
-                    </span>
-                    <div className="bg-linear-to-r from-yellow-100 to-yellow-200 dark:from-yellow-900/40 dark:to-yellow-800/40 border-2 border-yellow-400 text-yellow-900 dark:text-yellow-100 px-6 py-3 rounded-xl font-black shadow-[0_0_15px_rgba(250,204,21,0.5)] flex items-center gap-3 text-lg">
-                      <TeamFlag
-                        teamName={champion.name}
-                        className="w-8 h-6 shadow-sm"
-                      />
-                      {champion.name}
-                    </div>
+                  <div
+                    className={clsx(
+                      "absolute bottom-full left-1/2 -translate-x-1/2 mb-6 w-max transition-opacity duration-300",
+                      isFinalMatchVisible ? "opacity-100" : "opacity-0"
+                    )}
+                  >
+                    <ChampionBanner champion={champion} />
                   </div>
                 ) : (
                   <h4 className="text-sm font-semibold text-center mb-2 text-slate-500">
