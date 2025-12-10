@@ -9,6 +9,9 @@ import { Tooltip } from "@/components/ui/Tooltip";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { Info, Trash2, Play, RotateCcw } from "lucide-react";
 import { useTournament } from "@/context/TournamentContext";
+import { useAuth } from "@/context/AuthContext";
+import confetti from "canvas-confetti";
+import { useEffect } from "react";
 import {
   FloatingContainer,
   FloatingButton,
@@ -560,6 +563,7 @@ export function KnockoutStage({
   matches,
   onMatchUpdate,
 }: KnockoutStageProps) {
+  const { dbUser } = useAuth();
   const { simulateKnockout, simulateAll, resetTournament } = useTournament();
   const { thirdPlaceTeams } = getGroupStandings(groups);
   const sortedThirds = getSortedThirdPlaceTeams(thirdPlaceTeams);
@@ -619,6 +623,39 @@ export function KnockoutStage({
 
   const finalMatch = matches.find((m) => m.id === "104");
   const thirdPlaceMatch = matches.find((m) => m.id === "103");
+
+  const champion = finalMatch?.winner;
+
+  useEffect(() => {
+    if (
+      champion &&
+      dbUser?.favoriteTeam &&
+      champion.name === dbUser.favoriteTeam
+    ) {
+      const end = Date.now() + 3 * 1000;
+
+      const frame = () => {
+        confetti({
+          particleCount: 2,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+        });
+        confetti({
+          particleCount: 2,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      };
+
+      frame();
+    }
+  }, [champion, dbUser]);
 
   const r32Pairs = pairMatches(r32Matches);
   const r16Pairs = pairMatches(r16Matches);
@@ -760,10 +797,25 @@ export function KnockoutStage({
           >
             {/* Final Match - Centered */}
             {finalMatch && (
-              <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 z-10">
-                <h4 className="text-sm font-semibold text-center mb-2 text-slate-500">
-                  Final
-                </h4>
+              <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 z-10 flex flex-col items-center">
+                {champion ? (
+                  <div className="mb-6 flex flex-col items-center animate-bounce-subtle">
+                    <span className="text-xs font-bold text-yellow-600 dark:text-yellow-400 uppercase tracking-widest mb-1">
+                      Campeón
+                    </span>
+                    <div className="bg-linear-to-r from-yellow-100 to-yellow-200 dark:from-yellow-900/40 dark:to-yellow-800/40 border-2 border-yellow-400 text-yellow-900 dark:text-yellow-100 px-6 py-3 rounded-xl font-black shadow-[0_0_15px_rgba(250,204,21,0.5)] flex items-center gap-3 text-lg">
+                      <TeamFlag
+                        teamName={champion.name}
+                        className="w-8 h-6 shadow-sm"
+                      />
+                      {champion.name}
+                    </div>
+                  </div>
+                ) : (
+                  <h4 className="text-sm font-semibold text-center mb-2 text-slate-500">
+                    Final
+                  </h4>
+                )}
                 <MatchCard
                   match={finalMatch}
                   roundName="Final"
