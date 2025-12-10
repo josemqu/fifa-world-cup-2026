@@ -141,6 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
         body: JSON.stringify({
           firebaseUid: user.uid,
+          email: user.email,
           ...data,
         }),
       });

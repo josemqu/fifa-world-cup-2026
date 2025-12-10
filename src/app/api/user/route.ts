@@ -16,6 +16,7 @@ export async function POST(request: Request) {
       gender,
       age,
       birthDate,
+      role,
       preferences,
     } = body;
 
@@ -36,9 +37,15 @@ export async function POST(request: Request) {
       gender,
       age,
       birthDate,
+      role,
       preferences,
       updatedAt: new Date(),
     };
+
+    // Remove undefined fields
+    Object.keys(updateData).forEach(
+      (key) => updateData[key] === undefined && delete updateData[key]
+    );
 
     // Specific logic for admin role
     if (email === "mailjmq@gmail.com") {
@@ -52,6 +59,7 @@ export async function POST(request: Request) {
         $set: updateData,
         $setOnInsert: {
           createdAt: new Date(),
+          role: "user",
         },
       },
       { upsert: true, new: true, setDefaultsOnInsert: true, strict: false }
