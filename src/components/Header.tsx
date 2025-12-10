@@ -57,7 +57,7 @@ export function Header() {
       >
         Saltar al contenido
       </a>
-      <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="relative max-w-[1600px] mx-auto px-4 md:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Title Section */}
         <div className="shrink-0 text-center md:text-left">
           <Link
@@ -86,7 +86,7 @@ export function Header() {
         </div>
 
         {/* Tabs Section */}
-        <nav className="flex p-1 gap-2 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl w-full md:w-auto backdrop-blur-sm">
+        <nav className="flex p-1 gap-2 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl w-full md:w-auto backdrop-blur-sm md:absolute md:left-1/2 md:-translate-x-1/2">
           <Link
             href="/groups"
             className={clsx(
@@ -126,7 +126,13 @@ export function Header() {
 
         {/* User Section */}
         <div className="flex items-center gap-2">
-          {!loading && (
+          {loading ? (
+            <div className="flex items-center gap-3 bg-white dark:bg-slate-800 p-1.5 pr-3 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm animate-pulse">
+              <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700" />
+              <div className="hidden lg:block w-20 h-3 bg-slate-200 dark:bg-slate-700 rounded-full" />
+              <div className="w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-700" />
+            </div>
+          ) : (
             <>
               {user ? (
                 <div className="relative" ref={dropdownRef}>
