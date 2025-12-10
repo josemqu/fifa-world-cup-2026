@@ -10,8 +10,14 @@ import { useState, useRef, useEffect } from "react";
 
 export function Header() {
   const pathname = usePathname();
-  const { user, loginWithGoogle, logout, loading, setProfileModalOpen } =
-    useAuth();
+  const {
+    user,
+    dbUser,
+    loginWithGoogle,
+    logout,
+    loading,
+    setProfileModalOpen,
+  } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -103,17 +109,19 @@ export function Header() {
           >
             Fase Eliminatoria
           </Link>
-          <Link
-            href="/predictions"
-            className={clsx(
-              "w-full md:w-32 lg:w-40 rounded-lg py-2 text-sm font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200",
-              isPredictions
-                ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm"
-                : "text-slate-500 dark:text-slate-400 hover:bg-white/40 hover:text-slate-700 dark:hover:text-slate-200"
-            )}
-          >
-            Predicciones
-          </Link>
+          {dbUser?.role === "admin" && (
+            <Link
+              href="/predictions"
+              className={clsx(
+                "w-full md:w-32 lg:w-40 rounded-lg py-2 text-sm font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200",
+                isPredictions
+                  ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm"
+                  : "text-slate-500 dark:text-slate-400 hover:bg-white/40 hover:text-slate-700 dark:hover:text-slate-200"
+              )}
+            >
+              Predicciones
+            </Link>
+          )}
         </nav>
 
         {/* User Section */}

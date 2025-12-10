@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import { useTournament } from "@/context/TournamentContext";
 import { runMonteCarloSimulation, PredictionResult } from "@/utils/monteCarlo";
 import { simulateTournament } from "@/utils/simulationUtils";
@@ -23,7 +25,20 @@ type SortColumn =
   | "r32Count";
 
 export default function PredictionsPage() {
+  const router = useRouter();
+  const { dbUser, loading } = useAuth();
   const { groups } = useTournament();
+
+  useEffect(() => {
+    if (!loading && dbUser?.role !== "admin") {
+      router.push("/");
+    }
+  }, [loading, dbUser, router]);
+
+  if (loading || dbUser?.role !== "admin") {
+    return null; // Or a loading spinner
+  }
+
   const [results, setResults] = useState<PredictionResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [iterations, setIterations] = useState(10000);
