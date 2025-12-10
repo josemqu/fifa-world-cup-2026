@@ -662,7 +662,8 @@ export function KnockoutStage({
         setIsFinalMatchVisible(entry.isIntersecting);
       },
       {
-        threshold: 0.1, // Trigger when 10% of the match card is visible
+        threshold: 0,
+        rootMargin: "-40% 0px -40% 0px", // Trigger when element enters the middle 20% of viewport
       }
     );
 
