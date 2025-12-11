@@ -40,6 +40,68 @@ body {
   animation: fadeInUp 0.5s ease-out forwards;
 }
 
+/* Tooltip Animations (Fast & Directional) */
+@keyframes tooltipInTop {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-tooltip-top {
+  animation: tooltipInTop 0.15s ease-out forwards;
+}
+
+@keyframes tooltipInBottom {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-tooltip-bottom {
+  animation: tooltipInBottom 0.15s ease-out forwards;
+}
+
+@keyframes tooltipInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-tooltip-right {
+  animation: tooltipInRight 0.15s ease-out forwards;
+}
+
+@keyframes tooltipInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-tooltip-left {
+  animation: tooltipInLeft 0.15s ease-out forwards;
+}
+
+/* Legacy animations (keeping for reference or other uses) */
 @keyframes fadeInDown {
   from {
     opacity: 0;

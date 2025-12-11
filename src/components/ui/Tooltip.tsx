@@ -120,10 +120,10 @@ export function Tooltip({
   };
 
   const animationClasses = {
-    top: "animate-fade-in-up",
-    bottom: "animate-fade-in-down",
-    right: "animate-fade-in-right",
-    left: "animate-fade-in-left",
+    top: "animate-tooltip-top",
+    bottom: "animate-tooltip-bottom",
+    right: "animate-tooltip-right",
+    left: "animate-tooltip-left",
   };
 
   return (
