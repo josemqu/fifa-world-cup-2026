@@ -2,7 +2,7 @@ export const JsonLd = () => {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: "FIFA World Cup 2026 Simulator",
+    name: "World Cup 2026 Simulator",
     applicationCategory: "SportsApplication",
     operatingSystem: "Any",
     description:
@@ -19,7 +19,7 @@ export const JsonLd = () => {
     },
     about: {
       "@type": "SportsEvent",
-      name: "FIFA World Cup 2026",
+      name: "World Cup 2026",
       startDate: "2026-06-11",
       endDate: "2026-07-19",
       location: [

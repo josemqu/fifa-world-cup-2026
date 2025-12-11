@@ -359,6 +359,18 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
                   ? match.awayTeam
                   : match.homeTeam;
 
+              // Debug log for 3rd place propagation
+              console.log("[TournamentContext] 3rd Place Propagation:", {
+                matchId: match.id,
+                winner: winner.name,
+                loser:
+                  loser && !("placeholder" in loser)
+                    ? (loser as Team).name
+                    : "Placeholder",
+                isHomeSource,
+                isAwaySource,
+              });
+
               if (isHomeSource) {
                 thirdPlaceMatch.homeTeam = (loser as Team) || {
                   placeholder: `L${matchId}`,

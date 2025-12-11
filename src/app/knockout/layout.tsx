@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   description:
     "Visualiza y simula el cuadro de la Fase Final del Mundial 2026. Octavos de final, cuartos, semifinales y la gran final.",
   openGraph: {
-    title: "Fase Final | FIFA World Cup 2026",
+    title: "Fase Final | World Cup 2026",
     description:
       "Visualiza y simula el cuadro de la Fase Final del Mundial 2026.",
   },

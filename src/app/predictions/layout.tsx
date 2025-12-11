@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   description:
     "Utiliza nuestra simulación de Montecarlo para predecir las probabilidades de cada equipo de ganar el Mundial 2026.",
   openGraph: {
-    title: "Predicciones | FIFA World Cup 2026",
+    title: "Predicciones | World Cup 2026",
     description:
       "Utiliza nuestra simulación de Montecarlo para predecir las probabilidades de cada equipo de ganar el Mundial 2026.",
   },

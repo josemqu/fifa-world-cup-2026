@@ -384,9 +384,21 @@ export const runKnockoutSimulation = (
 
               if (isHomeSource) {
                 thirdPlaceMatch.homeTeam = loser as Team;
+                // Reset results
+                thirdPlaceMatch.homeScore = null;
+                thirdPlaceMatch.awayScore = null;
+                thirdPlaceMatch.homePenalties = null;
+                thirdPlaceMatch.awayPenalties = null;
+                thirdPlaceMatch.winner = null;
               }
               if (isAwaySource) {
                 thirdPlaceMatch.awayTeam = loser as Team;
+                // Reset results
+                thirdPlaceMatch.homeScore = null;
+                thirdPlaceMatch.awayScore = null;
+                thirdPlaceMatch.homePenalties = null;
+                thirdPlaceMatch.awayPenalties = null;
+                thirdPlaceMatch.winner = null;
               }
             }
           }
@@ -454,9 +466,15 @@ export const simulateTournament = (
       const hTeamEx = existingMatch.homeTeam as Team;
       const aTeamEx = existingMatch.awayTeam as Team;
 
-      // Ensure teams are defined and IDs match
-      const homeMatches = hTeamGen && hTeamEx && hTeamGen.id === hTeamEx.id;
-      const awayMatches = aTeamGen && aTeamEx && aTeamGen.id === aTeamEx.id;
+      // Ensure teams are defined and IDs match (if generated is not placeholder)
+      const homeMatches =
+        hTeamGen &&
+        hTeamEx &&
+        ("placeholder" in hTeamGen || hTeamGen.id === hTeamEx.id);
+      const awayMatches =
+        aTeamGen &&
+        aTeamEx &&
+        ("placeholder" in aTeamGen || aTeamGen.id === aTeamEx.id);
 
       if (homeMatches && awayMatches) {
         return {

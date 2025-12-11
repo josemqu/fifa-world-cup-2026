@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   description:
     "Consulta la tabla de posiciones y simula los resultados de la Fase de Grupos del Mundial 2026.",
   openGraph: {
-    title: "Fase de Grupos | FIFA World Cup 2026",
+    title: "Fase de Grupos | World Cup 2026",
     description:
       "Consulta la tabla de posiciones y simula los resultados de la Fase de Grupos del Mundial 2026.",
   },

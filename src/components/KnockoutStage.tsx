@@ -151,12 +151,30 @@ function MatchCard({
       ? displayedAway.placeholder
       : displayedAway?.name;
 
+  const homeProb = prob?.homeTeamProb;
+  const awayProb = prob?.awayTeamProb;
+  const showProbabilities = homeProb !== undefined && awayProb !== undefined;
+
   const isHomePlaceholder =
     !displayedHome || "placeholder" in displayedHome || isHomeProjected;
   const isAwayPlaceholder =
     !displayedAway || "placeholder" in displayedAway || isAwayProjected;
 
   const isMatchupDetermined = !isHomePlaceholder && !isAwayPlaceholder;
+
+  // Determine favorite for determined matches to show visual cue
+  const homeIsFavorite =
+    isMatchupDetermined &&
+    showProbabilities &&
+    homeProb !== undefined &&
+    awayProb !== undefined &&
+    homeProb > awayProb;
+  const awayIsFavorite =
+    isMatchupDetermined &&
+    showProbabilities &&
+    homeProb !== undefined &&
+    awayProb !== undefined &&
+    awayProb > homeProb;
   const canEdit =
     !isHomePlaceholder &&
     !isAwayPlaceholder &&
@@ -342,7 +360,9 @@ function MatchCard({
                     isAwayPlaceholder
                       ? "text-slate-400 italic"
                       : "text-slate-900 dark:text-slate-100",
-                    isAwayProjected && "text-blue-600 dark:text-blue-400"
+                    isAwayProjected && "text-blue-600 dark:text-blue-400",
+                    awayIsFavorite &&
+                      "font-bold text-indigo-700 dark:text-indigo-300"
                   )}
                   title={awayName}
                 >
@@ -361,9 +381,18 @@ function MatchCard({
                   </Tooltip>
                 )}
               </div>
-              {isAwayProjected &&
+              {(isAwayProjected || showProbabilities) &&
                 (prob!.awayTeamProb * 100).toFixed(0) !== "100" && (
-                  <span className="text-[10px] text-blue-500/70 dark:text-blue-400/70 font-mono whitespace-nowrap shrink-0">
+                  <span
+                    className={clsx(
+                      "text-[10px] font-mono whitespace-nowrap shrink-0 transition-colors",
+                      isAwayProjected
+                        ? "text-blue-500/70 dark:text-blue-400/70"
+                        : awayIsFavorite
+                        ? "text-indigo-600 dark:text-indigo-400 font-bold"
+                        : "text-slate-400/70"
+                    )}
+                  >
                     {(prob!.awayTeamProb * 100).toFixed(0)}%
                   </span>
                 )}
