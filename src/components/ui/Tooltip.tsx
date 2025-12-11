@@ -113,10 +113,10 @@ export function Tooltip({
   // 'left': position is at (center, left-gap). We need to translate(-100%, -50%).
 
   const baseClasses = {
-    top: "-translate-y-full",
-    bottom: "",
-    right: "",
-    left: "-translate-x-full",
+    top: "-translate-x-1/2 -translate-y-full",
+    bottom: "-translate-x-1/2",
+    right: "-translate-y-1/2",
+    left: "-translate-x-full -translate-y-1/2",
   };
 
   return (
@@ -136,14 +136,11 @@ export function Tooltip({
               position: "fixed",
               zIndex: 9999,
             }}
-            className={clsx(
-              "pointer-events-none animate-fade-in-up",
-              baseClasses[placement]
-            )}
+            className={clsx("pointer-events-none", baseClasses[placement])}
           >
             <div
               className={twMerge(
-                "relative px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 dark:bg-slate-950 dark:text-slate-200 rounded-lg shadow-xl border border-slate-700/50 dark:border-slate-800 backdrop-blur-sm text-center",
+                "relative px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 dark:bg-slate-950 dark:text-slate-200 rounded-lg shadow-xl border border-slate-700/50 dark:border-slate-800 backdrop-blur-sm text-center animate-fade-in-up",
                 className
               )}
             >
