@@ -75,7 +75,7 @@ export function Header() {
             </div>
             <div>
               <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
-                FIFA World Cup{" "}
+                World Cup{" "}
                 <span className="text-blue-600 dark:text-blue-400">2026</span>
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
