@@ -119,6 +119,13 @@ export function Tooltip({
     left: "-translate-x-full -translate-y-1/2",
   };
 
+  const animationClasses = {
+    top: "animate-fade-in-up",
+    bottom: "animate-fade-in-down",
+    right: "animate-fade-in-right",
+    left: "animate-fade-in-left",
+  };
+
   return (
     <div
       ref={triggerRef}
@@ -140,7 +147,8 @@ export function Tooltip({
           >
             <div
               className={twMerge(
-                "relative px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 dark:bg-slate-950 dark:text-slate-200 rounded-lg shadow-xl border border-slate-700/50 dark:border-slate-800 backdrop-blur-sm text-center animate-fade-in-up",
+                "relative px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 dark:bg-slate-950 dark:text-slate-200 rounded-lg shadow-xl border border-slate-700/50 dark:border-slate-800 backdrop-blur-sm text-center",
+                animationClasses[placement],
                 className
               )}
             >
