@@ -19,9 +19,18 @@ export const poisson = (lambda: number): number => {
   return k - 1;
 };
 
+const gaussianRandom = (): number => {
+  let u = 0;
+  let v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+};
+
 export const predictMatchScore = (
   home: { ranking?: number; fifaPoints?: number } = {},
-  away: { ranking?: number; fifaPoints?: number } = {}
+  away: { ranking?: number; fifaPoints?: number } = {},
+  upsetFactor: number = 0.35
 ): { home: number; away: number } => {
   let diff = 0;
   let factor = 0.02;
@@ -37,8 +46,16 @@ export const predictMatchScore = (
   }
 
   // Base expected goals ~1.4 per team
-  let homeLambda = 1.4 + diff * factor;
-  let awayLambda = 1.4 - diff * factor;
+  const clampedUpset = Math.max(0, Math.min(1, upsetFactor));
+  const compression = 1 - clampedUpset * 0.65;
+  const effectiveDiff = diff * compression;
+
+  let homeLambda = 1.4 + effectiveDiff * factor;
+  let awayLambda = 1.4 - effectiveDiff * factor;
+
+  const noiseSigma = 0.55 * clampedUpset;
+  homeLambda += gaussianRandom() * noiseSigma;
+  awayLambda += gaussianRandom() * noiseSigma;
 
   // Clamp values to be realistic
   homeLambda = Math.max(0.2, Math.min(5.0, homeLambda));
