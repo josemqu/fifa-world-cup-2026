@@ -9,9 +9,27 @@ export interface TeamAnalysis {
 }
 
 export const analyzeGroup = (group: Group): Record<string, TeamAnalysis> => {
+  const playedMatches = group.matches.filter(
+    (m) => m.homeScore != null && m.awayScore != null
+  );
+
+  if (playedMatches.length === 0) {
+    const result: Record<string, TeamAnalysis> = {};
+    const teamCount = group.teams.length;
+    group.teams.forEach((t) => {
+      result[t.id] = {
+        minRank: 1,
+        maxRank: teamCount,
+        isQualified: false,
+        isPositionLocked: false,
+      };
+    });
+    return result;
+  }
+
   // Find unplayed matches
   const unplayedMatches = group.matches.filter(
-    (m) => m.homeScore === null || m.awayScore === null
+    (m) => m.homeScore == null || m.awayScore == null
   );
 
   // If no matches are unplayed, the current standing is the final result

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { GroupCard } from "./GroupCard";
 import { Group } from "@/data/types";
 import { Eye, EyeOff, Trash2 } from "lucide-react";
@@ -12,6 +12,7 @@ import {
   getSortedThirdPlaceTeams,
 } from "@/utils/knockoutUtils";
 import { ThirdPlaceTable } from "@/components/ThirdPlaceTable";
+import { estimateBestThirdQualificationProbabilities } from "@/utils/thirdPlaceMonteCarlo";
 
 interface GroupStageProps {
   groups: Group[];
@@ -26,11 +27,35 @@ interface GroupStageProps {
 export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
   const { simulateGroups, resetTournament } = useTournament();
 
-  const { sortedThirds, qualifiedThirdIds } = useMemo(() => {
-    const { thirdPlaceTeams } = getGroupStandings(groups);
-    const sorted = getSortedThirdPlaceTeams(thirdPlaceTeams);
-    const top8Ids = new Set(sorted.slice(0, 8).map((t) => t.id));
-    return { sortedThirds: sorted, qualifiedThirdIds: top8Ids };
+  const [thirdQualificationProbabilities, setThirdQualificationProbabilities] =
+    useState<Record<string, number> | null>(null);
+
+  const { sortedThirds, qualifiedThirdIds, isGroupStageComplete } =
+    useMemo(() => {
+      const { thirdPlaceTeams } = getGroupStandings(groups);
+      const sorted = getSortedThirdPlaceTeams(thirdPlaceTeams);
+      const stageComplete = groups.every((g) =>
+        g.matches.every((m) => m.homeScore != null && m.awayScore != null)
+      );
+      const top8Ids = stageComplete
+        ? new Set(sorted.slice(0, 8).map((t) => t.id))
+        : new Set<string>();
+      return {
+        sortedThirds: sorted,
+        qualifiedThirdIds: top8Ids,
+        isGroupStageComplete: stageComplete,
+      };
+    }, [groups]);
+
+  useEffect(() => {
+    // Monte Carlo estimation can be a bit heavy; defer it to avoid blocking render.
+    setThirdQualificationProbabilities(null);
+    const t = setTimeout(() => {
+      setThirdQualificationProbabilities(
+        estimateBestThirdQualificationProbabilities(groups, 1200)
+      );
+    }, 0);
+    return () => clearTimeout(t);
   }, [groups]);
 
   // Store which groups have their matches HIDDEN.
@@ -84,7 +109,13 @@ export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
       </div>
 
       <div className="max-w-4xl mx-auto w-full">
-        <ThirdPlaceTable teams={sortedThirds} />
+        <ThirdPlaceTable
+          teams={sortedThirds}
+          showQualification={isGroupStageComplete}
+          qualificationProbabilities={
+            thirdQualificationProbabilities ?? undefined
+          }
+        />
       </div>
 
       <FloatingContainer>

@@ -188,6 +188,7 @@ export function GroupCard({
                             />
                           </Tooltip>
                         )}
+
                       {analysis[team.id]?.isPositionLocked && (
                         <Tooltip
                           content={`Posición asegurada (${index + 1}º)`}

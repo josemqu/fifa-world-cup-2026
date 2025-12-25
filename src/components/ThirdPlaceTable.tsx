@@ -7,9 +7,15 @@ import { CheckCircle2 } from "lucide-react";
 
 interface ThirdPlaceTableProps {
   teams: Team[];
+  showQualification?: boolean;
+  qualificationProbabilities?: Record<string, number>;
 }
 
-export function ThirdPlaceTable({ teams }: ThirdPlaceTableProps) {
+export function ThirdPlaceTable({
+  teams,
+  showQualification = false,
+  qualificationProbabilities,
+}: ThirdPlaceTableProps) {
   // We expect 'teams' to be already sorted by performance
   const top8 = teams.slice(0, 8);
   const qualifiedIds = new Set(top8.map((t) => t.id));
@@ -50,11 +56,16 @@ export function ThirdPlaceTable({ teams }: ThirdPlaceTableProps) {
               <th scope="col" className="px-2 py-2 text-center w-10">
                 G
               </th>
+              <th scope="col" className="px-2 py-2 text-center w-14">
+                Prob.
+              </th>
             </tr>
           </thead>
           <tbody>
             {teams.map((team, index) => {
-              const isQualified = qualifiedIds.has(team.id);
+              const isQualified =
+                showQualification && qualifiedIds.has(team.id);
+              const prob = qualificationProbabilities?.[team.id];
               return (
                 <tr
                   key={team.id}
@@ -104,6 +115,15 @@ export function ThirdPlaceTable({ teams }: ThirdPlaceTableProps) {
                   </td>
                   <td className="px-2 py-2 text-center text-slate-600 dark:text-slate-400">
                     {team.won}
+                  </td>
+                  <td className="px-2 py-2 text-center font-mono text-xs text-slate-500 dark:text-slate-400">
+                    {showQualification
+                      ? isQualified
+                        ? "100%"
+                        : "0%"
+                      : prob != null
+                      ? `${Math.round(prob * 100)}%`
+                      : "-"}
                   </td>
                 </tr>
               );
