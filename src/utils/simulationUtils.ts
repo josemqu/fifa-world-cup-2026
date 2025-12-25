@@ -1,5 +1,6 @@
 import { Group, Team, KnockoutMatch } from "@/data/types";
 import { generateR32Matches } from "@/utils/knockoutUtils";
+import { predictWorldCupMatch } from "@/utils/poissonMatchPrediction";
 import {
   R16_MATCHES,
   QF_MATCHES,
@@ -27,43 +28,94 @@ const gaussianRandom = (): number => {
   return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
 };
 
+const rankingToPseudoPoints = (ranking?: number): number => {
+  // Deterministic fallback when FIFA points are missing.
+  // Keeps ordering: better ranking -> higher points.
+  const r = ranking ?? 50;
+  const points = 2000 - r * 10;
+  return Math.max(1000, Math.min(2000, points));
+};
+
+const getTeamFifaPoints = (
+  team: { fifaPoints?: number; ranking?: number } = {}
+): number => {
+  return team.fifaPoints ?? rankingToPseudoPoints(team.ranking);
+};
+
+const getIsHost = (team: any): boolean => {
+  return Boolean(team?.es_anfitrion ?? team?.isHost ?? team?.host);
+};
+
+const decidePenaltyWinnerIsHome = (we: number): boolean => {
+  return Math.random() < we;
+};
+
+const generatePenaltyShootout = (homeWins: boolean) => {
+  const simulate = (pHome: number, pAway: number) => {
+    let homePens = 0;
+    let awayPens = 0;
+    let homeTaken = 0;
+    let awayTaken = 0;
+
+    const homeRemaining = () => 5 - homeTaken;
+    const awayRemaining = () => 5 - awayTaken;
+
+    while (homeTaken < 5 || awayTaken < 5) {
+      if (homeTaken < 5) {
+        homeTaken++;
+        if (Math.random() < pHome) homePens++;
+      }
+      if (awayTaken < 5) {
+        awayTaken++;
+        if (Math.random() < pAway) awayPens++;
+      }
+
+      if (homePens > awayPens + awayRemaining()) break;
+      if (awayPens > homePens + homeRemaining()) break;
+    }
+
+    while (homePens === awayPens) {
+      const homeGoal = Math.random() < pHome;
+      const awayGoal = Math.random() < pAway;
+      if (homeGoal) homePens++;
+      if (awayGoal) awayPens++;
+    }
+
+    return { homePens, awayPens };
+  };
+
+  let result = simulate(0.75, 0.7);
+
+  if (homeWins && result.homePens < result.awayPens) {
+    result = { homePens: result.awayPens, awayPens: result.homePens };
+  }
+  if (!homeWins && result.awayPens < result.homePens) {
+    result = { homePens: result.awayPens, awayPens: result.homePens };
+  }
+
+  return result;
+};
+
 export const predictMatchScore = (
   home: { ranking?: number; fifaPoints?: number } = {},
   away: { ranking?: number; fifaPoints?: number } = {},
-  upsetFactor: number = 0.35
+  _upsetFactor: number = 0.35
 ): { home: number; away: number } => {
-  let diff = 0;
-  let factor = 0.02;
+  const puntosA = getTeamFifaPoints(home);
+  const puntosB = getTeamFifaPoints(away);
 
-  if (home.fifaPoints && away.fifaPoints) {
-    diff = home.fifaPoints - away.fifaPoints; // Positive if home is better (higher points)
-    factor = 0.003; // Approx 0.003 for points (e.g. 100 diff -> 0.3 goals)
-  } else {
-    const homeRank = home.ranking || 50;
-    const awayRank = away.ranking || 50;
-    diff = awayRank - homeRank; // Positive if home is better (lower rank)
-    factor = 0.02; // Approx 0.02 for rank (e.g. 15 diff -> 0.3 goals)
-  }
-
-  // Base expected goals ~1.4 per team
-  const clampedUpset = Math.max(0, Math.min(1, upsetFactor));
-  const compression = 1 - clampedUpset * 0.65;
-  const effectiveDiff = diff * compression;
-
-  let homeLambda = 1.4 + effectiveDiff * factor;
-  let awayLambda = 1.4 - effectiveDiff * factor;
-
-  const noiseSigma = 0.55 * clampedUpset;
-  homeLambda += gaussianRandom() * noiseSigma;
-  awayLambda += gaussianRandom() * noiseSigma;
-
-  // Clamp values to be realistic
-  homeLambda = Math.max(0.2, Math.min(5.0, homeLambda));
-  awayLambda = Math.max(0.2, Math.min(5.0, awayLambda));
+  const prediction = predictWorldCupMatch({
+    puntosA,
+    puntosB,
+    es_anfitrionA: getIsHost(home),
+    es_anfitrionB: getIsHost(away),
+    es_eliminacion_directa: false,
+  });
 
   return {
-    home: poisson(homeLambda),
-    away: poisson(awayLambda),
+    // Clamp to keep UI stable and consistent with 0..6 modelling.
+    home: Math.min(6, poisson(prediction.lambdaA)),
+    away: Math.min(6, poisson(prediction.lambdaB)),
   };
 };
 
@@ -275,19 +327,23 @@ export const runKnockoutSimulation = (
         } else if (away > home) {
           winner = match.awayTeam as Team;
         } else {
-          // Penalties
-          let homePens = 0;
-          let awayPens = 0;
-          do {
-            homePens = Math.floor(Math.random() * 5) + 3;
-            awayPens = Math.floor(Math.random() * 5) + 3;
-          } while (homePens === awayPens);
+          const puntosA = getTeamFifaPoints(hTeam);
+          const puntosB = getTeamFifaPoints(aTeam);
+          const { we } = predictWorldCupMatch({
+            puntosA,
+            puntosB,
+            es_anfitrionA: getIsHost(hTeam),
+            es_anfitrionB: getIsHost(aTeam),
+            es_eliminacion_directa: true,
+          });
 
+          const homeWins = decidePenaltyWinnerIsHome(we);
+          const { homePens, awayPens } = generatePenaltyShootout(homeWins);
           match.homePenalties = homePens;
           match.awayPenalties = awayPens;
-
-          if (homePens > awayPens) winner = match.homeTeam as Team;
-          else winner = match.awayTeam as Team;
+          winner = homeWins
+            ? (match.homeTeam as Team)
+            : (match.awayTeam as Team);
         }
         match.winner = winner;
       } else {
@@ -310,21 +366,30 @@ export const runKnockoutSimulation = (
             }
           } else {
             // Tied but no penalties entered yet. Simulate them to determine a winner for progression.
-            let homePens = 0;
-            let awayPens = 0;
-            do {
-              homePens = Math.floor(Math.random() * 5) + 3;
-              awayPens = Math.floor(Math.random() * 5) + 3;
-            } while (homePens === awayPens);
+            const hTeam = match.homeTeam as Team;
+            const aTeam = match.awayTeam as Team;
+
+            const puntosA = getTeamFifaPoints(hTeam);
+            const puntosB = getTeamFifaPoints(aTeam);
+            const { we } = predictWorldCupMatch({
+              puntosA,
+              puntosB,
+              es_anfitrionA: getIsHost(hTeam),
+              es_anfitrionB: getIsHost(aTeam),
+              es_eliminacion_directa: true,
+            });
+
+            const homeWins = decidePenaltyWinnerIsHome(we);
+            const { homePens, awayPens } = generatePenaltyShootout(homeWins);
 
             // We only set these for the simulation instance
             // If this is the "Simulate" button, these values will be saved.
             // If this is probability calc, they are transient.
             match.homePenalties = homePens;
             match.awayPenalties = awayPens;
-
-            if (homePens > awayPens) winner = match.homeTeam as Team;
-            else winner = match.awayTeam as Team;
+            winner = homeWins
+              ? (match.homeTeam as Team)
+              : (match.awayTeam as Team);
           }
           match.winner = winner;
         }
