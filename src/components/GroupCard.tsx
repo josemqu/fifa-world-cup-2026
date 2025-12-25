@@ -150,19 +150,19 @@ export function GroupCard({
                         : "bg-transparent"
                     )}
                   />
-                  <div className="flex items-center">
+                  <div className="flex items-center min-w-0 flex-1">
                     <TeamFlag
                       teamName={team.name}
-                      className="w-5 h-3.5 mr-2 shadow-sm"
+                      className="w-5 h-3.5 mr-2 shadow-sm shrink-0"
                     />
                     <Tooltip content={team.name} placement="right">
-                      <span className="cursor-help mr-1">
+                      <span className="cursor-help mr-1 truncate">
                         {getTeamAbbreviation(team.name)}
                       </span>
                     </Tooltip>
 
                     {/* Qualification/Lock Indicators */}
-                    <div className="flex gap-0.5 ml-1">
+                    <div className="flex gap-0.5 ml-1 shrink-0">
                       {analysis[team.id]?.isQualified && (
                         <Tooltip
                           content="Clasificado a la siguiente fase"
