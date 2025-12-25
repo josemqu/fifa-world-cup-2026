@@ -620,8 +620,6 @@ export function KnockoutStage({
 }: KnockoutStageProps) {
   const { dbUser } = useAuth();
   const { simulateKnockout, simulateAll, resetTournament } = useTournament();
-  const { thirdPlaceTeams } = getGroupStandings(groups);
-  const sortedThirds = getSortedThirdPlaceTeams(thirdPlaceTeams);
 
   // Helper to chunk matches into pairs
   const pairMatches = (matchList: KnockoutMatch[]) => {
@@ -935,78 +933,8 @@ export function KnockoutStage({
         </div>
       </div>
 
-      {/* Third Place Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden max-w-4xl">
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
-          <h3 className="font-bold text-slate-900 dark:text-slate-100">
-            Mejores Terceros
-          </h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Los 8 mejores clasifican a 16avos de final
-          </p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="text-xs text-slate-500 dark:text-slate-400 uppercase bg-slate-50 dark:bg-slate-900/50">
-              <tr>
-                <th className="px-4 py-3 font-medium">#</th>
-                <th className="px-4 py-3 font-medium">Grp</th>
-                <th className="px-4 py-3 font-medium">Equipo</th>
-                <th className="px-4 py-3 font-medium text-center">Pts</th>
-                <th className="px-4 py-3 font-medium text-center">Dif</th>
-                <th className="px-4 py-3 font-medium text-center">GF</th>
-                <th className="px-4 py-3 font-medium text-center">PG</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-              {sortedThirds.map((team, index) => {
-                const isQualified = index < 8;
-                return (
-                  <tr
-                    key={team.id}
-                    className={clsx(
-                      "transition-colors",
-                      isQualified
-                        ? "bg-green-50/50 dark:bg-green-900/10"
-                        : "opacity-60"
-                    )}
-                  >
-                    <td className="px-4 py-3 font-mono text-slate-500">
-                      {index + 1}
-                    </td>
-                    <td className="px-4 py-3 font-bold text-slate-700 dark:text-slate-300">
-                      {team.group}
-                    </td>
-                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
-                      <div className="flex items-center gap-2">
-                        <TeamFlag
-                          teamName={team.name}
-                          className="w-5 h-3.5 shadow-sm"
-                        />
-                        {team.code && (
-                          <span className="font-mono text-xs text-slate-400 w-8">
-                            {team.code}
-                          </span>
-                        )}
-                        {team.name}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-center font-bold">
-                      {team.pts}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {team.gf - team.ga > 0 ? "+" : ""}
-                      {team.gf - team.ga}
-                    </td>
-                    <td className="px-4 py-3 text-center">{team.gf}</td>
-                    <td className="px-4 py-3 text-center">{team.won}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* Third Place Table Removed (Migrated to GroupStage) */}
+
       <FloatingContainer>
         <FloatingButton
           onClick={simulateKnockout}

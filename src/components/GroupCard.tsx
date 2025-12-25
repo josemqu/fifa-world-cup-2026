@@ -3,7 +3,9 @@ import { clsx } from "clsx";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { getTeamAbbreviation } from "@/utils/teamAbbreviations";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, CheckCircle2, Lock } from "lucide-react";
+import { analyzeGroup } from "@/utils/groupAnalysis";
+import { useMemo } from "react";
 
 interface GroupCardProps {
   group: Group;
@@ -15,6 +17,7 @@ interface GroupCardProps {
   ) => void;
   showMatches?: boolean;
   onToggleMatches?: () => void;
+  qualifiedThirdIds?: Set<string>;
 }
 
 export function GroupCard({
@@ -22,13 +25,18 @@ export function GroupCard({
   onMatchUpdate,
   showMatches = true,
   onToggleMatches,
+  qualifiedThirdIds,
 }: GroupCardProps) {
-  // Sort teams by points, then GD, then GF (simplified logic for now)
-  const sortedTeams = [...group.teams].sort((a, b) => {
-    if (b.pts !== a.pts) return b.pts - a.pts;
-    if (b.gf - b.ga !== a.gf - a.ga) return b.gf - b.ga - (a.gf - a.ga);
-    return b.gf - a.gf;
-  });
+  const sortedTeams = useMemo(() => {
+    return [...group.teams].sort((a, b) => {
+      if (b.pts !== a.pts) return b.pts - a.pts;
+      if (b.gf - b.ga !== a.gf - a.ga) return b.gf - b.ga - (a.gf - a.ga);
+      if (b.gf !== a.gf) return b.gf - a.gf;
+      return b.won - a.won;
+    });
+  }, [group.teams]);
+
+  const analysis = useMemo(() => analyzeGroup(group), [group]);
 
   const getTeamName = (id: string) => {
     const team = group.teams.find((t) => t.id === id);
@@ -124,7 +132,9 @@ export function GroupCard({
                 key={team.id}
                 className={clsx(
                   "border-b border-slate-100 dark:border-slate-700/50 last:border-none hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors",
-                  index < 2 ? "bg-green-50/30 dark:bg-green-900/10" : ""
+                  index < 2 || (index === 2 && qualifiedThirdIds?.has(team.id))
+                    ? "bg-green-50/30 dark:bg-green-900/10"
+                    : ""
                 )}
               >
                 <td className="px-2 py-1 pl-4 font-medium text-slate-900 dark:text-slate-100 flex items-center gap-1.5 relative h-8">
@@ -133,20 +143,64 @@ export function GroupCard({
                       "w-1 h-full absolute left-0 top-0",
                       index < 2
                         ? "bg-green-500"
+                        : index === 2 && qualifiedThirdIds?.has(team.id)
+                        ? "bg-green-500"
                         : index === 2
                         ? "bg-yellow-400/50"
                         : "bg-transparent"
                     )}
                   />
-                  <TeamFlag
-                    teamName={team.name}
-                    className="w-5 h-3.5 mr-2 shadow-sm"
-                  />
-                  <Tooltip content={team.name} placement="right">
-                    <span className="cursor-help">
-                      {getTeamAbbreviation(team.name)}
-                    </span>
-                  </Tooltip>
+                  <div className="flex items-center">
+                    <TeamFlag
+                      teamName={team.name}
+                      className="w-5 h-3.5 mr-2 shadow-sm"
+                    />
+                    <Tooltip content={team.name} placement="right">
+                      <span className="cursor-help mr-1">
+                        {getTeamAbbreviation(team.name)}
+                      </span>
+                    </Tooltip>
+
+                    {/* Qualification/Lock Indicators */}
+                    <div className="flex gap-0.5 ml-1">
+                      {analysis[team.id]?.isQualified && (
+                        <Tooltip
+                          content="Clasificado a la siguiente fase"
+                          placement="top"
+                        >
+                          <CheckCircle2
+                            size={14}
+                            className="text-green-600 dark:text-green-400"
+                          />
+                        </Tooltip>
+                      )}
+                      {/* Check for Qualified Best Third Place */}
+                      {!analysis[team.id]?.isQualified &&
+                        index === 2 &&
+                        qualifiedThirdIds?.has(team.id) && (
+                          <Tooltip
+                            content="Clasificado como mejor tercero"
+                            placement="top"
+                          >
+                            <CheckCircle2
+                              size={14}
+                              className="text-green-600 dark:text-green-400"
+                            />
+                          </Tooltip>
+                        )}
+                      {analysis[team.id]?.isPositionLocked && (
+                        <Tooltip
+                          content={`Posición asegurada (${index + 1}º)`}
+                          placement="top"
+                        >
+                          <Lock
+                            size={14}
+                            className="text-slate-400 dark:text-slate-500"
+                          />
+                        </Tooltip>
+                      )}
+                    </div>
+                  </div>
                 </td>
                 <td className="px-1 py-1 text-center text-slate-600 dark:text-slate-400">
                   {team.played}

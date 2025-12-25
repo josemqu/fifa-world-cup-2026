@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { GroupCard } from "./GroupCard";
 import { Group } from "@/data/types";
 import { Eye, EyeOff, Trash2 } from "lucide-react";
@@ -7,6 +7,11 @@ import {
   FloatingContainer,
   FloatingButton,
 } from "@/components/ui/FloatingActions";
+import {
+  getGroupStandings,
+  getSortedThirdPlaceTeams,
+} from "@/utils/knockoutUtils";
+import { ThirdPlaceTable } from "@/components/ThirdPlaceTable";
 
 interface GroupStageProps {
   groups: Group[];
@@ -20,6 +25,13 @@ interface GroupStageProps {
 
 export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
   const { simulateGroups, resetTournament } = useTournament();
+
+  const { sortedThirds, qualifiedThirdIds } = useMemo(() => {
+    const { thirdPlaceTeams } = getGroupStandings(groups);
+    const sorted = getSortedThirdPlaceTeams(thirdPlaceTeams);
+    const top8Ids = new Set(sorted.slice(0, 8).map((t) => t.id));
+    return { sortedThirds: sorted, qualifiedThirdIds: top8Ids };
+  }, [groups]);
 
   // Store which groups have their matches HIDDEN.
   // We initialize with all groups hidden by default as requested.
@@ -66,8 +78,13 @@ export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
             onMatchUpdate={onMatchUpdate}
             showMatches={!hiddenGroups[group.name]}
             onToggleMatches={() => toggleGroup(group.name)}
+            qualifiedThirdIds={qualifiedThirdIds}
           />
         ))}
+      </div>
+
+      <div className="max-w-4xl mx-auto w-full">
+        <ThirdPlaceTable teams={sortedThirds} />
       </div>
 
       <FloatingContainer>

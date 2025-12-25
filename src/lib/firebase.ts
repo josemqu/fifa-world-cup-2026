@@ -11,17 +11,6 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Debug: Check which config values are present and their format
-console.log("Firebase Config Debug:", {
-  apiKey: firebaseConfig.apiKey
-    ? `${firebaseConfig.apiKey.substring(0, 5)}...`
-    : "MISSING",
-  authDomain: firebaseConfig.authDomain,
-  projectId: firebaseConfig.projectId,
-  storageBucket: firebaseConfig.storageBucket,
-  appId: firebaseConfig.appId,
-});
-
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
