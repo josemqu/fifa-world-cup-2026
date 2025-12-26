@@ -1,8 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
+import { useState, useMemo, type ReactNode } from "react";
 import { useTournament } from "@/context/TournamentContext";
 import { runMonteCarloSimulation, PredictionResult } from "@/utils/monteCarlo";
 import { simulateTournament } from "@/utils/simulationUtils";
@@ -26,8 +24,6 @@ type SortColumn =
   | "r32Count";
 
 export default function PredictionsPage() {
-  const router = useRouter();
-  const { dbUser, loading } = useAuth();
   const { groups } = useTournament();
 
   const [results, setResults] = useState<PredictionResult[]>([]);
@@ -44,12 +40,6 @@ export default function PredictionsPage() {
     finalists: Team[];
     matches: KnockoutMatch[];
   } | null>(null);
-
-  useEffect(() => {
-    if (!loading && dbUser?.role !== "admin") {
-      router.push("/");
-    }
-  }, [loading, dbUser, router]);
 
   const handleRun = async (numIterations: number = iterations) => {
     setIsRunning(true);
@@ -184,7 +174,7 @@ export default function PredictionsPage() {
     align = "right",
   }: {
     column: SortColumn;
-    label: React.ReactNode;
+    label: ReactNode;
     align?: "left" | "right";
   }) => (
     <th
@@ -211,10 +201,6 @@ export default function PredictionsPage() {
       </div>
     </th>
   );
-
-  if (loading || dbUser?.role !== "admin") {
-    return null; // Or a loading spinner
-  }
 
   return (
     <PageTransition className="max-w-[1600px] mx-auto p-4 md:p-4">
