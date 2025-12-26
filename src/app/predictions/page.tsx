@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, type ReactNode } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { useTournament } from "@/context/TournamentContext";
 import { runMonteCarloSimulation, PredictionResult } from "@/utils/monteCarlo";
 import { simulateTournament } from "@/utils/simulationUtils";
@@ -24,7 +25,9 @@ type SortColumn =
   | "r32Count";
 
 export default function PredictionsPage() {
+  const { user, loading } = useAuth();
   const { groups } = useTournament();
+  const canRunSimulation = !!user && !loading;
 
   const [results, setResults] = useState<PredictionResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
@@ -239,9 +242,11 @@ export default function PredictionsPage() {
                   onChange={(e) => {
                     const val = Number(e.target.value);
                     setIterations(val);
-                    handleRun(val);
+                    if (canRunSimulation) {
+                      handleRun(val);
+                    }
                   }}
-                  disabled={isRunning}
+                  disabled={isRunning || !canRunSimulation}
                   className="bg-slate-100 dark:bg-slate-800 border-none rounded-lg px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
                 >
                   <option value={100}>100 simulaciones</option>
@@ -254,10 +259,10 @@ export default function PredictionsPage() {
 
                 <button
                   onClick={() => handleRun()}
-                  disabled={isRunning}
+                  disabled={isRunning || !canRunSimulation}
                   className={clsx(
                     "min-w-[220px] px-6 py-2 rounded-lg font-bold text-white transition-all shadow-md active:scale-95 flex justify-center items-center",
-                    isRunning
+                    isRunning || !canRunSimulation
                       ? "bg-slate-400 cursor-not-allowed"
                       : "bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25"
                   )}
@@ -291,6 +296,11 @@ export default function PredictionsPage() {
                   )}
                 </button>
               </div>
+              {!loading && !user && (
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  Para correr la simulación debés registrarte e iniciar sesión.
+                </div>
+              )}
               <div
                 className={clsx(
                   "flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-mono transition-opacity duration-300",
@@ -424,8 +434,8 @@ export default function PredictionsPage() {
 
       {/* Verification Modal */}
       {showVerification && sampleResult && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800">
+        <div className="fixed inset-0 z-80 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="verification-modal-scroll bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
               <div className="flex items-center gap-2">
