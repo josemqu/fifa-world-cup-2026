@@ -182,23 +182,29 @@ export default function PredictionsMethodologyPage() {
                 según We.
               </p>
               <div className="mt-3 grid grid-cols-1 gap-2">
-                <div className="rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 text-slate-700 dark:text-slate-200 overflow-x-auto">
-                  <BlockMath
-                    math={String.raw`\text{GOLES\_BASE} = 2.6`}
-                    settings={KATEX_SETTINGS}
-                  />
+                <div className="rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 text-slate-700 dark:text-slate-200 overflow-hidden flex justify-center">
+                  <div className="scale-[0.98] origin-center">
+                    <BlockMath
+                      math={String.raw`\text{GOLES\_BASE} = 2.6`}
+                      settings={KATEX_SETTINGS}
+                    />
+                  </div>
                 </div>
-                <div className="rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 text-slate-700 dark:text-slate-200 overflow-x-auto">
-                  <BlockMath
-                    math={String.raw`\lambda_A = \text{GOLES\_BASE} \cdot W_e`}
-                    settings={KATEX_SETTINGS}
-                  />
+                <div className="rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 text-slate-700 dark:text-slate-200 overflow-hidden flex justify-center">
+                  <div className="scale-[0.96] origin-center">
+                    <BlockMath
+                      math={String.raw`\lambda_A = \text{GOLES\_BASE} \cdot W_e`}
+                      settings={KATEX_SETTINGS}
+                    />
+                  </div>
                 </div>
-                <div className="rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 text-slate-700 dark:text-slate-200 overflow-x-auto">
-                  <BlockMath
-                    math={String.raw`\lambda_B = \text{GOLES\_BASE} \cdot (1 - W_e)`}
-                    settings={KATEX_SETTINGS}
-                  />
+                <div className="rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 text-slate-700 dark:text-slate-200 overflow-hidden flex justify-center">
+                  <div className="scale-[0.92] origin-center">
+                    <BlockMath
+                      math={String.raw`\lambda_B = \text{GOLES\_BASE} \cdot (1 - W_e)`}
+                      settings={KATEX_SETTINGS}
+                    />
+                  </div>
                 </div>
               </div>
               <div className="mt-3 text-xs text-slate-500 dark:text-slate-400">
