@@ -9,6 +9,7 @@ import { simulateTournament } from "@/utils/simulationUtils";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { Info, Timer, CheckCircle2, X } from "lucide-react";
+import Link from "next/link";
 import { clsx } from "clsx";
 import { Team, KnockoutMatch } from "@/data/types";
 import { PageTransition } from "@/components/PageTransition";
@@ -232,6 +233,13 @@ export default function PredictionsPage() {
 
             <div className="flex flex-col items-end gap-2">
               <div className="flex items-center gap-4">
+                <Link
+                  href="/predictions/metodologia"
+                  className="px-4 py-2 rounded-lg font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
+                >
+                  <Info className="w-4 h-4" />
+                  Cómo funciona
+                </Link>
                 <button
                   onClick={handleVerify}
                   className="px-4 py-2 rounded-lg font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
