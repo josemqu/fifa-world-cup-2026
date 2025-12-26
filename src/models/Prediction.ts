@@ -12,7 +12,7 @@ export interface IPrediction extends Document {
 
 const PredictionSchema: Schema = new Schema(
   {
-    firebaseUid: { type: String, required: true, index: true },
+    firebaseUid: { type: String, required: true },
     groupStage: { type: Schema.Types.Mixed, required: true },
     knockoutStage: { type: Schema.Types.Mixed, required: true },
     champion: { type: String },
