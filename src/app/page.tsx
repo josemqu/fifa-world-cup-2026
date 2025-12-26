@@ -38,6 +38,12 @@ export default function Home() {
               >
                 Ver Fase Eliminatoria
               </Link>
+              <Link
+                href="/predictions"
+                className="inline-flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 px-5 py-3 text-sm font-bold border border-slate-200 dark:border-slate-700 shadow-sm transition-colors"
+              >
+                Ver Predicciones
+              </Link>
             </div>
           </div>
         </div>
@@ -56,11 +62,18 @@ export default function Home() {
 
         <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/60 backdrop-blur-md p-6 shadow-sm">
           <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
-            Simulación rápida
+            Predicciones
           </h3>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-            Probá escenarios y mirá cómo cambia el cuadro con tus resultados.
+            Corré una simulación de Montecarlo para estimar probabilidades de
+            campeón y de avance por ronda.
           </p>
+          <Link
+            href="/predictions"
+            className="mt-4 inline-flex text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            Ir a Predicciones
+          </Link>
         </div>
 
         <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/60 backdrop-blur-md p-6 shadow-sm">
