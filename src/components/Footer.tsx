@@ -1,4 +1,5 @@
 import { Github } from "lucide-react";
+import Link from "next/link";
 
 export function Footer() {
   return (
@@ -11,6 +12,11 @@ export function Footer() {
             <a className="underline" href="https://github.com/josemqu">
               josemqu
             </a>
+          </p>
+          <p className="mt-2">
+            <Link href="/condiciones" className="underline">
+              Términos y Condiciones
+            </Link>
           </p>
         </div>
 
