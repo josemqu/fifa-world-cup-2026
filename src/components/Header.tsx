@@ -10,14 +10,24 @@ import { useState, useRef, useEffect } from "react";
 
 export function Header() {
   const pathname = usePathname();
-  const { user, loginWithGoogle, logout, loading, setProfileModalOpen } =
-    useAuth();
+  const {
+    user,
+    dbUser,
+    loginWithGoogle,
+    logout,
+    loading,
+    setProfileModalOpen,
+  } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const isGroups = pathname === "/groups" || pathname === "/";
+  const isHome = pathname === "/";
+  const isGroups = pathname === "/groups";
   const isKnockout = pathname === "/knockout";
   const isPredictions = pathname === "/predictions";
+  const ADMIN_EMAIL = "mailjmq@gmail.com";
+  const normalizedEmail = user?.email?.trim().toLowerCase();
+  const isAdmin = dbUser?.role === "admin" || normalizedEmail === ADMIN_EMAIL;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -82,6 +92,17 @@ export function Header() {
         {/* Tabs Section */}
         <nav className="flex p-1 gap-2 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl w-full md:w-auto backdrop-blur-sm md:absolute md:left-1/2 md:-translate-x-1/2">
           <Link
+            href="/"
+            className={clsx(
+              "w-full md:w-28 lg:w-32 rounded-lg py-2 text-sm font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200",
+              isHome
+                ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm"
+                : "text-slate-500 dark:text-slate-400 hover:bg-white/40 hover:text-slate-700 dark:hover:text-slate-200"
+            )}
+          >
+            Inicio
+          </Link>
+          <Link
             href="/groups"
             className={clsx(
               "w-full md:w-32 lg:w-40 rounded-lg py-2 text-sm font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200",
@@ -103,17 +124,19 @@ export function Header() {
           >
             Fase Eliminatoria
           </Link>
-          <Link
-            href="/predictions"
-            className={clsx(
-              "w-full md:w-32 lg:w-40 rounded-lg py-2 text-sm font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200",
-              isPredictions
-                ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm"
-                : "text-slate-500 dark:text-slate-400 hover:bg-white/40 hover:text-slate-700 dark:hover:text-slate-200"
-            )}
-          >
-            Predicciones
-          </Link>
+          {isAdmin && (
+            <Link
+              href="/predictions"
+              className={clsx(
+                "w-full md:w-32 lg:w-40 rounded-lg py-2 text-sm font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200",
+                isPredictions
+                  ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm"
+                  : "text-slate-500 dark:text-slate-400 hover:bg-white/40 hover:text-slate-700 dark:hover:text-slate-200"
+              )}
+            >
+              Predicciones
+            </Link>
+          )}
         </nav>
 
         {/* User Section */}
