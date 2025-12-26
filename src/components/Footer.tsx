@@ -13,11 +13,15 @@ export function Footer() {
               josemqu
             </a>
           </p>
-          <p className="mt-2">
+          <div className="mt-2 flex items-center justify-center md:justify-start gap-3">
             <Link href="/condiciones" className="underline">
               Términos y Condiciones
             </Link>
-          </p>
+            <span className="opacity-50">|</span>
+            <Link href="/privacidad" className="underline">
+              Privacidad
+            </Link>
+          </div>
         </div>
 
         <a
