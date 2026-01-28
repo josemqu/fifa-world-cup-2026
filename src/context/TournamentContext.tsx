@@ -410,8 +410,6 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     setGroups((currentGroups) => {
       return currentGroups.map((group) => {
         const updatedMatches = group.matches.map((match) => {
-          if (match.finished) return match;
-
           const homeTeam = group.teams.find((t) => t.id === match.homeTeamId);
           const awayTeam = group.teams.find((t) => t.id === match.awayTeamId);
 
@@ -432,12 +430,30 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
 
   const simulateKnockout = () => {
     setKnockoutMatches((currentMatches) => {
-      return runKnockoutSimulation(currentMatches);
+      const resetMatches = currentMatches.map((m) => ({
+        ...m,
+        homeScore: null,
+        awayScore: null,
+        homePenalties: null,
+        awayPenalties: null,
+        winner: null,
+      }));
+      return runKnockoutSimulation(resetMatches);
     });
   };
 
   const simulateAll = () => {
-    const result = simulateTournament(groups, knockoutMatches);
+    const resetGroups = groups.map((group) => ({
+      ...group,
+      matches: group.matches.map((match) => ({
+        ...match,
+        homeScore: null,
+        awayScore: null,
+        finished: false,
+      })),
+    }));
+
+    const result = simulateTournament(resetGroups, []);
     setGroups(result.groups);
     setKnockoutMatches(result.knockoutMatches);
   };
