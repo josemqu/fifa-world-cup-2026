@@ -1,4 +1,4 @@
-import { Group, Team } from "@/data/types";
+import { Group, KnockoutMatch, Team } from "@/data/types";
 import { simulateTournament } from "@/utils/simulationUtils";
 
 export type PredictionResult = {
@@ -17,7 +17,8 @@ export type PredictionResult = {
 
 export const runMonteCarloSimulation = async (
   currentGroups: Group[],
-  iterations: number = 1000
+  currentKnockoutMatches: KnockoutMatch[] = [],
+  iterations: number = 1000,
 ): Promise<PredictionResult[]> => {
   const stats: Record<string, PredictionResult> = {};
 
@@ -37,7 +38,7 @@ export const runMonteCarloSimulation = async (
         r16Count: 0,
         r32Count: 0,
       };
-    })
+    }),
   );
 
   // We can run this in chunks to avoid blocking the main thread entirely,
@@ -46,7 +47,7 @@ export const runMonteCarloSimulation = async (
   // but simple loop is fine for < 1s execution time.
 
   for (let i = 0; i < iterations; i++) {
-    const result = simulateTournament(currentGroups);
+    const result = simulateTournament(currentGroups, currentKnockoutMatches);
 
     // Helper to process stage
     const processStage = (
@@ -54,10 +55,10 @@ export const runMonteCarloSimulation = async (
       prop: keyof Omit<
         PredictionResult,
         "teamId" | "teamName" | "simulations" | "championCount"
-      >
+      >,
     ) => {
       const matches = result.knockoutMatches.filter(
-        (m) => m.stage === stageName
+        (m) => m.stage === stageName,
       );
       matches.forEach((m) => {
         if (m.homeTeam && !("placeholder" in m.homeTeam)) {

@@ -23,6 +23,7 @@ import {
   runKnockoutSimulation,
   recalculateGroupStats,
   predictMatchScore,
+  simulateTournament,
 } from "@/utils/simulationUtils";
 
 interface TournamentContextType {
@@ -32,14 +33,14 @@ interface TournamentContextType {
     groupId: string,
     matchId: string,
     homeScore: number | null,
-    awayScore: number | null
+    awayScore: number | null,
   ) => void;
   updateKnockoutMatch: (
     matchId: string,
     homeScore: number | null,
     awayScore: number | null,
     homePenalties?: number | null,
-    awayPenalties?: number | null
+    awayPenalties?: number | null,
   ) => void;
   simulateGroups: () => void;
   simulateKnockout: () => void;
@@ -48,7 +49,7 @@ interface TournamentContextType {
 }
 
 const TournamentContext = createContext<TournamentContextType | undefined>(
-  undefined
+  undefined,
 );
 
 export function TournamentProvider({ children }: { children: ReactNode }) {
@@ -56,7 +57,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   const [knockoutMatches, setKnockoutMatches] = useState<KnockoutMatch[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [probabilities, setProbabilities] = useState<Map<string, any>>(
-    new Map()
+    new Map(),
   );
 
   // Fetch live rankings
@@ -158,7 +159,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         });
 
       return [...updatedR32, ...nonR32].sort(
-        (a, b) => Number(a.id) - Number(b.id)
+        (a, b) => Number(a.id) - Number(b.id),
       );
     });
   }, [groups]);
@@ -167,16 +168,15 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const runProbabilityCalc = async () => {
       // Import dynamically to avoid circular dependencies if any, though imports are top-level
-      const { calculateKnockoutProbabilities } = await import(
-        "@/utils/probabilityUtils"
-      );
+      const { calculateKnockoutProbabilities } =
+        await import("@/utils/probabilityUtils");
 
       // We run probability calculation if there are matches
       // The util handles skipping simulation for finished matches, effectively giving 100% prob
       if (groups.length > 0) {
         const newProbabilities = await calculateKnockoutProbabilities(
           groups,
-          knockoutMatches
+          knockoutMatches,
         );
         setProbabilities(newProbabilities);
       }
@@ -190,7 +190,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     groupId: string,
     matchId: string,
     homeScore: number | null,
-    awayScore: number | null
+    awayScore: number | null,
   ) => {
     setGroups((currentGroups) => {
       return currentGroups.map((group) => {
@@ -218,7 +218,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     homeScore: number | null,
     awayScore: number | null,
     homePenalties: number | null = null,
-    awayPenalties: number | null = null
+    awayPenalties: number | null = null,
   ) => {
     setKnockoutMatches((currentMatches) => {
       let newMatches = [...currentMatches];
@@ -260,7 +260,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       // Propagate to next match
       if (match.nextMatchId) {
         const nextMatchIndex = newMatches.findIndex(
-          (m) => m.id === match.nextMatchId
+          (m) => m.id === match.nextMatchId,
         );
         if (nextMatchIndex !== -1) {
           const nextMatch = { ...newMatches[nextMatchIndex] };
@@ -271,7 +271,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
             ...FINAL_MATCHES,
           ];
           const staticNextMatch = allStaticMatches.find(
-            (m) => m.id === match.nextMatchId
+            (m) => m.id === match.nextMatchId,
           );
 
           if (staticNextMatch) {
@@ -341,12 +341,12 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       if (matchId === "101" || matchId === "102") {
         const thirdPlaceMatchId = "103";
         const thirdPlaceIndex = newMatches.findIndex(
-          (m) => m.id === thirdPlaceMatchId
+          (m) => m.id === thirdPlaceMatchId,
         );
         if (thirdPlaceIndex !== -1) {
           const thirdPlaceMatch = { ...newMatches[thirdPlaceIndex] };
           const staticThirdPlace = FINAL_MATCHES.find(
-            (m) => m.id === thirdPlaceMatchId
+            (m) => m.id === thirdPlaceMatchId,
           );
 
           if (staticThirdPlace) {
@@ -410,7 +410,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     setGroups((currentGroups) => {
       return currentGroups.map((group) => {
         const updatedMatches = group.matches.map((match) => {
-          // if (match.finished) return match; // Allow re-simulation
+          if (match.finished) return match;
 
           const homeTeam = group.teams.find((t) => t.id === match.homeTeamId);
           const awayTeam = group.teams.find((t) => t.id === match.awayTeamId);
@@ -428,7 +428,6 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         return recalculateGroupStats({ ...group, matches: updatedMatches });
       });
     });
-    setKnockoutMatches([]);
   };
 
   const simulateKnockout = () => {
@@ -438,53 +437,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   };
 
   const simulateAll = () => {
-    // 1. Simulate Groups locally (respecting existing results)
-    const simulatedGroups = groups.map((group) => {
-      const updatedMatches = group.matches.map((match) => {
-        // if (match.finished) return match; // Allow re-simulation
-
-        const homeTeam = group.teams.find((t) => t.id === match.homeTeamId);
-        const awayTeam = group.teams.find((t) => t.id === match.awayTeamId);
-
-        const { home, away } = predictMatchScore(homeTeam, awayTeam);
-
-        return {
-          ...match,
-          homeScore: home,
-          awayScore: away,
-          finished: true,
-        };
-      });
-
-      return recalculateGroupStats({ ...group, matches: updatedMatches });
-    });
-
-    // 2. Generate R32 Matches
-    const r32 = generateR32Matches(simulatedGroups).map((m) => ({
-      ...m,
-      stage: "R32" as const,
-    }));
-
-    // 3. Create Full Knockout Structure (R32 + initial empty R16-Final)
-    const initialKnockout = getInitialKnockoutMatches();
-    // Merge: R32 from generator + initial empty stages
-    const allMatches = [...r32, ...initialKnockout].sort(
-      (a, b) => Number(a.id) - Number(b.id)
-    );
-
-    // 4. Run Knockout Simulation
-    // We also want to respect existing knockout matches if they are valid?
-    // For simplicity in "Simulate All", we usually re-sim knockout because the tree might change significantly if groups changed.
-    // However, if the user wants to "Simulate the Rest", we might want to keep finished knockout matches IF the teams match.
-    // But since group results might change the teams in the bracket, it's safer to re-simulate knockout from scratch
-    // OR at least re-evaluate the tree.
-    // Given the requirement is about group dependency, ensuring groups are *complete* is key.
-    // For now, we will re-simulate the knockout stage entirely to ensure consistency with the new group results.
-    const simulatedKnockoutMatches = runKnockoutSimulation(allMatches);
-
-    // 5. Update State
-    setGroups(simulatedGroups);
-    setKnockoutMatches(simulatedKnockoutMatches);
+    const result = simulateTournament(groups, knockoutMatches);
+    setGroups(result.groups);
+    setKnockoutMatches(result.knockoutMatches);
   };
 
   const resetTournament = () => {

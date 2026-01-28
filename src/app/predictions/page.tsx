@@ -26,7 +26,7 @@ type SortColumn =
 
 export default function PredictionsPage() {
   const { user, loading } = useAuth();
-  const { groups } = useTournament();
+  const { groups, knockoutMatches } = useTournament();
   const canRunSimulation = !!user && !loading;
 
   const [results, setResults] = useState<PredictionResult[]>([]);
@@ -51,7 +51,11 @@ export default function PredictionsPage() {
     // Add a small delay to allow UI to update to loading state
     setTimeout(async () => {
       const start = performance.now();
-      const data = await runMonteCarloSimulation(groups, numIterations);
+      const data = await runMonteCarloSimulation(
+        groups,
+        knockoutMatches,
+        numIterations,
+      );
       const end = performance.now();
 
       setExecutionTime(end - start);
@@ -61,11 +65,11 @@ export default function PredictionsPage() {
   };
 
   const handleVerify = () => {
-    const result = simulateTournament(groups);
+    const result = simulateTournament(groups, knockoutMatches);
     const final = result.knockoutMatches.find((m) => m.stage === "Final");
     const champion = final?.winner || undefined;
     const finalists = [final?.homeTeam, final?.awayTeam].filter(
-      (t) => t && !("placeholder" in t)
+      (t) => t && !("placeholder" in t),
     ) as Team[];
 
     setSampleResult({
@@ -185,14 +189,14 @@ export default function PredictionsPage() {
         "px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors select-none",
         align === "right" ? "text-right" : "text-left",
         sortColumn === column &&
-          "text-blue-600 dark:text-blue-400 bg-slate-50 dark:bg-slate-800/50"
+          "text-blue-600 dark:text-blue-400 bg-slate-50 dark:bg-slate-800/50",
       )}
       onClick={() => handleSort(column)}
     >
       <div
         className={clsx(
           "flex items-center gap-1",
-          align === "right" ? "justify-end" : "justify-start"
+          align === "right" ? "justify-end" : "justify-start",
         )}
       >
         {label}
@@ -264,7 +268,7 @@ export default function PredictionsPage() {
                     "min-w-[220px] px-6 py-2 rounded-lg font-bold text-white transition-all shadow-md active:scale-95 flex justify-center items-center",
                     isRunning || !canRunSimulation
                       ? "bg-slate-400 cursor-not-allowed"
-                      : "bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25"
+                      : "bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25",
                   )}
                 >
                   {isRunning ? (
@@ -304,7 +308,7 @@ export default function PredictionsPage() {
               <div
                 className={clsx(
                   "flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-mono transition-opacity duration-300",
-                  executionTime > 0 ? "opacity-100" : "opacity-0 select-none"
+                  executionTime > 0 ? "opacity-100" : "opacity-0 select-none",
                 )}
               >
                 <Timer className="w-3 h-3" />
@@ -313,7 +317,7 @@ export default function PredictionsPage() {
                     <>
                       {executionTime.toFixed(0)}ms (
                       {Math.round(
-                        (iterations / executionTime) * 1000
+                        (iterations / executionTime) * 1000,
                       ).toLocaleString("es-ES")}{" "}
                       sim/s)
                     </>
@@ -396,7 +400,7 @@ export default function PredictionsPage() {
                         <td
                           className={clsx(
                             "px-4 py-3 text-right",
-                            getProbabilityColor(winRate)
+                            getProbabilityColor(winRate),
                           )}
                         >
                           {getPercentage(team.championCount)}
@@ -512,7 +516,7 @@ export default function PredictionsPage() {
                                 "font-medium",
                                 m.winner?.id === (m.homeTeam as Team).id
                                   ? "text-green-600 dark:text-green-400 font-bold"
-                                  : "text-slate-600 dark:text-slate-400"
+                                  : "text-slate-600 dark:text-slate-400",
                               )}
                             >
                               {(m.homeTeam as Team).name}
@@ -540,7 +544,7 @@ export default function PredictionsPage() {
                                 "font-medium",
                                 m.winner?.id === (m.awayTeam as Team).id
                                   ? "text-green-600 dark:text-green-400 font-bold"
-                                  : "text-slate-600 dark:text-slate-400"
+                                  : "text-slate-600 dark:text-slate-400",
                               )}
                             >
                               {(m.awayTeam as Team).name}

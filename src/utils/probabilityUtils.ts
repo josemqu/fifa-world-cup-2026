@@ -11,7 +11,7 @@ interface MatchStats {
 export const calculateKnockoutProbabilities = async (
   currentGroups: Group[],
   currentKnockoutMatches: KnockoutMatch[] = [],
-  iterations: number = 200
+  iterations: number = 200,
 ): Promise<
   Map<
     string,
@@ -27,6 +27,39 @@ export const calculateKnockoutProbabilities = async (
   >
 > => {
   const matchStats = new Map<string, MatchStats>();
+
+  const getDeterministicWinner = (match: KnockoutMatch): Team | null => {
+    if (
+      !match.homeTeam ||
+      !match.awayTeam ||
+      "placeholder" in match.homeTeam ||
+      "placeholder" in match.awayTeam
+    ) {
+      return null;
+    }
+
+    const home = match.homeScore;
+    const away = match.awayScore;
+
+    if (home == null || away == null) return null;
+
+    if (home > away) return match.homeTeam as Team;
+    if (away > home) return match.awayTeam as Team;
+
+    const homePens = match.homePenalties;
+    const awayPens = match.awayPenalties;
+    if (homePens != null && awayPens != null && homePens !== awayPens) {
+      return homePens > awayPens
+        ? (match.homeTeam as Team)
+        : (match.awayTeam as Team);
+    }
+
+    if (match.winner && !("placeholder" in match.winner)) {
+      return match.winner as Team;
+    }
+
+    return null;
+  };
 
   // Helper to init stats for a match
   const getStats = (matchId: string) => {
@@ -47,7 +80,7 @@ export const calculateKnockoutProbabilities = async (
     // But in a real app might want to yield to event loop if N is large
     const { knockoutMatches } = simulateTournament(
       currentGroups,
-      currentKnockoutMatches
+      currentKnockoutMatches,
     );
 
     knockoutMatches.forEach((match) => {
@@ -69,7 +102,7 @@ export const calculateKnockoutProbabilities = async (
       if (hasHome) {
         stats.homeTeamCounts.set(
           hTeam.id,
-          (stats.homeTeamCounts.get(hTeam.id) || 0) + 1
+          (stats.homeTeamCounts.get(hTeam.id) || 0) + 1,
         );
         stats.teamData.set(hTeam.id, hTeam);
       }
@@ -77,7 +110,7 @@ export const calculateKnockoutProbabilities = async (
       if (hasAway) {
         stats.awayTeamCounts.set(
           aTeam.id,
-          (stats.awayTeamCounts.get(aTeam.id) || 0) + 1
+          (stats.awayTeamCounts.get(aTeam.id) || 0) + 1,
         );
         stats.teamData.set(aTeam.id, aTeam);
       }
@@ -182,6 +215,35 @@ export const calculateKnockoutProbabilities = async (
         : undefined,
       homeCandidates,
       awayCandidates,
+    });
+  });
+
+  // Override probabilities for matches that are already decided by the user.
+  // This ensures UI shows 100% / 0% to advance when a result is locked.
+  currentKnockoutMatches.forEach((m) => {
+    const winner = getDeterministicWinner(m);
+    if (!winner) return;
+
+    if (
+      !m.homeTeam ||
+      !m.awayTeam ||
+      "placeholder" in m.homeTeam ||
+      "placeholder" in m.awayTeam
+    ) {
+      return;
+    }
+
+    const homeTeam = m.homeTeam as Team;
+    const awayTeam = m.awayTeam as Team;
+
+    results.set(m.id, {
+      homeTeamProb: winner.id === homeTeam.id ? 1 : 0,
+      awayTeamProb: winner.id === awayTeam.id ? 1 : 0,
+      matchupProb: 1,
+      projectedHomeTeam: homeTeam,
+      projectedAwayTeam: awayTeam,
+      homeCandidates: [{ team: homeTeam, probability: 1 }],
+      awayCandidates: [{ team: awayTeam, probability: 1 }],
     });
   });
 
