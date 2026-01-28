@@ -25,7 +25,7 @@ interface KnockoutStageProps {
     homeScore: number | null,
     awayScore: number | null,
     homePenalties?: number | null,
-    awayPenalties?: number | null
+    awayPenalties?: number | null,
   ) => void;
 }
 
@@ -41,7 +41,7 @@ function ChampionBanner({
     <div
       className={clsx(
         "flex flex-col items-center animate-bounce-subtle z-50",
-        isSticky ? "pointer-events-auto" : "mb-6"
+        isSticky ? "pointer-events-auto" : "mb-6",
       )}
     >
       <span className="text-xs font-bold text-yellow-600 dark:text-yellow-400 uppercase tracking-widest mb-1 shadow-sm">
@@ -73,7 +73,7 @@ function CandidatesTooltip({
     <div
       className={clsx(
         "flex flex-col gap-1",
-        useColumns ? "min-w-[300px]" : "min-w-[150px]"
+        useColumns ? "min-w-[300px]" : "min-w-[150px]",
       )}
     >
       <span className="font-bold text-xs border-b border-slate-700/50 pb-1 mb-1">
@@ -82,7 +82,7 @@ function CandidatesTooltip({
       <div
         className={clsx(
           "grid gap-x-6 gap-y-1",
-          useColumns ? "grid-cols-2" : "grid-cols-1"
+          useColumns ? "grid-cols-2" : "grid-cols-1",
         )}
       >
         {topCandidates.map((c) => (
@@ -124,7 +124,7 @@ function MatchCard({
     h: number | null,
     a: number | null,
     hp?: number | null,
-    ap?: number | null
+    ap?: number | null,
   ) => void;
   onSimulate?: (match: KnockoutMatch) => void;
   onReset?: (match: KnockoutMatch) => void;
@@ -199,6 +199,7 @@ function MatchCard({
     match.homePenalties === match.awayPenalties;
 
   const hasResult = match.homeScore !== null && match.awayScore !== null;
+  const showTeamProbabilities = !hasResult;
 
   return (
     <div
@@ -206,7 +207,7 @@ function MatchCard({
         "bg-white dark:bg-slate-800 border rounded-lg shadow-sm min-w-[220px] relative z-10 transition-colors flex flex-col",
         isPenaltyTied
           ? "border-red-300 dark:border-red-900/50"
-          : "border-slate-200 dark:border-slate-700"
+          : "border-slate-200 dark:border-slate-700",
       )}
     >
       <div className="p-3 pb-2">
@@ -270,7 +271,7 @@ function MatchCard({
                     isHomePlaceholder
                       ? "text-slate-400 italic"
                       : "text-slate-900 dark:text-slate-100",
-                    isHomeProjected && "text-blue-600 dark:text-blue-400"
+                    isHomeProjected && "text-blue-600 dark:text-blue-400",
                   )}
                   title={homeName}
                 >
@@ -289,7 +290,8 @@ function MatchCard({
                   </Tooltip>
                 )}
               </div>
-              {isHomeProjected &&
+              {showTeamProbabilities &&
+                isHomeProjected &&
                 (prob!.homeTeamProb * 100).toFixed(0) !== "100" && (
                   <span className="text-[10px] text-blue-500/70 dark:text-blue-400/70 font-mono whitespace-nowrap shrink-0">
                     {(prob!.homeTeamProb * 100).toFixed(0)}%
@@ -305,7 +307,7 @@ function MatchCard({
                     "w-5 h-5 text-center text-[10px] font-medium border rounded focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50",
                     isPenaltyTied
                       ? "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800 text-red-600 focus:ring-red-500 focus:border-red-500"
-                      : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:ring-blue-500 focus:border-transparent"
+                      : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:ring-blue-500 focus:border-transparent",
                   )}
                   value={match.homePenalties ?? ""}
                   onChange={(e) => {
@@ -316,7 +318,7 @@ function MatchCard({
                       match.homeScore ?? null,
                       match.awayScore ?? null,
                       val,
-                      match.awayPenalties ?? null
+                      match.awayPenalties ?? null,
                     );
                   }}
                   placeholder="P"
@@ -336,7 +338,7 @@ function MatchCard({
                     val,
                     match.awayScore ?? null,
                     match.homePenalties ?? null,
-                    match.awayPenalties ?? null
+                    match.awayPenalties ?? null,
                   );
                 }}
                 placeholder="-"
@@ -362,7 +364,7 @@ function MatchCard({
                       : "text-slate-900 dark:text-slate-100",
                     isAwayProjected && "text-blue-600 dark:text-blue-400",
                     awayIsFavorite &&
-                      "font-bold text-indigo-700 dark:text-indigo-300"
+                      "font-bold text-indigo-700 dark:text-indigo-300",
                   )}
                   title={awayName}
                 >
@@ -381,7 +383,8 @@ function MatchCard({
                   </Tooltip>
                 )}
               </div>
-              {(isAwayProjected || showProbabilities) &&
+              {showTeamProbabilities &&
+                (isAwayProjected || showProbabilities) &&
                 (prob!.awayTeamProb * 100).toFixed(0) !== "100" && (
                   <span
                     className={clsx(
@@ -389,8 +392,8 @@ function MatchCard({
                       isAwayProjected
                         ? "text-blue-500/70 dark:text-blue-400/70"
                         : awayIsFavorite
-                        ? "text-indigo-600 dark:text-indigo-400 font-bold"
-                        : "text-slate-400/70"
+                          ? "text-indigo-600 dark:text-indigo-400 font-bold"
+                          : "text-slate-400/70",
                     )}
                   >
                     {(prob!.awayTeamProb * 100).toFixed(0)}%
@@ -406,7 +409,7 @@ function MatchCard({
                     "w-5 h-5 text-center text-[10px] font-medium border rounded focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50",
                     isPenaltyTied
                       ? "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800 text-red-600 focus:ring-red-500 focus:border-red-500"
-                      : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:ring-blue-500 focus:border-transparent"
+                      : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:ring-blue-500 focus:border-transparent",
                   )}
                   value={match.awayPenalties ?? ""}
                   onChange={(e) => {
@@ -417,7 +420,7 @@ function MatchCard({
                       match.homeScore ?? null,
                       match.awayScore ?? null,
                       match.homePenalties ?? null,
-                      val
+                      val,
                     );
                   }}
                   placeholder="P"
@@ -437,7 +440,7 @@ function MatchCard({
                     match.homeScore ?? null,
                     val,
                     match.homePenalties ?? null,
-                    match.awayPenalties ?? null
+                    match.awayPenalties ?? null,
                   );
                 }}
                 placeholder="-"
@@ -480,8 +483,8 @@ function MatchCard({
                       prob.matchupProb > 0.8
                         ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                         : prob.matchupProb > 0.5
-                        ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                        : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
+                          ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                          : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400",
                     )}
                   >
                     {(prob.matchupProb * 100).toFixed(0)}%
@@ -534,7 +537,7 @@ function MatchPair({
     h: number | null,
     a: number | null,
     hp?: number | null,
-    ap?: number | null
+    ap?: number | null,
   ) => void;
   onSimulate?: (match: KnockoutMatch) => void;
   onReset?: (match: KnockoutMatch) => void;
@@ -639,7 +642,7 @@ export function KnockoutStage({
     ) {
       const { home, away } = predictMatchScore(
         match.homeTeam as Team,
-        match.awayTeam as Team
+        match.awayTeam as Team,
       );
 
       let homePen: number | null = null;
@@ -691,7 +694,7 @@ export function KnockoutStage({
       {
         threshold: 0,
         rootMargin: "-15% 0px -40% 0px", // Expand visible area to avoid collision with 3rd place match
-      }
+      },
     );
 
     if (finalMatchRef.current) {
@@ -755,7 +758,7 @@ export function KnockoutStage({
                 key={`bg-${stage.id}`}
                 className={clsx(
                   "row-start-1 row-span-full rounded-2xl -mx-4",
-                  stage.bgClass
+                  stage.bgClass,
                 )}
                 style={{ gridColumnStart: stage.colStart }}
               />
@@ -768,7 +771,7 @@ export function KnockoutStage({
                 <h3
                   className={clsx(
                     "text-center py-2 px-3 rounded-xl font-semibold text-sm mb-4 -mx-4",
-                    stage.headerClass
+                    stage.headerClass,
                   )}
                 >
                   {stage.label}
@@ -783,7 +786,7 @@ export function KnockoutStage({
                 <h3
                   className={clsx(
                     "text-center py-2 px-3 rounded-xl font-semibold text-sm mt-4 -mx-4",
-                    stage.headerClass
+                    stage.headerClass,
                   )}
                 >
                   {stage.label}
@@ -890,7 +893,7 @@ export function KnockoutStage({
                   <div
                     className={clsx(
                       "absolute bottom-full left-1/2 -translate-x-1/2 mb-6 w-max transition-opacity duration-300",
-                      isFinalMatchVisible ? "opacity-100" : "opacity-0"
+                      isFinalMatchVisible ? "opacity-100" : "opacity-0",
                     )}
                   >
                     <ChampionBanner champion={champion} />
