@@ -67,47 +67,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [dbUser]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      // We set loading to false as soon as we know the auth state from Firebase.
+      // The DB sync will happen in the background.
+      setLoading(false);
 
       if (currentUser) {
-        try {
-          // First try to get existing user data from MongoDB
-          const getResponse = await fetch(`/api/user?uid=${currentUser.uid}`);
+        // Sync with DB asynchronously
+        const syncUser = async () => {
+          try {
+            // First try to get existing user data from MongoDB
+            const getResponse = await fetch(`/api/user?uid=${currentUser.uid}`);
 
-          if (getResponse.ok) {
-            const data = await getResponse.json();
-            if (data.success) {
-              setDbUser(data.data);
-            }
-          } else if (getResponse.status === 404) {
-            // If user doesn't exist, create/sync via POST
-            const response = await fetch("/api/user", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                firebaseUid: currentUser.uid,
-                email: currentUser.email,
-                displayName: currentUser.displayName,
-              }),
-            });
-
-            if (response.ok) {
-              const data = await response.json();
+            if (getResponse.ok) {
+              const data = await getResponse.json();
               if (data.success) {
                 setDbUser(data.data);
+                return;
               }
             }
+            
+            if (getResponse.status === 404) {
+              // If user doesn't exist, create/sync via POST
+              const response = await fetch("/api/user", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  firebaseUid: currentUser.uid,
+                  email: currentUser.email,
+                  displayName: currentUser.displayName,
+                }),
+              });
+
+              if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                  setDbUser(data.data);
+                }
+              }
+            }
+          } catch (error) {
+            console.error("Error syncing user with DB:", error);
           }
-        } catch (error) {
-          console.error("Error syncing user with DB:", error);
-        }
+        };
+        syncUser();
       } else {
         setDbUser(null);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();

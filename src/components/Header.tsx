@@ -130,7 +130,7 @@ export function Header() {
 
         {/* User Section */}
         <div className="flex items-center gap-2">
-          {loading ? (
+          {loading && !user ? (
             <div className="flex items-center gap-3 bg-white dark:bg-slate-800 p-1.5 pr-3 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm animate-pulse">
               <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700" />
               <div className="hidden lg:block w-20 h-3 bg-slate-200 dark:bg-slate-700 rounded-full" />
@@ -145,15 +145,22 @@ export function Header() {
                     className="flex items-center gap-3 bg-white dark:bg-slate-800 p-1.5 pr-3 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   >
                     {user.photoURL ? (
-                      <Image
-                        src={user.photoURL}
-                        alt={user.displayName || "User"}
-                        width={32}
-                        height={32}
-                        className="rounded-full"
-                      />
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 relative ring-1 ring-slate-200 dark:ring-slate-700">
+                        <Image
+                          src={user.photoURL}
+                          alt={user.displayName || "User"}
+                          fill
+                          sizes="32px"
+                          className="object-cover"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = "none";
+                          }}
+                        />
+                      </div>
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center ring-1 ring-blue-200 dark:ring-blue-800">
                         <UserIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                       </div>
                     )}
