@@ -25,10 +25,16 @@ import {
   predictMatchScore,
   simulateTournament,
 } from "@/utils/simulationUtils";
+import { PredictionResult } from "@/utils/monteCarlo";
 
 interface TournamentContextType {
   groups: Group[];
   knockoutMatches: KnockoutMatch[];
+  predictions: PredictionResult[];
+  predictionIterations: number;
+  predictionTime: number;
+  setPredictions: (results: PredictionResult[], iterations: number, time: number) => void;
+  clearPredictions: () => void;
   updateMatch: (
     groupId: string,
     matchId: string,
@@ -55,10 +61,25 @@ const TournamentContext = createContext<TournamentContextType | undefined>(
 export function TournamentProvider({ children }: { children: ReactNode }) {
   const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
   const [knockoutMatches, setKnockoutMatches] = useState<KnockoutMatch[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [probabilities, setProbabilities] = useState<Map<string, any>>(
     new Map(),
   );
+
+  // Predictions persistence
+  const [predictions, setPredictionsState] = useState<PredictionResult[]>([]);
+  const [predictionIterations, setPredictionIterations] = useState(10000);
+  const [predictionTime, setPredictionTime] = useState(0);
+
+  const setPredictions = (results: PredictionResult[], iterations: number, time: number) => {
+    setPredictionsState(results);
+    setPredictionIterations(iterations);
+    setPredictionTime(time);
+  };
+
+  const clearPredictions = () => {
+    setPredictionsState([]);
+    setPredictionTime(0);
+  };
 
   // Fetch live rankings
   useEffect(() => {
@@ -476,6 +497,11 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         simulateKnockout,
         simulateAll,
         resetTournament,
+        predictions,
+        predictionIterations,
+        predictionTime,
+        setPredictions,
+        clearPredictions,
       }}
     >
       {children}

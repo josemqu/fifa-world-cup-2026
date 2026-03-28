@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, type ReactNode } from "react";
+import { useState, useMemo, useEffect, type ReactNode } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTournament } from "@/context/TournamentContext";
 import { runMonteCarloSimulation, PredictionResult } from "@/utils/monteCarlo";
@@ -26,13 +26,24 @@ type SortColumn =
 
 export default function PredictionsPage() {
   const { user, loading } = useAuth();
-  const { groups, knockoutMatches } = useTournament();
+  const {
+    groups,
+    knockoutMatches,
+    predictions,
+    predictionIterations,
+    predictionTime,
+    setPredictions,
+    clearPredictions,
+  } = useTournament();
   const canRunSimulation = !!user && !loading;
 
-  const [results, setResults] = useState<PredictionResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
-  const [iterations, setIterations] = useState(10000);
-  const [executionTime, setExecutionTime] = useState<number>(0);
+  const [iterations, setIterations] = useState(predictionIterations);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   const [sortColumn, setSortColumn] = useState<SortColumn>("championCount");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
@@ -46,9 +57,8 @@ export default function PredictionsPage() {
 
   const handleRun = async (numIterations: number = iterations) => {
     setIsRunning(true);
-    setResults([]);
-    setExecutionTime(0);
-    // Add a small delay to allow UI to update to loading state
+    clearPredictions();
+    // Add a small delay for UI feedback
     setTimeout(async () => {
       const start = performance.now();
       const data = await runMonteCarloSimulation(
@@ -57,9 +67,7 @@ export default function PredictionsPage() {
         numIterations,
       );
       const end = performance.now();
-
-      setExecutionTime(end - start);
-      setResults(data);
+      setPredictions(data, numIterations, end - start);
       setIsRunning(false);
     }, 100);
   };
@@ -91,7 +99,7 @@ export default function PredictionsPage() {
   };
 
   const sortedResults = useMemo(() => {
-    return [...results]
+    return [...predictions]
       .filter((r) => r.r32Count > 0)
       .sort((a, b) => {
         let comparison = 0;
@@ -161,10 +169,10 @@ export default function PredictionsPage() {
         if (b.r16Count !== a.r16Count) return b.r16Count - a.r16Count;
         return b.r32Count - a.r32Count;
       });
-  }, [results, sortColumn, sortDirection]);
+  }, [predictions, sortColumn, sortDirection]);
 
   const getPercentage = (count: number) => {
-    return ((count / iterations) * 100).toFixed(1) + "%";
+    return ((count / predictionIterations) * 100).toFixed(1) + "%";
   };
 
   const getProbabilityColor = (percentage: number) => {
@@ -261,44 +269,60 @@ export default function PredictionsPage() {
                   <option value={100000}>100.000 simulaciones</option>
                 </select>
 
-                <button
-                  onClick={() => handleRun()}
-                  disabled={isRunning || !canRunSimulation}
-                  className={clsx(
-                    "min-w-[220px] px-6 py-2 rounded-lg font-bold text-white transition-all shadow-md active:scale-95 flex justify-center items-center",
-                    isRunning || !canRunSimulation
-                      ? "bg-slate-400 cursor-not-allowed"
-                      : "bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25",
-                  )}
-                >
-                  {isRunning ? (
-                    <span className="flex items-center gap-2">
-                      <svg
-                        className="animate-spin h-4 w-4 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
+                {isMounted ? (
+                  <div className="flex items-center gap-2">
+                    {predictions.length > 0 && !isRunning && (
+                      <button
+                        onClick={clearPredictions}
+                        className="px-4 py-2 rounded-lg font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
                       >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Simulando...
-                    </span>
-                  ) : (
-                    "Ejecutar Simulación"
-                  )}
-                </button>
+                        <X className="w-4 h-4" />
+                        Limpiar
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleRun()}
+                      disabled={isRunning || !canRunSimulation}
+                      className={clsx(
+                        "min-w-[220px] px-6 py-2 rounded-lg font-bold text-white transition-all shadow-md active:scale-95 flex justify-center items-center gap-2",
+                        isRunning || !canRunSimulation
+                          ? "bg-slate-400 cursor-not-allowed"
+                          : "bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25",
+                      )}
+                    >
+                      {isRunning ? (
+                        <>
+                          <svg
+                            className="animate-spin h-4 w-4 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          Simulando...
+                        </>
+                      ) : (
+                        "Ejecutar Simulación"
+                      )}
+                    </button>
+                  </div>
+                ) : (
+                  // Placeholder for SSR to maintain layout if possible
+                  <div className="min-w-[220px] h-10" />
+                )}
               </div>
               {!loading && !user && (
                 <div className="text-xs text-slate-500 dark:text-slate-400">
@@ -308,16 +332,16 @@ export default function PredictionsPage() {
               <div
                 className={clsx(
                   "flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-mono transition-opacity duration-300",
-                  executionTime > 0 ? "opacity-100" : "opacity-0 select-none",
+                  predictionTime > 0 ? "opacity-100" : "opacity-0 select-none",
                 )}
               >
                 <Timer className="w-3 h-3" />
                 <span>
-                  {executionTime > 0 ? (
+                  {predictionTime > 0 ? (
                     <>
-                      {executionTime.toFixed(0)}ms (
+                      {predictionTime.toFixed(0)}ms (
                       {Math.round(
-                        (iterations / executionTime) * 1000,
+                        (predictionIterations / predictionTime) * 1000,
                       ).toLocaleString("es-ES")}{" "}
                       sim/s)
                     </>
@@ -329,7 +353,7 @@ export default function PredictionsPage() {
             </div>
           </div>
 
-          {results.length > 0 && (
+          {predictions.length > 0 && (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -428,7 +452,7 @@ export default function PredictionsPage() {
             </div>
           )}
 
-          {results.length === 0 && !isRunning && (
+          {predictions.length === 0 && !isRunning && (
             <div className="text-center py-20 text-slate-400 dark:text-slate-600">
               <p>Presiona "Ejecutar Simulación" para ver las probabilidades.</p>
             </div>
