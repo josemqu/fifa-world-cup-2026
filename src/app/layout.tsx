@@ -9,6 +9,7 @@ import { Footer } from "@/components/Footer";
 import { UserProfileModal } from "@/components/auth/UserProfileModal";
 import { JsonLd } from "@/components/JsonLd";
 import { Analytics } from "@vercel/analytics/next";
+import { GoogleOneTap } from "@/components/auth/GoogleOneTap";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -103,6 +104,7 @@ export default function RootLayout({
               </main>
               <Footer />
               <UserProfileModal />
+              <GoogleOneTap />
             </LanguageProvider>
           </TournamentProvider>
         </AuthProvider>

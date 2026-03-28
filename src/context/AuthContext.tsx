@@ -10,6 +10,7 @@ import React, {
 import {
   User,
   signInWithPopup,
+  signInWithCredential,
   signOut,
   onAuthStateChanged,
 } from "firebase/auth";
@@ -38,6 +39,7 @@ interface AuthContextType {
   loading: boolean;
   profileComplete: boolean;
   loginWithGoogle: () => Promise<void>;
+  loginWithCredential: (credential: any) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<DbUser>) => Promise<void>;
   isProfileModalOpen: boolean;
@@ -120,6 +122,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const loginWithCredential = async (credential: any) => {
+    try {
+      await signInWithCredential(auth, credential);
+    } catch (error) {
+      console.error("Error signing in with credential", error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       await signOut(auth);
@@ -168,6 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading,
         profileComplete,
         loginWithGoogle,
+        loginWithCredential,
         logout,
         updateProfile,
         isProfileModalOpen,
