@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Countdown from "@/components/Countdown";
 
 export default function Home() {
   return (
@@ -10,40 +11,49 @@ export default function Home() {
         </div>
 
         <div className="relative p-8 md:p-12">
-          <div className="max-w-3xl">
-            <p className="inline-flex items-center rounded-full border border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-900/40 px-3 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
-              Fixture interactivo y simulador
-            </p>
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 md:gap-12">
+            <div className="max-w-2xl">
+              <p className="inline-flex items-center rounded-full border border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-900/40 px-3 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                Fixture interactivo y simulador
+              </p>
 
-            <h2 className="mt-4 text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-              World Cup{" "}
-              <span className="text-blue-600 dark:text-blue-400">2026</span>
-            </h2>
+              <h2 className="mt-6 text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                World Cup{" "}
+                <span className="text-blue-600 dark:text-blue-400">2026</span>
+              </h2>
 
-            <p className="mt-3 text-base md:text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
-              Cargá resultados, seguí las tablas, y mirá cómo se arma el cuadro
-              final. Todo en una experiencia simple, rápida y clara.
-            </p>
+              <p className="mt-4 text-base md:text-lg lg:text-xl text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl">
+                Cargá resultados, seguí las tablas, y mirá cómo se arma el cuadro
+                final. Todo en una experiencia simple, rápida y clara.
+              </p>
 
-            <div className="mt-7 flex flex-col sm:flex-row gap-3">
-              <Link
-                href="/groups"
-                className="inline-flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 text-sm font-bold shadow-sm transition-colors"
-              >
-                Ir a Fase de Grupos
-              </Link>
-              <Link
-                href="/knockout"
-                className="inline-flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 px-5 py-3 text-sm font-bold border border-slate-200 dark:border-slate-700 shadow-sm transition-colors"
-              >
-                Ver Fase Eliminatoria
-              </Link>
-              <Link
-                href="/predictions"
-                className="inline-flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 px-5 py-3 text-sm font-bold border border-slate-200 dark:border-slate-700 shadow-sm transition-colors"
-              >
-                Ver Predicciones
-              </Link>
+              <div className="mt-8 flex flex-col sm:flex-row gap-3">
+                <Link
+                  href="/groups"
+                  className="inline-flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 text-sm font-bold shadow-sm transition-colors"
+                >
+                  Ir a Fase de Grupos
+                </Link>
+                <Link
+                  href="/knockout"
+                  className="inline-flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 px-5 py-3 text-sm font-bold border border-slate-200 dark:border-slate-700 shadow-sm transition-colors"
+                >
+                  Ver Fase Eliminatoria
+                </Link>
+                <Link
+                  href="/predictions"
+                  className="inline-flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 px-5 py-3 text-sm font-bold border border-slate-200 dark:border-slate-700 shadow-sm transition-colors"
+                >
+                  Ver Predicciones
+                </Link>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center lg:items-end shrink-0">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600/80 dark:text-blue-400/80 mb-2">
+                Faltan para el Kickoff
+              </span>
+              <Countdown targetDate="2026-06-11T16:00:00Z" />
             </div>
           </div>
         </div>
