@@ -27,7 +27,7 @@ export interface RankingData {
 }
 
 export const fetchFifaRankings = async (): Promise<
-  Record<string, RankingData>
+  Map<string, RankingData>
 > => {
   try {
     const response = await fetch("/api/rankings");
@@ -37,41 +37,44 @@ export const fetchFifaRankings = async (): Promise<
     }
 
     const data: FifaRankingResponse = await response.json();
-    const rankingMap: Record<string, RankingData> = {};
+    const rankingMap = new Map<string, RankingData>();
 
     data.rankings.forEach((item) => {
       const name = item.rankingItem.name;
       const rank = item.rankingItem.rank;
       const points = item.rankingItem.totalPoints;
       if (rank) {
-        rankingMap[name] = { rank, points };
+        rankingMap.set(name, { rank, points });
       }
     });
 
     return rankingMap;
   } catch (error) {
     console.error("Error fetching FIFA rankings:", error);
-    return {};
+    return new Map();
   }
 };
 
 export const getRankingDataForTeam = (
   teamName: string,
-  rankings: Record<string, RankingData>
+  rankings: Map<string, RankingData>
 ): RankingData | undefined => {
   // 1. Direct match
-  if (rankings[teamName]) return rankings[teamName];
+  if (rankings.has(teamName)) return rankings.get(teamName);
 
   // 2. Mapped match
-  const mappedName = TEAM_NAME_MAPPING[teamName];
-  if (mappedName && rankings[mappedName]) return rankings[mappedName];
+  if (Object.prototype.hasOwnProperty.call(TEAM_NAME_MAPPING, teamName)) {
+    const mappedName = TEAM_NAME_MAPPING[teamName];
+    if (rankings.has(mappedName)) return rankings.get(mappedName);
+  }
 
   // 3. Case insensitive match (fallback)
   const lowerName = teamName.toLowerCase();
-  const found = Object.keys(rankings).find(
-    (key) => key.toLowerCase() === lowerName
-  );
-  if (found) return rankings[found];
+  for (const [key, value] of rankings.entries()) {
+    if (key.toLowerCase() === lowerName) {
+      return value;
+    }
+  }
 
   return undefined;
 };

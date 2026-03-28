@@ -28,7 +28,7 @@ export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
   const { simulateGroups, resetTournament } = useTournament();
 
   const [thirdQualificationProbabilities, setThirdQualificationProbabilities] =
-    useState<Record<string, number> | null>(null);
+    useState<Map<string, number> | null>(null);
 
   const { sortedThirds, qualifiedThirdIds, isGroupStageComplete } =
     useMemo(() => {
@@ -59,38 +59,28 @@ export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
   }, [groups]);
 
   // Store which groups have their matches HIDDEN.
-  // We initialize with all groups hidden by default as requested.
-  const [hiddenGroups, setHiddenGroups] = useState<Record<string, boolean>>(
-    () => {
-      const initialHidden: Record<string, boolean> = {};
-      groups.forEach((g) => {
-        initialHidden[g.name] = true;
-      });
-      return initialHidden;
-    }
-  );
+  const [hiddenGroups, setHiddenGroups] = useState<Map<string, boolean>>(() => {
+    return new Map(groups.map((g) => [g.name, true]));
+  });
 
-  const allHidden = groups.every((g) => hiddenGroups[g.name]);
+  const allHidden = groups.every((g) => hiddenGroups.get(g.name));
 
   const toggleAll = () => {
     if (allHidden) {
       // Show all -> clear hidden map
-      setHiddenGroups({});
+      setHiddenGroups(new Map());
     } else {
       // Hide all -> set all to true
-      const newHidden: Record<string, boolean> = {};
-      groups.forEach((g) => {
-        newHidden[g.name] = true;
-      });
-      setHiddenGroups(newHidden);
+      setHiddenGroups(new Map(groups.map((g) => [g.name, true])));
     }
   };
 
   const toggleGroup = (groupName: string) => {
-    setHiddenGroups((prev) => ({
-      ...prev,
-      [groupName]: !prev[groupName],
-    }));
+    setHiddenGroups((prev) => {
+      const next = new Map(prev);
+      next.set(groupName, !prev.get(groupName));
+      return next;
+    });
   };
 
   return (
@@ -101,7 +91,7 @@ export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
             key={group.name}
             group={group}
             onMatchUpdate={onMatchUpdate}
-            showMatches={!hiddenGroups[group.name]}
+            showMatches={!hiddenGroups.get(group.name)}
             onToggleMatches={() => toggleGroup(group.name)}
             qualifiedThirdIds={qualifiedThirdIds}
           />

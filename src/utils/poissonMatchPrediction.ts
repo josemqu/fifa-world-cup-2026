@@ -83,6 +83,7 @@ export const predictWorldCupMatch = (
 
   for (let a = 0; a <= MAX_GOALS; a++) {
     for (let b = 0; b <= MAX_GOALS; b++) {
+      // eslint-disable-next-line security/detect-object-injection
       const p = goalsA[a] * goalsB[b];
 
       if (a > b) probA += p;

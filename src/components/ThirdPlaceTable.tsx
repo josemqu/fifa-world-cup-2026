@@ -8,7 +8,7 @@ import { CheckCircle2 } from "lucide-react";
 interface ThirdPlaceTableProps {
   teams: Team[];
   showQualification?: boolean;
-  qualificationProbabilities?: Record<string, number>;
+  qualificationProbabilities?: Map<string, number>;
 }
 
 export function ThirdPlaceTable({
@@ -65,7 +65,7 @@ export function ThirdPlaceTable({
             {teams.map((team, index) => {
               const isQualified =
                 showQualification && qualifiedIds.has(team.id);
-              const prob = qualificationProbabilities?.[team.id];
+              const prob = qualificationProbabilities?.get(team.id);
               return (
                 <tr
                   key={team.id}

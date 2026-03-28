@@ -297,6 +297,7 @@ export const runKnockoutSimulation = (
   newMatches.sort((a, b) => Number(a.id) - Number(b.id));
 
   for (let i = 0; i < newMatches.length; i++) {
+    // eslint-disable-next-line security/detect-object-injection
     const match = newMatches[i];
 
     // Only simulate if teams are present
@@ -401,6 +402,7 @@ export const runKnockoutSimulation = (
           (m) => m.id === match.nextMatchId
         );
         if (nextMatchIndex !== -1) {
+          // eslint-disable-next-line security/detect-object-injection
           const nextMatch = newMatches[nextMatchIndex];
           const staticNextMatch = allStaticMatches.find(
             (m) => m.id === match.nextMatchId
@@ -449,6 +451,7 @@ export const runKnockoutSimulation = (
           (m) => m.id === thirdPlaceMatchId
         );
         if (thirdPlaceIndex !== -1) {
+          // eslint-disable-next-line security/detect-object-injection
           const thirdPlaceMatch = newMatches[thirdPlaceIndex];
           const staticThirdPlace = FINAL_MATCHES.find(
             (m) => m.id === thirdPlaceMatchId

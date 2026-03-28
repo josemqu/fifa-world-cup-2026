@@ -16,11 +16,11 @@ function sortThirdPlaceTeams(thirdPlaceTeams: Team[]) {
 export function estimateBestThirdQualificationProbabilities(
   groups: Group[],
   iterations: number = 1500
-): Record<string, number> {
-  const counts: Record<string, number> = {};
+): Map<string, number> {
+  const counts = new Map<string, number>();
 
   // init counts
-  groups.forEach((g) => g.teams.forEach((t) => (counts[t.id] = 0)));
+  groups.forEach((g) => g.teams.forEach((t) => counts.set(t.id, 0)));
 
   if (iterations <= 0) return counts;
 
@@ -75,13 +75,13 @@ export function estimateBestThirdQualificationProbabilities(
     const qualified = sortedThirds.slice(0, 8);
 
     qualified.forEach((t) => {
-      counts[t.id] = (counts[t.id] ?? 0) + 1;
+      counts.set(t.id, (counts.get(t.id) ?? 0) + 1);
     });
   }
 
-  const probs: Record<string, number> = {};
-  Object.keys(counts).forEach((id) => {
-    probs[id] = counts[id] / iterations;
+  const probs = new Map<string, number>();
+  counts.forEach((count, id) => {
+    probs.set(id, count / iterations);
   });
 
   return probs;

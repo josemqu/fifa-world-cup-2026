@@ -64,18 +64,7 @@ export async function POST(request: Request) {
       { upsert: true, new: true, setDefaultsOnInsert: true, strict: false }
     ).lean();
 
-    // Debug log to verify fields are being saved
-    console.log("Updated user profile:", {
-      // @ts-ignore - access fields that might not be in typed schema yet
-      id: user._id,
-      // @ts-ignore
-      nickname: user.nickname,
-      // @ts-ignore
-      country: user.country,
-      // @ts-ignore
-      savedAge: user.age,
-    });
-
+    // user update successful
     return NextResponse.json({ success: true, data: user });
   } catch (error: any) {
     console.error("Error in user API:", error);

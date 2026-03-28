@@ -20,12 +20,12 @@ export const runMonteCarloSimulation = async (
   currentKnockoutMatches: KnockoutMatch[] = [],
   iterations: number = 1000,
 ): Promise<PredictionResult[]> => {
-  const stats: Record<string, PredictionResult> = {};
+  const stats = new Map<string, PredictionResult>();
 
   // Initialize stats for all teams
   currentGroups.forEach((g) =>
     g.teams.forEach((t) => {
-      stats[t.id] = {
+      stats.set(t.id, {
         teamId: t.id,
         teamName: t.name,
         teamRanking: t.ranking,
@@ -37,14 +37,9 @@ export const runMonteCarloSimulation = async (
         quarterFinalistCount: 0,
         r16Count: 0,
         r32Count: 0,
-      };
+      });
     }),
   );
-
-  // We can run this in chunks to avoid blocking the main thread entirely,
-  // but for now, we'll just run it in a loop.
-  // Since we are in an async function, we can use setImmediate or equivalent if needed,
-  // but simple loop is fine for < 1s execution time.
 
   for (let i = 0; i < iterations; i++) {
     const result = simulateTournament(currentGroups, currentKnockoutMatches);
@@ -63,11 +58,17 @@ export const runMonteCarloSimulation = async (
       matches.forEach((m) => {
         if (m.homeTeam && !("placeholder" in m.homeTeam)) {
           const tId = (m.homeTeam as Team).id;
-          if (stats[tId]) stats[tId][prop]++;
+          const teamStats = stats.get(tId);
+          if (teamStats) {
+            (teamStats[prop] as number)++;
+          }
         }
         if (m.awayTeam && !("placeholder" in m.awayTeam)) {
           const tId = (m.awayTeam as Team).id;
-          if (stats[tId]) stats[tId][prop]++;
+          const teamStats = stats.get(tId);
+          if (teamStats) {
+            (teamStats[prop] as number)++;
+          }
         }
       });
     };
@@ -81,13 +82,14 @@ export const runMonteCarloSimulation = async (
     // Champion
     const finalMatch = result.knockoutMatches.find((m) => m.stage === "Final");
     if (finalMatch?.winner) {
-      if (stats[finalMatch.winner.id]) {
-        stats[finalMatch.winner.id].championCount++;
+      const winnerStats = stats.get(finalMatch.winner.id);
+      if (winnerStats) {
+        winnerStats.championCount++;
       }
     }
   }
 
-  return Object.values(stats).sort((a, b) => {
+  return Array.from(stats.values()).sort((a, b) => {
     if (b.championCount !== a.championCount)
       return b.championCount - a.championCount;
     if (b.finalistCount !== a.finalistCount)

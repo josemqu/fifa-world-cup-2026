@@ -18,7 +18,8 @@ export function GoogleOneTap() {
         const idToken = response.credential;
         const credential = GoogleAuthProvider.credential(idToken);
         await loginWithCredential(credential);
-        console.log("Sesión iniciada correctamente con Google One Tap");
+        // Sesión iniciada correctamente
+
       } catch (error) {
         console.error("Error al iniciar sesión con Google One Tap:", error);
       }
@@ -44,13 +45,8 @@ export function GoogleOneTap() {
           });
 
           window.google.accounts.id.prompt((notification: any) => {
-            if (notification.isNotDisplayed()) {
-              console.log("One Tap UI no mostrada:", notification.getNotDisplayedReason());
-            } else if (notification.isSkippedMoment()) {
-              console.log("One Tap UI omitida:", notification.getSkippedReason());
-            } else if (notification.isDismissedMoment()) {
-              console.log("One Tap UI cerrada por el usuario:", notification.getDismissedReason());
-            }
+            // Los logs de estado se manejan silenciosamente
+
           });
           
           initialized.current = true;

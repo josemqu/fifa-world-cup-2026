@@ -64,19 +64,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const loadRankings = async () => {
       const rankings = await fetchFifaRankings();
-      if (Object.keys(rankings).length > 0) {
+      if (rankings.size > 0) {
         setGroups((currentGroups) => {
-          // If we are resetting, we might want to preserve the ranking data?
-          // The effect runs on mount.
-          // When we reset, we setGroups(INITIAL_GROUPS).
-          // But INITIAL_GROUPS doesn't have rankings if they were fetched dynamically.
-          // We should probably re-apply rankings if possible, or just accept they might be lost until refresh?
-          // Actually, we can just re-map rankings here if we want, or just rely on this effect not running again unless component remounts?
-          // No, this effect runs ONCE on mount.
-          // If I resetGroups(INITIAL_GROUPS), the new state won't have rankings.
-          // I should fix resetTournament to re-apply rankings if I have them?
-          // For now, let's just reset to INITIAL_GROUPS. The user can refresh if they strictly need live rankings again, or we can improve later.
-          // actually, checking currentGroups is safe.
           return currentGroups.map((group) => ({
             ...group,
             teams: group.teams.map((team) => {
@@ -359,17 +348,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
                   ? match.awayTeam
                   : match.homeTeam;
 
-              // Debug log for 3rd place propagation
-              console.log("[TournamentContext] 3rd Place Propagation:", {
-                matchId: match.id,
-                winner: winner.name,
-                loser:
-                  loser && !("placeholder" in loser)
-                    ? (loser as Team).name
-                    : "Placeholder",
-                isHomeSource,
-                isAwaySource,
-              });
+              // Propagación silenciosa a 3er puesto
+
 
               if (isHomeSource) {
                 thirdPlaceMatch.homeTeam = (loser as Team) || {

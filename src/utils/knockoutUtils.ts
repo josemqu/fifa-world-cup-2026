@@ -18,9 +18,7 @@ interface R32MatchDefinition {
 }
 
 export function getGroupStandings(groups: Group[]) {
-  const qualified: {
-    [key: string]: { first: Team; second: Team; third: Team };
-  } = {};
+  const qualified = new Map<string, { first: Team; second: Team; third: Team }>();
   const thirdPlaceTeams: Team[] = [];
 
   groups.forEach((group) => {
@@ -30,11 +28,11 @@ export function getGroupStandings(groups: Group[]) {
       return b.gf - a.gf;
     });
 
-    qualified[group.name] = {
+    qualified.set(group.name, {
       first: sorted[0],
       second: sorted[1],
       third: sorted[2],
-    };
+    });
 
     thirdPlaceTeams.push(sorted[2]);
   });
@@ -99,7 +97,7 @@ export function generateR32Matches(groups: Group[]) {
 
   // Fallback assignment logic if combination is missing but we have 8 thirds
   // (Since we disabled matrix lookup, this is now the MAIN logic)
-  let fallbackAssignments: { [key: string]: Team } = {};
+  let fallbackAssignments = new Map<string, Team>();
   if (bestThirds.length === 8) {
     // We need to assign bestThirds to the variable matches.
     // Variable matches home teams groups:
@@ -111,10 +109,10 @@ export function generateR32Matches(groups: Group[]) {
     const solve = (
       index: number,
       usedIndices: Set<number>,
-      currentAssignments: { [key: string]: Team }
+      currentAssignments: Map<string, Team>
     ): boolean => {
       if (index === variableHomeGroups.length) {
-        fallbackAssignments = { ...currentAssignments };
+        fallbackAssignments = new Map(currentAssignments);
         return true;
       }
 
@@ -128,14 +126,14 @@ export function generateR32Matches(groups: Group[]) {
           // Constraint: Third place team cannot play against 1st place of same group
           if (thirdTeam.group !== homeGroup) {
             usedIndices.add(i);
-            currentAssignments[homeGroup] = thirdTeam;
+            currentAssignments.set(homeGroup, thirdTeam);
 
             if (solve(index + 1, usedIndices, currentAssignments)) {
               return true;
             }
 
             // Backtrack
-            delete currentAssignments[homeGroup];
+            currentAssignments.delete(homeGroup);
             usedIndices.delete(i);
           }
         }
@@ -144,19 +142,19 @@ export function generateR32Matches(groups: Group[]) {
       return false;
     };
 
-    const solutionFound = solve(0, new Set(), {});
+    const solutionFound = solve(0, new Set(), new Map());
 
     // If no strict solution found (rare but possible with weird distributions?),
     // fall back to purely random valid assignment ignoring same-group constraint
     // to AT LEAST have a match.
     if (!solutionFound) {
       const usedIndices = new Set<number>();
-      const assignments: { [key: string]: Team } = {};
+      const assignments = new Map<string, Team>();
 
       for (const homeGroup of variableHomeGroups) {
         for (let i = 0; i < bestThirds.length; i++) {
           if (!usedIndices.has(i)) {
-            assignments[homeGroup] = bestThirds[i];
+            assignments.set(homeGroup, bestThirds[i]);
             usedIndices.add(i);
             break;
           }
@@ -176,15 +174,21 @@ export function generateR32Matches(groups: Group[]) {
       const rank = match.home.charAt(0); // "2"
       const groupName = match.home.charAt(1); // "A"
       if (isGroupFinished(groupName)) {
-        if (rank === "1") homeTeam = qualified[groupName].first;
-        else if (rank === "2") homeTeam = qualified[groupName].second;
+        const groupBest = qualified.get(groupName);
+        if (groupBest) {
+          if (rank === "1") homeTeam = groupBest.first;
+          else if (rank === "2") homeTeam = groupBest.second;
+        }
       }
     } else if (match.type === "variable") {
       // e.g. "1E"
       const rank = match.home.charAt(0);
       const groupName = match.home.charAt(1);
       if (isGroupFinished(groupName)) {
-        if (rank === "1") homeTeam = qualified[groupName].first;
+        const groupBest = qualified.get(groupName);
+        if (groupBest && rank === "1") {
+          homeTeam = groupBest.first;
+        }
       }
     }
 
@@ -193,8 +197,11 @@ export function generateR32Matches(groups: Group[]) {
       const rank = match.away.charAt(0);
       const groupName = match.away.charAt(1);
       if (isGroupFinished(groupName)) {
-        if (rank === "1") awayTeam = qualified[groupName].first;
-        else if (rank === "2") awayTeam = qualified[groupName].second;
+        const groupBest = qualified.get(groupName);
+        if (groupBest) {
+          if (rank === "1") awayTeam = groupBest.first;
+          else if (rank === "2") awayTeam = groupBest.second;
+        }
       }
     } else if (match.type === "variable") {
       // match.away is "3?"
@@ -202,8 +209,9 @@ export function generateR32Matches(groups: Group[]) {
       if (allGroupsFinished) {
         // Fallback: Check if we have a calculated assignment
         const homeGroup = match.home.charAt(1);
-        if (fallbackAssignments[homeGroup]) {
-          awayTeam = fallbackAssignments[homeGroup];
+        const assignedTeam = fallbackAssignments.get(homeGroup);
+        if (assignedTeam) {
+          awayTeam = assignedTeam;
         } else {
           // Fallback if no assignment found (should not happen if solver works)
           if (match.possibilities) {
@@ -215,6 +223,7 @@ export function generateR32Matches(groups: Group[]) {
           }
         }
       } else {
+        // ... show placeholder ...
         // If not all groups finished, show placeholder
         if (match.possibilities) {
           awayTeam = { placeholder: `3° (${match.possibilities.join("/")})` };
