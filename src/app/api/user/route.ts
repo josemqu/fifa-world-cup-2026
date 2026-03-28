@@ -59,7 +59,6 @@ export async function POST(request: Request) {
         $set: updateData,
         $setOnInsert: {
           createdAt: new Date(),
-          role: "user",
         },
       },
       { upsert: true, new: true, setDefaultsOnInsert: true, strict: false }
@@ -78,10 +77,10 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true, data: user });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in user API:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: error?.message || "Internal Server Error" },
       { status: 500 }
     );
   }

@@ -172,7 +172,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setDbUser(result.data);
         }
       } else {
-        throw new Error("Failed to update profile");
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Profile update failed with status:", response.status, errorData);
+        throw new Error(errorData.error || "Failed to update profile");
       }
     } catch (error) {
       console.error("Error updating profile:", error);

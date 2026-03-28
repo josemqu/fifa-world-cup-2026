@@ -115,6 +115,10 @@ export function UserProfileModal() {
         calculatedAge = parseInt(formData.age);
       }
 
+      if (isNaN(calculatedAge)) {
+        calculatedAge = 0;
+      }
+
       await updateProfile({
         displayName: formData.displayName,
         nickname: formData.nickname,
