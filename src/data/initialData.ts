@@ -708,7 +708,7 @@ const RAW_GROUPS = [
       createTeam("A1", "México", "A", 15),
       createTeam("A2", "Corea del Sur", "A", 23),
       createTeam("A3", "Sudáfrica", "A", 60),
-      createTeam("A4", "UEFA Playoff D", "A", 40, true),
+      createTeam("A4", "Chequia", "A", 40),
     ],
   },
   {
@@ -717,7 +717,7 @@ const RAW_GROUPS = [
       createTeam("B1", "Canadá", "B", 35),
       createTeam("B2", "Suiza", "B", 19),
       createTeam("B3", "Catar", "B", 60),
-      createTeam("B4", "UEFA Playoff A", "B", 40, true),
+      createTeam("B4", "Bosnia y Herzegovina", "B", 40),
     ],
   },
   {
@@ -735,7 +735,7 @@ const RAW_GROUPS = [
       createTeam("D1", "Estados Unidos", "D", 11),
       createTeam("D2", "Australia", "D", 24),
       createTeam("D3", "Paraguay", "D", 55),
-      createTeam("D4", "UEFA Playoff C", "D", 40, true),
+      createTeam("D4", "Turquía", "D", 40),
     ],
   },
   {
@@ -753,7 +753,7 @@ const RAW_GROUPS = [
       createTeam("F1", "Países Bajos", "F", 7),
       createTeam("F2", "Japón", "F", 16),
       createTeam("F3", "Túnez", "F", 35),
-      createTeam("F4", "UEFA Playoff B", "F", 40, true),
+      createTeam("F4", "Suecia", "F", 40),
     ],
   },
   {
@@ -780,7 +780,7 @@ const RAW_GROUPS = [
       createTeam("I1", "Francia", "I", 3),
       createTeam("I2", "Senegal", "I", 18),
       createTeam("I3", "Noruega", "I", 45),
-      createTeam("I4", "FIFA Playoff 2", "I", 50, true),
+      createTeam("I4", "Bolivia", "I", 50),
     ],
   },
   {
@@ -798,7 +798,7 @@ const RAW_GROUPS = [
       createTeam("K1", "Portugal", "K", 8),
       createTeam("K2", "Colombia", "K", 12),
       createTeam("K3", "Uzbekistán", "K", 60),
-      createTeam("K4", "FIFA Playoff 1", "K", 50, true),
+      createTeam("K4", "RD Congo", "K", 50),
     ],
   },
   {

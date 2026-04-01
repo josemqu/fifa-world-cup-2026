@@ -18,6 +18,8 @@ const TEAM_NAME_MAPPING: Record<string, string> = {
   Irán: "RI de Irán",
   "Arabia Saudita": "Arabia Saudí",
   Catar: "Qatar",
+  Chequia: "República Checa",
+  "RD Congo": "RD del Congo",
   // Add others if discovered
 };
 
