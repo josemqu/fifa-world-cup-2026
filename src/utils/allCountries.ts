@@ -81,7 +81,7 @@ export const ALL_COUNTRIES = [
   { name: "Hungría", code: "HUN" },
   { name: "India", code: "IND" },
   { name: "Indonesia", code: "IDN" },
-  { name: "Irak", code: "IRQ" },
+  { name: "Iraq", code: "IRQ" },
   { name: "Irán", code: "IRN" },
   { name: "Irlanda", code: "IRL" },
   { name: "Islandia", code: "ISL" },
