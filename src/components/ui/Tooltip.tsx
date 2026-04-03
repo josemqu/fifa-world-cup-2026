@@ -70,7 +70,6 @@ export function Tooltip({
     }
   }, [isVisible, placement]);
 
-  if (!mounted) return <>{children}</>;
 
   const variants = {
     top: {

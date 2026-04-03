@@ -84,7 +84,7 @@ Los grupos H (España, Uruguay, Arabia Saudita, Cabo Verde) y G (Bélgica, Egipt
 Seis de las 48 selecciones aún no se han determinado, y se conocerán tras los torneos clasificatorios que finalizan en marzo de 2026\.6 Estos equipos están representados por _placeholders_ en los grupos A, B, D, F, I y K.3
 
 - **UEFA Playoff (A, B, C, D):** Estos cuatro cupos se definirán entre 16 equipos europeos, incluyendo potencias como Italia, Ucrania, Polonia, y Dinamarca.3 La identidad del clasificado impactará directamente la dificultad de los grupos A, B, D y F.
-- **FIFA Playoff 1 y 2 (Torneo Intercontinental):** Dos cupos se disputarán entre seis equipos provenientes de distintas confederaciones: Bolivia (CONMEBOL), Nueva Caledonia (OFC), República Democrática del Congo (CAF), Irak (AFC), Jamaica (CONCACAF) y Surinam (CONCACAF).10 El ganador del Playoff 1 se integra al Grupo K, y el ganador del Playoff 2 al Grupo I.3
+- **FIFA Playoff 1 y 2 (Torneo Intercontinental):** Dos cupos se disputarán entre seis equipos provenientes de distintas confederaciones: Irak (CONMEBOL), Nueva Caledonia (OFC), República Democrática del Congo (CAF), Irak (AFC), Jamaica (CONCACAF) y Surinam (CONCACAF).10 El ganador del Playoff 1 se integra al Grupo K, y el ganador del Playoff 2 al Grupo I.3
 
 Estos _placeholders_ deben ser tratados como variables en la simulación, donde el usuario puede preasignar al clasificado más probable (por _ranking_ FIFA) o permitir una asignación aleatoria o basada en escenarios predefinidos de _Playoff_.
 

@@ -139,10 +139,10 @@ export const COUNTRIES: Country[] = [
     enName: "DR Congo",
   },
   {
-    name: "Bolivia",
-    isoCode: "BOL",
-    fifaCode: "BOL",
-    enName: "Bolivia",
+    name: "Irak",
+    isoCode: "IRQ",
+    fifaCode: "IRQ",
+    enName: "Irak",
   },
 ];
 
