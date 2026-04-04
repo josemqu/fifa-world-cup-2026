@@ -10,6 +10,7 @@ import { TeamFlag } from "@/components/ui/TeamFlag";
 import { Info, Trash2, Play, RotateCcw } from "lucide-react";
 import { useTournament } from "@/context/TournamentContext";
 import { useAuth } from "@/context/AuthContext";
+import { useMatchTime } from "@/hooks/useMatchTime";
 import confetti from "canvas-confetti";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -201,6 +202,8 @@ function MatchCard({
   const hasResult = match.homeScore !== null && match.awayScore !== null;
   const showTeamProbabilities = !hasResult;
 
+  const { date: localDate, time: localTime } = useMatchTime(match.date || "", match.time);
+
   return (
     <div
       className={clsx(
@@ -215,7 +218,7 @@ function MatchCard({
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-2">
               <span className="font-medium text-slate-500 dark:text-slate-400 text-[10px]">
-                {match.date}
+                {localDate}
               </span>
               <span className="text-slate-300 dark:text-slate-600">|</span>
               <span className="font-mono text-slate-400 text-[10px]">
@@ -224,7 +227,7 @@ function MatchCard({
             </div>
             {match.time && (
               <span className="text-[9px] text-slate-400 dark:text-slate-500">
-                {match.time}
+                {localTime}
               </span>
             )}
           </div>

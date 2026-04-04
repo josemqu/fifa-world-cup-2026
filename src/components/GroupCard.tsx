@@ -6,6 +6,7 @@ import { getTeamAbbreviation } from "@/utils/teamAbbreviations";
 import { ChevronDown, ChevronUp, CheckCircle2, Lock } from "lucide-react";
 import { analyzeGroup } from "@/utils/groupAnalysis";
 import { useMemo } from "react";
+import { MatchDateTime } from "@/components/ui/MatchDateTime";
 
 interface GroupCardProps {
   group: Group;
@@ -249,16 +250,10 @@ export function GroupCard({
                   className="text-xs border border-slate-200 dark:border-slate-700 rounded-md p-1.5 bg-white dark:bg-slate-800 shadow-sm"
                 >
                   <div className="flex justify-between items-center text-[10px] text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-wide leading-none">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="font-medium text-slate-500 dark:text-slate-400">
-                        {match.date}
-                      </span>
-                      {match.time && (
-                        <span className="text-[9px] text-slate-400 dark:text-slate-500">
-                          {match.time}
-                        </span>
-                      )}
-                    </div>
+                    <MatchDateTime 
+                      date={match.date || ""} 
+                      time={match.time} 
+                    />
                     {match.location && (
                       <div className="flex flex-col items-end max-w-[240px] leading-tight">
                         <span
