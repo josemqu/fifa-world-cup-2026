@@ -60,9 +60,7 @@ const TournamentContext = createContext<TournamentContextType | undefined>(
 
 export function TournamentProvider({ children }: { children: ReactNode }) {
   const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
-  const [knockoutMatches, setKnockoutMatches] = useState<KnockoutMatch[]>(() => 
-    generateR32Matches(INITIAL_GROUPS)
-  );
+  const [knockoutMatches, setKnockoutMatches] = useState<KnockoutMatch[]>([]);
   const [probabilities, setProbabilities] = useState<Map<string, any>>(
     new Map(),
   );
@@ -109,9 +107,15 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     const r32 = generateR32Matches(groups);
 
     setKnockoutMatches((prev) => {
-      // If first run, merge with initial structure
-      const currentMatches =
-        prev.length > 0 ? prev : getInitialKnockoutMatches();
+      // Ensure we always have the base structure for all knockout stages
+      const initialMatches = getInitialKnockoutMatches();
+      
+      // Merge previous matches with initial structure if missing
+      const currentMatches = prev.length > 0 ? prev : initialMatches;
+      
+      // Safety check: if currentMatches is missing non-R32 matches, add them
+      const hasR16 = currentMatches.some(m => m.stage === "R16");
+      const baseMatches = hasR16 ? currentMatches : [...currentMatches, ...initialMatches];
 
       // Update R32 matches
       // We need to preserve scores if the teams haven't changed
@@ -146,7 +150,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       });
 
       // Filter out old R32s and add new ones
-      const nonR32 = currentMatches
+      const nonR32 = baseMatches
         .filter((m) => m.stage !== "R32")
         .map((m) => {
           const allDefs = [
