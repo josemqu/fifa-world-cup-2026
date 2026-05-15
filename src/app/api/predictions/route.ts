@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Prediction from "@/models/Prediction";
 
+// api
+
 export async function POST(request: Request) {
   try {
     await connectDB();
