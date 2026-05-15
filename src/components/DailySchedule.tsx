@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Group, Match, KnockoutMatch, Team } from "@/data/types";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { MatchDateTime } from "@/components/ui/MatchDateTime";
@@ -110,9 +111,15 @@ export function DailySchedule({
   }, [allMatches]);
 
   // Find the "best" initial day - today if there are matches, otherwise the first day
+  const searchParams = useSearchParams();
   const getInitialDayIndex = useCallback(() => {
     if (sortedDays.length === 0) return 0;
-    const today = new Date().toLocaleDateString("sv-SE");
+    
+    // Check for simulatedTime
+    const simulatedTime = searchParams.get("simulatedTime");
+    const now = simulatedTime ? new Date(simulatedTime) : new Date();
+    const today = now.toLocaleDateString("sv-SE");
+    
     const todayIndex = sortedDays.indexOf(today);
     if (todayIndex !== -1) return todayIndex;
 
@@ -302,9 +309,8 @@ function ScheduleMatchCard({ match }: { match: NormalizedMatch }) {
         </span>
         <MatchDateTime
           utcDate={match.utcDate}
-          className="items-end"
           dateClassName="text-[10px] font-medium text-slate-400 dark:text-slate-500"
-          timeClassName="hidden"
+          timeClassName="text-[10px] font-bold text-slate-600 dark:text-slate-300"
         />
       </div>
 

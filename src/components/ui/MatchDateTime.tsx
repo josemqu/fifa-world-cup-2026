@@ -48,14 +48,22 @@ export function MatchDateTime({
   const isFinished = now ? now >= matchEndDate : false;
 
   return (
-    <div className={`flex flex-col gap-0.5 ${className}`}>
+    <div className={`flex items-center gap-2 ${className}`}>
       <div className="flex items-center gap-1.5">
         <span className={dateClassName}>
           {localDate}
         </span>
+        {localTime && (
+          <>
+            <span className="text-slate-300 dark:text-slate-700">|</span>
+            <span className={timeClassName}>
+              {localTime}
+            </span>
+          </>
+        )}
         {matchId && (
           <>
-            <span className="text-slate-300 dark:text-slate-600">|</span>
+            <span className="text-slate-200 dark:text-slate-800">|</span>
             <span className="font-mono text-slate-400 text-[10px]">
               #{matchId}
             </span>
@@ -78,11 +86,6 @@ export function MatchDateTime({
           </Tooltip>
         )}
       </div>
-      {localTime && (
-        <span className={`text-[9px] text-slate-400 dark:text-slate-500 ${timeClassName}`}>
-          {localTime}
-        </span>
-      )}
     </div>
   );
 }
