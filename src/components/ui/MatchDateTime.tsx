@@ -48,7 +48,7 @@ export function MatchDateTime({
   const isFinished = now ? now >= matchEndDate : false;
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={clsx("flex items-center gap-2", className)}>
       <div className="flex items-center gap-1.5">
         <span className={dateClassName}>
           {localDate}

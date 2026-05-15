@@ -112,31 +112,52 @@ export function DailySchedule({
 
   // Find the "best" initial day - today if there are matches, otherwise the first day
   const searchParams = useSearchParams();
+  const { todayKey, yesterdayKey, tomorrowKey } = useMemo(() => {
+    const simulatedTime = searchParams.get("simulatedTime");
+    const now = simulatedTime ? new Date(simulatedTime) : new Date();
+    
+    const today = now.toLocaleDateString("sv-SE");
+    
+    const yest = new Date(now);
+    yest.setDate(now.getDate() - 1);
+    const yesterday = yest.toLocaleDateString("sv-SE");
+    
+    const tom = new Date(now);
+    tom.setDate(now.getDate() + 1);
+    const tomorrow = tom.toLocaleDateString("sv-SE");
+    
+    return { todayKey: today, yesterdayKey: yesterday, tomorrowKey: tomorrow };
+  }, [searchParams]);
+
   const getInitialDayIndex = useCallback(() => {
     if (sortedDays.length === 0) return 0;
     
-    // Check for simulatedTime
-    const simulatedTime = searchParams.get("simulatedTime");
-    const now = simulatedTime ? new Date(simulatedTime) : new Date();
-    const today = now.toLocaleDateString("sv-SE");
-    
-    const todayIndex = sortedDays.indexOf(today);
+    const todayIndex = sortedDays.indexOf(todayKey);
     if (todayIndex !== -1) return todayIndex;
 
     // Find the closest future day
-    const futureIndex = sortedDays.findIndex((d) => d >= today);
+    const futureIndex = sortedDays.findIndex((d) => d >= todayKey);
     if (futureIndex !== -1) return futureIndex;
 
     // All days are past, show the last day
     return sortedDays.length - 1;
-  }, [sortedDays]);
+  }, [sortedDays, todayKey]);
 
+  const [mounted, setMounted] = useState(false);
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
 
   useEffect(() => {
+    setMounted(true);
     setCurrentDayIndex(getInitialDayIndex());
   }, [getInitialDayIndex]);
 
+  if (!mounted) {
+    return (
+      <div className="min-h-[400px] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
   if (sortedDays.length === 0) {
     return (
       <div className="text-center text-slate-400 py-12">
@@ -146,6 +167,14 @@ export function DailySchedule({
   }
 
   const currentDay = sortedDays[currentDayIndex];
+
+  const relativeLabel = (() => {
+    if (currentDay === todayKey) return "Hoy";
+    if (currentDay === yesterdayKey) return "Ayer";
+    if (currentDay === tomorrowKey) return "Mañana";
+    return null;
+  })();
+
   const currentMatches = matchesByDay.get(currentDay) || [];
 
   // Group by hour
@@ -209,18 +238,29 @@ export function DailySchedule({
         </Tooltip>
 
         <div className="flex flex-col items-center gap-1">
-          <Tooltip content="Ir al día más cercano a hoy" placement="top">
-            <button
-              onClick={goToToday}
-              className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
-            >
-              <Calendar size={12} />
-              <span>Hoy</span>
-            </button>
-          </Tooltip>
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white text-center">
-            {displayDay}
-          </h2>
+          <div className="flex items-center gap-2">
+            {relativeLabel && (
+              <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 bg-blue-600 text-white rounded shadow-sm">
+                {relativeLabel}
+              </span>
+            )}
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white text-center">
+              {displayDay}
+            </h2>
+            
+            {currentDay !== todayKey && (
+              <Tooltip content="Volver a Hoy" placement="top">
+                <button
+                  onClick={goToToday}
+                  className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-all"
+                  aria-label="Ir a hoy"
+                >
+                  <Calendar size={16} />
+                </button>
+              </Tooltip>
+            )}
+          </div>
+          
           <span className="text-xs text-slate-400 dark:text-slate-500">
             {currentMatches.length} partido{currentMatches.length !== 1 ? "s" : ""} ·
             Día {currentDayIndex + 1} de {sortedDays.length}

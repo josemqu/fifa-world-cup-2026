@@ -60,7 +60,9 @@ const TournamentContext = createContext<TournamentContextType | undefined>(
 
 export function TournamentProvider({ children }: { children: ReactNode }) {
   const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
-  const [knockoutMatches, setKnockoutMatches] = useState<KnockoutMatch[]>([]);
+  const [knockoutMatches, setKnockoutMatches] = useState<KnockoutMatch[]>(() => 
+    generateR32Matches(INITIAL_GROUPS)
+  );
   const [probabilities, setProbabilities] = useState<Map<string, any>>(
     new Map(),
   );
