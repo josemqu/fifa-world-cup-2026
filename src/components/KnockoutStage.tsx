@@ -17,6 +17,7 @@ import {
   FloatingContainer,
   FloatingButton,
 } from "@/components/ui/FloatingActions";
+import { MatchDateTime } from "@/components/ui/MatchDateTime";
 
 interface KnockoutStageProps {
   groups: Group[];
@@ -202,8 +203,6 @@ function MatchCard({
   const hasResult = match.homeScore !== null && match.awayScore !== null;
   const showTeamProbabilities = !hasResult;
 
-  const { date: localDate, time: localTime } = useMatchTime(match.utcDate);
-
   return (
     <div
       className={clsx(
@@ -215,22 +214,11 @@ function MatchCard({
     >
       <div className="p-3 pb-2">
         <div className="text-xs text-slate-400 mb-2 flex justify-between items-start leading-none uppercase tracking-wide">
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-slate-500 dark:text-slate-400 text-[10px]">
-                {localDate}
-              </span>
-              <span className="text-slate-300 dark:text-slate-600">|</span>
-              <span className="font-mono text-slate-400 text-[10px]">
-                #{match.id}
-              </span>
-            </div>
-            {localTime && (
-              <span className="text-[9px] text-slate-400 dark:text-slate-500">
-                {localTime}
-              </span>
-            )}
-          </div>
+          <MatchDateTime 
+            utcDate={match.utcDate} 
+            matchId={match.id} 
+            dateClassName="font-medium text-slate-500 dark:text-slate-400 text-[10px]" 
+          />
           {match.location && (
             <div className="flex flex-col items-end max-w-[140px] gap-0.5">
               <span
