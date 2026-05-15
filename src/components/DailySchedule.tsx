@@ -5,6 +5,7 @@ import { Group, Match, KnockoutMatch, Team } from "@/data/types";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { MatchDateTime } from "@/components/ui/MatchDateTime";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { useTournament } from "@/context/TournamentContext";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -23,6 +24,7 @@ type NormalizedMatch = {
   location?: string;
   stage: string; // "Grupo A", "16avos", etc.
   isKnockout: boolean;
+  groupId?: string;
 };
 
 const STAGE_LABELS: Record<string, string> = {
@@ -65,6 +67,7 @@ export function DailySchedule({
           location: match.location,
           stage: `Grupo ${group.name}`,
           isKnockout: false,
+          groupId: group.name,
         });
       }
     }
@@ -265,11 +268,30 @@ export function DailySchedule({
 }
 
 function ScheduleMatchCard({ match }: { match: NormalizedMatch }) {
-  const hasResult =
-    match.homeScore !== null &&
-    match.homeScore !== undefined &&
-    match.awayScore !== null &&
-    match.awayScore !== undefined;
+  const { updateMatch, updateKnockoutMatch } = useTournament();
+
+  const handleScoreChange = (
+    side: "home" | "away",
+    val: string
+  ) => {
+    const score = val === "" ? null : parseInt(val);
+    if (match.isKnockout) {
+      updateKnockoutMatch(
+        match.id,
+        side === "home" ? score : (match.homeScore ?? null),
+        side === "away" ? score : (match.awayScore ?? null)
+      );
+    } else if (match.groupId) {
+      updateMatch(
+        match.groupId,
+        match.id,
+        side === "home" ? score : (match.homeScore ?? null),
+        side === "away" ? score : (match.awayScore ?? null)
+      );
+    }
+  };
+
+  const isPlaceholder = match.homeTeamName === "Por definir" || match.awayTeamName === "Por definir";
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden transition-colors hover:border-slate-300 dark:hover:border-slate-600">
@@ -288,18 +310,22 @@ function ScheduleMatchCard({ match }: { match: NormalizedMatch }) {
 
       {/* Teams */}
       <div className="p-3">
-        <div className="flex items-center justify-between gap-2">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
           {/* Home */}
-          <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
             <TeamFlag
               teamName={match.homeTeamName}
               className="w-6 h-4 shrink-0"
             />
-            <Tooltip content={match.homeTeamName} placement="top">
+            <Tooltip 
+              content={match.homeTeamName} 
+              placement="top"
+              wrapperClassName="min-w-0 flex-1"
+            >
               <span
                 className={clsx(
-                  "text-sm font-medium truncate cursor-default",
-                  match.homeTeamName === "Por definir" || match.isKnockout && !hasResult
+                  "text-sm font-medium truncate block cursor-default",
+                  match.homeTeamName === "Por definir" || match.isKnockout && match.homeScore === null
                     ? "text-slate-400 dark:text-slate-500 italic"
                     : "text-slate-900 dark:text-slate-100"
                 )}
@@ -309,34 +335,42 @@ function ScheduleMatchCard({ match }: { match: NormalizedMatch }) {
             </Tooltip>
           </div>
 
-          {/* Score */}
+          {/* Score Inputs */}
           <div className="flex items-center gap-1 shrink-0 mx-2">
-            {hasResult ? (
-              <div className="flex items-center gap-1">
-                <span className="w-7 h-7 flex items-center justify-center text-xs font-bold bg-slate-100 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700">
-                  {match.homeScore}
-                </span>
-                <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
-                  :
-                </span>
-                <span className="w-7 h-7 flex items-center justify-center text-xs font-bold bg-slate-100 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700">
-                  {match.awayScore}
-                </span>
-              </div>
-            ) : (
-              <span className="text-xs text-slate-300 dark:text-slate-600 font-bold tracking-wider">
-                vs
-              </span>
-            )}
+            <input
+              type="number"
+              min="0"
+              placeholder="-"
+              disabled={isPlaceholder}
+              value={match.homeScore ?? ""}
+              onChange={(e) => handleScoreChange("home", e.target.value)}
+              className="w-8 h-8 text-center text-xs font-bold bg-slate-100 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-30 transition-all appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
+            <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
+              :
+            </span>
+            <input
+              type="number"
+              min="0"
+              placeholder="-"
+              disabled={isPlaceholder}
+              value={match.awayScore ?? ""}
+              onChange={(e) => handleScoreChange("away", e.target.value)}
+              className="w-8 h-8 text-center text-xs font-bold bg-slate-100 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-30 transition-all appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
           </div>
 
           {/* Away */}
-          <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-            <Tooltip content={match.awayTeamName} placement="top">
+          <div className="flex items-center gap-2 min-w-0 justify-end">
+            <Tooltip 
+              content={match.awayTeamName} 
+              placement="top"
+              wrapperClassName="min-w-0 flex-1"
+            >
               <span
                 className={clsx(
-                  "text-sm font-medium truncate text-right cursor-default",
-                  match.awayTeamName === "Por definir" || match.isKnockout && !hasResult
+                  "text-sm font-medium truncate block text-right cursor-default",
+                  match.awayTeamName === "Por definir" || match.isKnockout && match.awayScore === null
                     ? "text-slate-400 dark:text-slate-500 italic"
                     : "text-slate-900 dark:text-slate-100"
                 )}

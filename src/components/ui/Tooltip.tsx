@@ -9,6 +9,7 @@ interface TooltipProps {
   children: React.ReactNode;
   content: React.ReactNode;
   className?: string;
+  wrapperClassName?: string;
   placement?: "top" | "right" | "bottom" | "left";
 }
 
@@ -16,6 +17,7 @@ export function Tooltip({
   children,
   content,
   className,
+  wrapperClassName,
   placement = "top",
 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
@@ -130,7 +132,7 @@ export function Tooltip({
       ref={triggerRef}
       onMouseEnter={() => setIsVisible(true)}
       onMouseLeave={() => setIsVisible(false)}
-      className="inline-block relative cursor-help mx-0"
+      className={twMerge("relative cursor-help mx-0", wrapperClassName)}
     >
       {children}
       {isVisible && (
