@@ -168,9 +168,11 @@ export function DailySchedule({
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
 
   useEffect(() => {
-    setMounted(true);
-    setCurrentDayIndex(getInitialDayIndex());
-  }, [getInitialDayIndex]);
+    if (!mounted) {
+      setMounted(true);
+      setCurrentDayIndex(getInitialDayIndex());
+    }
+  }, [getInitialDayIndex, mounted]);
 
   if (!mounted) {
     return (
