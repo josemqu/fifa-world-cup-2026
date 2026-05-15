@@ -202,7 +202,7 @@ function MatchCard({
   const hasResult = match.homeScore !== null && match.awayScore !== null;
   const showTeamProbabilities = !hasResult;
 
-  const { date: localDate, time: localTime } = useMatchTime(match.date || "", match.time);
+  const { date: localDate, time: localTime } = useMatchTime(match.utcDate);
 
   return (
     <div
@@ -225,7 +225,7 @@ function MatchCard({
                 #{match.id}
               </span>
             </div>
-            {match.time && (
+            {localTime && (
               <span className="text-[9px] text-slate-400 dark:text-slate-500">
                 {localTime}
               </span>

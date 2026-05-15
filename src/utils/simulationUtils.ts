@@ -194,11 +194,7 @@ export const getInitialKnockoutMatches = (): KnockoutMatch[] => {
       homeTeam: { placeholder: `W${m.home.replace("W", "")}` },
       awayTeam: { placeholder: `W${m.away.replace("W", "")}` },
       nextMatchId: m.next,
-      // @ts-ignore
-      date: m.date,
-      // @ts-ignore
-      time: m.time,
-      // @ts-ignore
+      utcDate: m.utcDate,
       location: m.location,
     });
   });
@@ -211,11 +207,7 @@ export const getInitialKnockoutMatches = (): KnockoutMatch[] => {
       homeTeam: { placeholder: `W${m.home.replace("W", "")}` },
       awayTeam: { placeholder: `W${m.away.replace("W", "")}` },
       nextMatchId: m.next,
-      // @ts-ignore
-      date: m.date,
-      // @ts-ignore
-      time: m.time,
-      // @ts-ignore
+      utcDate: m.utcDate,
       location: m.location,
     });
   });
@@ -228,11 +220,7 @@ export const getInitialKnockoutMatches = (): KnockoutMatch[] => {
       homeTeam: { placeholder: `W${m.home.replace("W", "")}` },
       awayTeam: { placeholder: `W${m.away.replace("W", "")}` },
       nextMatchId: m.next,
-      // @ts-ignore
-      date: m.date,
-      // @ts-ignore
-      time: m.time,
-      // @ts-ignore
+      utcDate: m.utcDate,
       location: m.location,
     });
   });
@@ -253,11 +241,7 @@ export const getInitialKnockoutMatches = (): KnockoutMatch[] => {
           : `L${m.away.replace("L", "")}`,
       },
       nextMatchId: m.next || undefined,
-      // @ts-ignore
-      date: m.date,
-      // @ts-ignore
-      time: m.time,
-      // @ts-ignore
+      utcDate: m.utcDate,
       location: m.location,
     });
   });
@@ -282,11 +266,7 @@ export const runKnockoutSimulation = (
     if (def) {
       return {
         ...m,
-        // @ts-ignore
-        date: def.date,
-        // @ts-ignore
-        time: def.time,
-        // @ts-ignore
+        utcDate: def.utcDate,
         location: def.location,
       };
     }

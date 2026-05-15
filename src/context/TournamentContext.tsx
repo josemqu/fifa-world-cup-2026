@@ -157,12 +157,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           if (def) {
             return {
               ...m,
-              // @ts-ignore
-              date: def.date,
-              // @ts-ignore
-              time: def.time,
-              // @ts-ignore
-              location: def.location,
+              utcDate: (def as any).utcDate,
+              location: (def as any).location,
             };
           }
           return m;

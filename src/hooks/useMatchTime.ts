@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { getLocalDateAndTime } from "@/utils/dateUtils";
 
-export function useMatchTime(date: string, time?: string) {
+export function useMatchTime(utcDate: string) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -11,8 +11,8 @@ export function useMatchTime(date: string, time?: string) {
   }, []);
 
   if (!mounted) {
-    return { date, time: time || "" };
+    return { date: "", time: "" };
   }
 
-  return getLocalDateAndTime(date, time || "");
+  return getLocalDateAndTime(utcDate);
 }

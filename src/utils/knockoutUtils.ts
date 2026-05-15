@@ -12,8 +12,7 @@ interface R32MatchDefinition {
   away: string;
   next: string;
   possibilities?: string[];
-  date?: string;
-  time?: string;
+  utcDate: string;
   location?: string;
 }
 

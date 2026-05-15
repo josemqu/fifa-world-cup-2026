@@ -251,8 +251,7 @@ export function GroupCard({
                 >
                   <div className="flex justify-between items-center text-[10px] text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-wide leading-none">
                     <MatchDateTime 
-                      date={match.date || ""} 
-                      time={match.time} 
+                      utcDate={match.utcDate} 
                     />
                     {match.location && (
                       <div className="flex flex-col items-end max-w-[240px] leading-tight">

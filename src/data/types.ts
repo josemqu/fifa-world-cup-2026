@@ -22,8 +22,7 @@ export type Match = {
   awayTeamId: string;
   homeScore?: number | null;
   awayScore?: number | null;
-  date?: string;
-  time?: string;
+  utcDate: string; // ISO 8601 UTC string
   location?: string; // Stadium - City
   finished: boolean;
 };
@@ -52,8 +51,7 @@ export type KnockoutMatch = {
   awayPenalties?: number | null;
   winner?: Team | null;
   nextMatchId?: string; // Where the winner goes
-  date?: string;
-  time?: string;
+  utcDate: string; // ISO 8601 UTC string
   location?: string;
   probabilisticData?: {
     homeTeamProb: number; // 0-1
