@@ -234,6 +234,7 @@ export function generateR32Matches(groups: Group[]) {
 
     return {
       ...match,
+      stage: "R32" as const,
       homeTeam,
       awayTeam,
       nextMatchId: match.next,

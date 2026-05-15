@@ -28,6 +28,9 @@ type NormalizedMatch = {
   groupId?: string;
 };
 
+const TOURNAMENT_START = "2026-06-11";
+const TOURNAMENT_END = "2026-07-19";
+
 const STAGE_LABELS: Record<string, string> = {
   R32: "16avos de Final",
   R16: "Octavos de Final",
@@ -55,9 +58,11 @@ export function DailySchedule({
 
     // Group stage matches
     for (const group of groups) {
-      for (const match of group.matches) {
+      group.matches.forEach((match, i) => {
         const homeTeam = group.teams.find((t) => t.id === match.homeTeamId);
         const awayTeam = group.teams.find((t) => t.id === match.awayTeamId);
+        const matchday = Math.floor(i / 2) + 1;
+        
         result.push({
           id: match.id,
           utcDate: match.utcDate,
@@ -66,11 +71,11 @@ export function DailySchedule({
           homeScore: match.homeScore,
           awayScore: match.awayScore,
           location: match.location,
-          stage: `Grupo ${group.name}`,
+          stage: `Fase de grupos — Fecha ${matchday}`,
           isKnockout: false,
           groupId: group.name,
         });
-      }
+      });
     }
 
     // Knockout matches
@@ -88,9 +93,15 @@ export function DailySchedule({
       });
     }
 
-    return result.sort(
+    const sorted = result.sort(
       (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
     );
+
+    // Final results Map to ensure unique IDs (safety against data inconsistencies)
+    const uniqueMap = new Map<string, NormalizedMatch>();
+    sorted.forEach((m) => uniqueMap.set(m.id, m));
+
+    return Array.from(uniqueMap.values());
   }, [groups, knockoutMatches]);
 
   // Group matches by local date string (e.g., "2026-06-11")
@@ -106,7 +117,17 @@ export function DailySchedule({
       byDay.get(dateKey)!.push(match);
     }
 
-    const days = Array.from(byDay.keys()).sort();
+    // Generate ALL tournament days
+    const days: string[] = [];
+    const start = new Date(TOURNAMENT_START + "T00:00:00Z");
+    const end = new Date(TOURNAMENT_END + "T00:00:00Z");
+    const current = new Date(start);
+
+    while (current <= end) {
+      days.push(current.toISOString().split("T")[0]);
+      current.setUTCDate(current.getUTCDate() + 1);
+    }
+
     return { matchesByDay: byDay, sortedDays: days };
   }, [allMatches]);
 
@@ -244,21 +265,23 @@ export function DailySchedule({
                 {relativeLabel}
               </span>
             )}
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white text-center">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white text-center min-w-[200px]">
               {displayDay}
             </h2>
             
-            {currentDay !== todayKey && (
-              <Tooltip content="Volver a Hoy" placement="top">
-                <button
-                  onClick={goToToday}
-                  className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-all"
-                  aria-label="Ir a hoy"
-                >
-                  <Calendar size={16} />
-                </button>
-              </Tooltip>
-            )}
+            <div className="w-8 flex justify-center">
+              {currentDay !== todayKey && (
+                <Tooltip content="Volver a Hoy" placement="top">
+                  <button
+                    onClick={goToToday}
+                    className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-all"
+                    aria-label="Ir a hoy"
+                  >
+                    <Calendar size={16} />
+                  </button>
+                </Tooltip>
+              )}
+            </div>
           </div>
           
           <span className="text-xs text-slate-400 dark:text-slate-500">
@@ -284,31 +307,45 @@ export function DailySchedule({
       </div>
 
       {/* Matches by Hour */}
-      <div className="space-y-4">
-        {sortedHours.map((hour) => {
-          const hourMatches = matchesByHour.get(hour)!;
-          return (
-            <div key={hour}>
-              {/* Hour Header */}
-              <div className="flex items-center gap-3 mb-2">
-                <span className="text-sm font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 font-mono">
-                  {hour}
-                </span>
-                <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wide">
-                  {hourMatches.length} partido{hourMatches.length !== 1 ? "s" : ""}
-                </span>
-              </div>
+      <div className="space-y-6">
+        {sortedHours.length > 0 ? (
+          sortedHours.map((hour) => {
+            const hourMatches = matchesByHour.get(hour)!;
+            return (
+              <div key={hour} className="animate-in fade-in slide-in-from-top-2 duration-300">
+                {/* Hour Header */}
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-sm font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 font-mono">
+                    {hour}
+                  </span>
+                  <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest font-bold">
+                    {hourMatches.length} partido{hourMatches.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
 
-              {/* Match Cards */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {hourMatches.map((match) => (
-                  <ScheduleMatchCard key={match.id} match={match} />
-                ))}
+                {/* Match Cards */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {hourMatches.map((match) => (
+                    <ScheduleMatchCard key={match.id} match={match} />
+                  ))}
+                </div>
               </div>
+            );
+          })
+        ) : (
+          <div className="flex flex-col items-center justify-center py-24 px-4 text-center bg-slate-50 dark:bg-slate-900/50 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800/50 animate-in fade-in zoom-in-95 duration-500">
+            <div className="w-20 h-20 bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex items-center justify-center mb-6 border border-slate-100 dark:border-slate-700">
+              <Calendar className="w-10 h-10 text-slate-300 dark:text-slate-600" />
             </div>
-          );
-        })}
+            <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 mb-2 uppercase tracking-tight">
+              Sin partidos
+            </h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs leading-relaxed">
+              No hay encuentros programados para esta fecha. ¡Aprovecha para repasar las posiciones de los grupos o los cruces de eliminatorias!
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -343,10 +380,17 @@ function ScheduleMatchCard({ match }: { match: NormalizedMatch }) {
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden transition-colors hover:border-slate-300 dark:hover:border-slate-600">
       {/* Header: Stage + Status */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700/50">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-          {match.stage}
-        </span>
+      <div className="flex items-center justify-between px-3 py-2 bg-slate-50/80 dark:bg-slate-900/80 border-b border-slate-100 dark:border-slate-700/50 backdrop-blur-sm">
+        <div className="flex items-center gap-2">
+          {match.isKnockout ? (
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+          ) : (
+            <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600" />
+          )}
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+            {match.stage}
+          </span>
+        </div>
         <MatchDateTime
           utcDate={match.utcDate}
           dateClassName="text-[10px] font-medium text-slate-400 dark:text-slate-500"
