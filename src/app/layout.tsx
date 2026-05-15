@@ -94,6 +94,7 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <body
         className={`${inter.className} bg-slate-50 dark:bg-slate-900 min-h-screen flex flex-col text-slate-900 dark:text-slate-100`}
+        suppressHydrationWarning
       >
         <AuthProvider>
           <TournamentProvider>
