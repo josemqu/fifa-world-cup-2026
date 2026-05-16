@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback, useEffect } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { Group, Match, KnockoutMatch, Team } from "@/data/types";
 import { TeamFlag } from "@/components/ui/TeamFlag";
@@ -167,6 +167,7 @@ export function DailySchedule({
   const [mounted, setMounted] = useState(false);
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
   const [direction, setDirection] = useState<'left' | 'right' | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!mounted) {
@@ -208,6 +209,12 @@ export function DailySchedule({
         goToPrevDay();
       } else if (e.key === "ArrowRight") {
         goToNextDay();
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        scrollContainerRef.current?.scrollBy({ top: -100, behavior: "smooth" });
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        scrollContainerRef.current?.scrollBy({ top: 100, behavior: "smooth" });
       }
     };
 
@@ -351,7 +358,10 @@ export function DailySchedule({
         {/* Top Gradient Fade */}
         <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white dark:from-[#0a0a0a] to-transparent pointer-events-none z-20 transition-opacity duration-300" />
         
-        <div className="h-full overflow-y-auto scrollbar-hide pt-8 pb-16 px-4 -mx-4">
+        <div 
+          ref={scrollContainerRef}
+          className="h-full overflow-y-auto scrollbar-hide pt-8 pb-16 px-4 -mx-4"
+        >
           <div 
             key={currentDay} 
             className={clsx(
