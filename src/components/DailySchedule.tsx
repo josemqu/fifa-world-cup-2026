@@ -314,7 +314,7 @@ export function DailySchedule({
         <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white dark:from-[#0a0a0a] to-transparent pointer-events-none z-20 transition-opacity duration-300" />
         
         <div className="h-full overflow-y-auto scrollbar-hide pt-8 pb-16">
-          <div key={currentDay} className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div key={currentDay} className="space-y-6 animate-fast-fade">
             {sortedHours.length > 0 ? (
               sortedHours.map((hour) => {
                 const hourMatches = matchesByHour.get(hour)!;
