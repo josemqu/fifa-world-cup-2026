@@ -212,46 +212,32 @@ function MatchCard({
           : "border-slate-200 dark:border-slate-700",
       )}
     >
-      <div className="p-3 pb-2">
-        <div className="text-xs text-slate-400 mb-2 flex justify-between items-start leading-none uppercase tracking-wide">
-          <MatchDateTime 
-            utcDate={match.utcDate} 
-            matchId={match.id} 
-            dateClassName="font-medium text-slate-500 dark:text-slate-400 text-[10px]" 
-          />
-          {match.location && (
-            <div className="flex flex-col items-end max-w-[140px] gap-0.5">
-              <span
-                className="truncate w-full text-right font-medium text-slate-500 dark:text-slate-400 text-[10px]"
-                title={match.location}
-              >
-                {match.location.split(" - ")[0]}
-              </span>
-              {match.location.includes(" - ") && (
-                <span
-                  className="text-[9px] text-slate-400 dark:text-slate-500 truncate w-full text-right"
-                  title={match.location.split(" - ")[1]}
-                >
-                  {match.location.split(" - ")[1]}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
+      {/* Header Section: Date & ID (Symmetrical with footer) */}
+      <div className="border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/30 px-3 py-1.5 flex justify-between items-center rounded-t-lg min-h-[32px]">
+        <MatchDateTime 
+          utcDate={match.utcDate} 
+          matchId={match.id} 
+          dateClassName="font-medium text-slate-500 dark:text-slate-400 text-[10px] uppercase tracking-tight" 
+        />
+        <span className="text-[10px] font-bold text-slate-400/70 dark:text-slate-500/70 uppercase tracking-widest">
+          {roundName} {match.id}
+        </span>
+      </div>
 
+      <div className="p-3">
         {isPenaltyTied && (
           <div
-            className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-bold shadow-sm z-20"
+            className="absolute top-10 right-2 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-bold shadow-sm z-20"
             title="Penalties cannot be tied"
           >
             !
           </div>
         )}
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5">
           {/* Home Team */}
           <div className="flex justify-between items-center gap-2">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className="flex items-center gap-1 min-w-0">
+              <div className="flex items-center gap-1.5 min-w-0">
                 <TeamFlag
                   teamName={homeName || ""}
                   className="w-4 h-3 shrink-0"
@@ -341,7 +327,7 @@ function MatchCard({
           {/* Away Team */}
           <div className="flex justify-between items-center gap-2">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className="flex items-center gap-1 min-w-0">
+              <div className="flex items-center gap-1.5 min-w-0">
                 <TeamFlag
                   teamName={awayName || ""}
                   className="w-4 h-3 shrink-0"
@@ -738,7 +724,7 @@ export function KnockoutStage({
           className="grid gap-x-8 gap-y-4 px-4"
           style={{
             gridTemplateColumns: "repeat(5, minmax(170px, 1fr))",
-            gridTemplateRows: "auto repeat(8, minmax(220px, auto)) auto",
+            gridTemplateRows: "auto repeat(8, minmax(150px, auto)) auto",
           }}
         >
           {/* Stage Backgrounds & Headers */}
