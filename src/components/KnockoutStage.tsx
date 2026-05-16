@@ -876,7 +876,7 @@ export function KnockoutStage({
             {finalMatch && (
               <div
                 ref={finalMatchRef}
-                className="absolute top-1/2 left-0 right-0 -translate-y-1/2 z-10 flex flex-col items-center"
+                className="absolute top-1/2 left-0 right-0 -translate-y-1/2 z-10"
               >
                 {/* Static Champion Banner (visible when final match is in view) */}
                 {champion ? (
