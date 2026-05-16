@@ -7,6 +7,7 @@ import { clsx } from "clsx";
 import { LogOut, User as UserIcon, Settings, ChevronDown } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
 
 export function Header() {
   const pathname = usePathname();
@@ -87,57 +88,92 @@ export function Header() {
           <Link
             href="/"
             className={clsx(
-              "px-4 md:px-6 rounded-lg py-2 text-xs font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200 whitespace-nowrap",
+              "relative px-4 md:px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center focus:outline-none transition-all duration-200 whitespace-nowrap",
               isHome
-                ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm"
-                : "text-slate-500 dark:text-slate-400 hover:bg-white/40 hover:text-slate-700 dark:hover:text-slate-200"
+                ? "text-blue-600 dark:text-blue-100"
+                : "text-slate-500 dark:text-slate-400 hover:bg-white/20 hover:text-slate-700 dark:hover:text-slate-200"
             )}
           >
-            Inicio
+            {isHome && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute inset-0 bg-white dark:bg-slate-700 rounded-lg shadow-sm"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
+            )}
+            <span className="relative z-10">Inicio</span>
           </Link>
           <Link
             href="/schedule"
             className={clsx(
-              "px-4 md:px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200 whitespace-nowrap",
+              "relative px-4 md:px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center focus:outline-none transition-all duration-200 whitespace-nowrap",
               isSchedule
-                ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm"
-                : "text-slate-500 dark:text-slate-400 hover:bg-white/40 hover:text-slate-700 dark:hover:text-slate-200"
+                ? "text-blue-600 dark:text-blue-100"
+                : "text-slate-500 dark:text-slate-400 hover:bg-white/20 hover:text-slate-700 dark:hover:text-slate-200"
             )}
           >
-            Cronograma
+            {isSchedule && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute inset-0 bg-white dark:bg-slate-700 rounded-lg shadow-sm"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
+            )}
+            <span className="relative z-10">Cronograma</span>
           </Link>
           <Link
             href="/groups"
             className={clsx(
-              "px-4 md:px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200 whitespace-nowrap",
+              "relative px-4 md:px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center focus:outline-none transition-all duration-200 whitespace-nowrap",
               isGroups
-                ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm"
-                : "text-slate-500 dark:text-slate-400 hover:bg-white/40 hover:text-slate-700 dark:hover:text-slate-200"
+                ? "text-blue-600 dark:text-blue-100"
+                : "text-slate-500 dark:text-slate-400 hover:bg-white/20 hover:text-slate-700 dark:hover:text-slate-200"
             )}
           >
-            Grupos
+            {isGroups && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute inset-0 bg-white dark:bg-slate-700 rounded-lg shadow-sm"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
+            )}
+            <span className="relative z-10">Grupos</span>
           </Link>
           <Link
             href="/knockout"
             className={clsx(
-              "px-4 md:px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200 whitespace-nowrap",
+              "relative px-4 md:px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center focus:outline-none transition-all duration-200 whitespace-nowrap",
               isKnockout
-                ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm"
-                : "text-slate-500 dark:text-slate-400 hover:bg-white/40 hover:text-slate-700 dark:hover:text-slate-200"
+                ? "text-blue-600 dark:text-blue-100"
+                : "text-slate-500 dark:text-slate-400 hover:bg-white/20 hover:text-slate-700 dark:hover:text-slate-200"
             )}
           >
-            Eliminatoria
+            {isKnockout && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute inset-0 bg-white dark:bg-slate-700 rounded-lg shadow-sm"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
+            )}
+            <span className="relative z-10">Eliminatoria</span>
           </Link>
           <Link
             href="/predictions"
             className={clsx(
-              "px-4 md:px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200 whitespace-nowrap",
+              "relative px-4 md:px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center focus:outline-none transition-all duration-200 whitespace-nowrap",
               isPredictions
-                ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm"
-                : "text-slate-500 dark:text-slate-400 hover:bg-white/40 hover:text-slate-700 dark:hover:text-slate-200"
+                ? "text-blue-600 dark:text-blue-100"
+                : "text-slate-500 dark:text-slate-400 hover:bg-white/20 hover:text-slate-700 dark:hover:text-slate-200"
             )}
           >
-            Predicciones
+            {isPredictions && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute inset-0 bg-white dark:bg-slate-700 rounded-lg shadow-sm"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
+            )}
+            <span className="relative z-10">Predicciones</span>
           </Link>
         </nav>
       </div>
