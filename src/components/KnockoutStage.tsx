@@ -79,7 +79,7 @@ function CandidatesTooltip({
             key={c.team.id}
             className="flex justify-between items-center text-[10px]"
           >
-            <span className="truncate max-w-[100px]" title={c.team.name}>
+            <span className="truncate max-w-[100px] block">
               {c.team.name}
             </span>
             <span className="font-mono text-slate-400 ml-2 shrink-0">
@@ -216,12 +216,13 @@ function MatchCard({
 
       <div className="p-3">
         {isPenaltyTied && (
-          <div
-            className="absolute top-10 right-2 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-bold shadow-sm z-20"
-            title="Penalties cannot be tied"
-          >
-            !
-          </div>
+          <Tooltip content="Los penales no pueden quedar empatados" placement="top">
+            <div
+              className="absolute top-10 right-2 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-bold shadow-sm z-20"
+            >
+              !
+            </div>
+          </Tooltip>
         )}
         <div className="flex flex-col gap-1.5">
           {/* Home Team */}
@@ -232,18 +233,19 @@ function MatchCard({
                   teamName={homeName || ""}
                   className="w-4 h-3 shrink-0"
                 />
-                <span
-                  className={clsx(
-                    "font-medium text-xs truncate",
-                    isHomePlaceholder
-                      ? "text-slate-400 italic"
-                      : "text-slate-900 dark:text-slate-100",
-                    isHomeProjected && "text-blue-600 dark:text-blue-400",
-                  )}
-                  title={homeName}
-                >
-                  {homeName}
-                </span>
+                <Tooltip content={homeName} placement="top">
+                  <span
+                    className={clsx(
+                      "font-medium text-xs truncate block",
+                      isHomePlaceholder
+                        ? "text-slate-400 italic"
+                        : "text-slate-900 dark:text-slate-100",
+                      isHomeProjected && "text-blue-600 dark:text-blue-400",
+                    )}
+                  >
+                    {homeName}
+                  </span>
+                </Tooltip>
                 {isHomeProjected && (
                   <Tooltip
                     placement={tooltipPlacement}
@@ -323,20 +325,21 @@ function MatchCard({
                   className="w-4 h-3 shrink-0"
                   showPlaceholder={false}
                 />
-                <span
-                  className={clsx(
-                    "font-medium text-xs truncate",
-                    isAwayPlaceholder
-                      ? "text-slate-400 italic"
-                      : "text-slate-900 dark:text-slate-100",
-                    isAwayProjected && "text-blue-600 dark:text-blue-400",
-                    awayIsFavorite &&
-                      "font-bold text-indigo-700 dark:text-indigo-300",
-                  )}
-                  title={awayName}
-                >
-                  {awayName}
-                </span>
+                <Tooltip content={awayName} placement="top">
+                  <span
+                    className={clsx(
+                      "font-medium text-xs truncate block",
+                      isAwayPlaceholder
+                        ? "text-slate-400 italic"
+                        : "text-slate-900 dark:text-slate-100",
+                      isAwayProjected && "text-blue-600 dark:text-blue-400",
+                      awayIsFavorite &&
+                        "font-bold text-indigo-700 dark:text-indigo-300",
+                    )}
+                  >
+                    {awayName}
+                  </span>
+                </Tooltip>
                 {isAwayProjected && (
                   <Tooltip
                     placement={tooltipPlacement}
@@ -424,7 +427,7 @@ function MatchCard({
         {match.location && (
           <div className="flex items-center gap-1.5">
             <Tooltip content={match.location} placement="bottom">
-              <span className="text-[9px] text-slate-400 dark:text-slate-500 truncate cursor-help" title={match.location}>
+              <span className="text-[9px] text-slate-400 dark:text-slate-500 truncate block cursor-help">
                 📍 {match.location.split(" - ")[0]}
                 {match.location.includes(" - ") && (
                   <span className="text-slate-300 dark:text-slate-600">
@@ -482,21 +485,23 @@ function MatchCard({
           {canEdit && (
             <div className="flex items-center gap-1">
               {hasResult && (
-                <button
-                  onClick={() => onReset?.(match)}
-                  className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                  title="Resetear resultado"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                </button>
+                <Tooltip content="Resetear resultado" placement="top">
+                  <button
+                    onClick={() => onReset?.(match)}
+                    className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  </button>
+                </Tooltip>
               )}
-              <button
-                onClick={() => onSimulate?.(match)}
-                className="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-                title="Simular este partido"
-              >
-                <Play className="w-3.5 h-3.5 fill-current opacity-80" />
-              </button>
+                <Tooltip content="Simular este partido" placement="top">
+                  <button
+                    onClick={() => onSimulate?.(match)}
+                    className="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-current opacity-80" />
+                  </button>
+                </Tooltip>
             </div>
           )}
         </div>
@@ -924,56 +929,59 @@ export function KnockoutStage({
       {/* Third Place Table Removed (Migrated to GroupStage) */}
 
       <FloatingContainer>
-        <FloatingButton
-          onClick={simulateKnockout}
-          className="bg-indigo-600 hover:bg-indigo-700"
-          title="Simular resultados de la Fase Eliminatoria"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            className="w-5 h-5"
-            aria-hidden="true"
+        <Tooltip content="Simular resultados de la Fase Eliminatoria" placement="left">
+          <FloatingButton
+            onClick={simulateKnockout}
+            className="bg-indigo-600 hover:bg-indigo-700"
           >
-            <path
-              fillRule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-              clipRule="evenodd"
-            />
-          </svg>
-          Simular Eliminatoria
-        </FloatingButton>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-5 h-5"
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Simular Eliminatoria
+          </FloatingButton>
+        </Tooltip>
 
-        <FloatingButton
-          onClick={simulateAll}
-          className="bg-purple-600 hover:bg-purple-700"
-          title="Simular todo el torneo"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            className="w-5 h-5"
-            aria-hidden="true"
+        <Tooltip content="Simular todo el torneo" placement="left">
+          <FloatingButton
+            onClick={simulateAll}
+            className="bg-purple-600 hover:bg-purple-700"
           >
-            <path
-              fillRule="evenodd"
-              d="M13.5 4.938a7 7 0 11-9.006 1.737c.202-.257.596-.218.797.065a.97.97 0 01-.19 1.316 5.061 5.061 0 00-.754.646.97.97 0 000 1.364l.015.015a.97.97 0 001.364 0l.015-.015a.97.97 0 011.364 0l.646.646a.97.97 0 001.364 0l.015-.015a.97.97 0 000-1.364l-.015-.015a.97.97 0 010-1.364l.646-.646a.97.97 0 000-1.364l-.015-.015a.97.97 0 00-1.364 0l-.015.015a.97.97 0 01-1.364 0l-.646-.646a.97.97 0 00-.22-.168zM10 18a8 8 0 100-16 8 8 0 000 16z"
-              clipRule="evenodd"
-            />
-          </svg>
-          Simular Todo
-        </FloatingButton>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-5 h-5"
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M13.5 4.938a7 7 0 11-9.006 1.737c.202-.257.596-.218.797.065a.97.97 0 01-.19 1.316 5.061 5.061 0 00-.754.646.97.97 0 000 1.364l.015.015a.97.97 0 001.364 0l.015-.015a.97.97 0 011.364 0l.646.646a.97.97 0 001.364 0l.015-.015a.97.97 0 000-1.364l-.015-.015a.97.97 0 010-1.364l.646-.646a.97.97 0 000-1.364l-.015-.015a.97.97 0 00-1.364 0l-.015.015a.97.97 0 01-1.364 0l-.646-.646a.97.97 0 00-.22-.168zM10 18a8 8 0 100-16 8 8 0 000 16z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Simular Todo
+          </FloatingButton>
+        </Tooltip>
 
-        <FloatingButton
-          onClick={resetTournament}
-          className="bg-red-600 hover:bg-red-700"
-          title="Limpiar todos los resultados"
-        >
-          <Trash2 size={18} />
-          Limpiar
-        </FloatingButton>
+        <Tooltip content="Limpiar todos los resultados" placement="left">
+          <FloatingButton
+            onClick={resetTournament}
+            className="bg-red-600 hover:bg-red-700"
+          >
+            <Trash2 size={18} />
+            Limpiar
+          </FloatingButton>
+        </Tooltip>
       </FloatingContainer>
     </div>
   );
