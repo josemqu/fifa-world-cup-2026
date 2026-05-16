@@ -53,9 +53,9 @@ export function Header() {
       >
         Saltar al contenido
       </a>
-      <div className="relative max-w-[1600px] mx-auto px-4 md:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="relative max-w-[1600px] mx-auto px-4 md:px-8 py-5 md:py-6 flex flex-col md:flex-row items-center justify-between gap-6">
         {/* Title Section */}
-        <div className="shrink-0 text-center md:text-left">
+        <div className="shrink-0 text-center md:text-left order-1">
           <Link
             href="/"
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
@@ -82,11 +82,12 @@ export function Header() {
         </div>
 
         {/* Tabs Section */}
-        <nav className="flex p-1 gap-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl w-full md:w-auto backdrop-blur-sm md:absolute md:left-1/2 md:-translate-x-1/2">
+        <div className="flex-1 flex justify-center w-full md:w-auto order-3 md:order-2">
+          <nav className="flex p-1 gap-2 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl w-full md:w-auto backdrop-blur-sm shadow-inner border border-slate-200/50 dark:border-slate-700/50">
           <Link
             href="/"
             className={clsx(
-              "w-full md:w-20 lg:w-24 rounded-lg py-2 text-xs font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200",
+              "px-4 md:px-6 rounded-lg py-2 text-xs font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200 whitespace-nowrap",
               isHome
                 ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm"
                 : "text-slate-500 dark:text-slate-400 hover:bg-white/40 hover:text-slate-700 dark:hover:text-slate-200"
@@ -97,7 +98,7 @@ export function Header() {
           <Link
             href="/schedule"
             className={clsx(
-              "w-full md:w-28 lg:w-32 rounded-lg py-2 text-xs font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200",
+              "px-4 md:px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200 whitespace-nowrap",
               isSchedule
                 ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm"
                 : "text-slate-500 dark:text-slate-400 hover:bg-white/40 hover:text-slate-700 dark:hover:text-slate-200"
@@ -108,7 +109,7 @@ export function Header() {
           <Link
             href="/groups"
             className={clsx(
-              "w-full md:w-24 lg:w-28 rounded-lg py-2 text-xs font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200",
+              "px-4 md:px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200 whitespace-nowrap",
               isGroups
                 ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm"
                 : "text-slate-500 dark:text-slate-400 hover:bg-white/40 hover:text-slate-700 dark:hover:text-slate-200"
@@ -119,7 +120,7 @@ export function Header() {
           <Link
             href="/knockout"
             className={clsx(
-              "w-full md:w-28 lg:w-32 rounded-lg py-2 text-xs font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200",
+              "px-4 md:px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200 whitespace-nowrap",
               isKnockout
                 ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm"
                 : "text-slate-500 dark:text-slate-400 hover:bg-white/40 hover:text-slate-700 dark:hover:text-slate-200"
@@ -130,7 +131,7 @@ export function Header() {
           <Link
             href="/predictions"
             className={clsx(
-              "w-full md:w-28 lg:w-32 rounded-lg py-2 text-xs font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200",
+              "px-4 md:px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 transition-all duration-200 whitespace-nowrap",
               isPredictions
                 ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm"
                 : "text-slate-500 dark:text-slate-400 hover:bg-white/40 hover:text-slate-700 dark:hover:text-slate-200"
@@ -139,9 +140,10 @@ export function Header() {
             Predicciones
           </Link>
         </nav>
+      </div>
 
         {/* User Section */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 order-2 md:order-3">
           {loading && !user ? (
             <div className="flex items-center gap-3 bg-white dark:bg-slate-800 p-1.5 pr-3 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm animate-pulse">
               <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700" />

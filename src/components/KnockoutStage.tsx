@@ -744,7 +744,7 @@ export function KnockoutStage({
   const sfPairs = pairMatches(sfMatches);
 
   return (
-    <div className="flex flex-col gap-4 animate-fade-in-up">
+    <div className="flex flex-col gap-4 animate-fade-in-up mt-4 md:mt-8">
       <div className="pb-4">
         <div
           className="grid gap-x-8 gap-y-4 px-4"
