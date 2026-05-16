@@ -46,12 +46,12 @@ function ChampionBanner({
         isSticky ? "pointer-events-auto" : "mb-6",
       )}
     >
-      <span className="text-xs font-bold text-yellow-600 dark:text-yellow-400 uppercase tracking-widest mb-1 shadow-sm">
+      <span className="text-[10px] font-bold text-yellow-600 dark:text-yellow-400 uppercase tracking-widest mb-1 shadow-sm">
         Campeón
       </span>
-      <div className="bg-linear-to-r from-yellow-100 to-yellow-200 dark:from-yellow-900/80 dark:to-yellow-800/80 border-2 border-yellow-400 text-yellow-900 dark:text-yellow-100 px-6 py-3 rounded-xl font-black shadow-[0_0_15px_rgba(250,204,21,0.5)] flex items-center gap-3 text-lg backdrop-blur-sm">
-        <TeamFlag teamName={champion.name} className="w-8 h-6 shadow-sm" />
-        {champion.name}
+      <div className="bg-linear-to-r from-yellow-100 to-yellow-200 dark:from-yellow-900/80 dark:to-yellow-800/80 border border-yellow-400 text-yellow-900 dark:text-yellow-100 px-3 py-2 rounded-xl font-black shadow-[0_0_15px_rgba(250,204,21,0.5)] flex items-center gap-2 text-sm backdrop-blur-sm">
+        <TeamFlag teamName={champion.name} className="w-6 h-4 shadow-sm" />
+        <span className="truncate max-w-[100px]">{champion.name}</span>
       </div>
     </div>
   );
@@ -75,24 +75,24 @@ function CandidatesTooltip({
     <div
       className={clsx(
         "flex flex-col gap-1",
-        useColumns ? "min-w-[300px]" : "min-w-[150px]",
+        useColumns ? "min-w-[240px]" : "min-w-[120px]",
       )}
     >
-      <span className="font-bold text-xs border-b border-slate-700/50 pb-1 mb-1">
+      <span className="font-bold text-[10px] border-b border-slate-700/50 pb-1 mb-1">
         Candidatos Posibles
       </span>
       <div
         className={clsx(
-          "grid gap-x-6 gap-y-1",
+          "grid gap-x-4 gap-y-1",
           useColumns ? "grid-cols-2" : "grid-cols-1",
         )}
       >
         {topCandidates.map((c) => (
           <div
             key={c.team.id}
-            className="flex justify-between items-center text-[10px]"
+            className="flex justify-between items-center text-[9px]"
           >
-            <span className="truncate max-w-[100px]" title={c.team.name}>
+            <span className="truncate max-w-[80px]" title={c.team.name}>
               {c.team.name}
             </span>
             <span className="font-mono text-slate-400 ml-2 shrink-0">
@@ -206,42 +206,25 @@ function MatchCard({
   return (
     <div
       className={clsx(
-        "bg-white dark:bg-slate-800 border rounded-lg shadow-sm min-w-[220px] relative z-10 transition-colors flex flex-col",
+        "bg-white dark:bg-slate-800 border rounded-lg shadow-sm min-w-[150px] relative z-10 transition-all flex flex-col overflow-hidden hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600",
         isPenaltyTied
-          ? "border-red-300 dark:border-red-900/50"
+          ? "border-red-300 dark:border-red-900/50 ring-1 ring-red-500/20"
           : "border-slate-200 dark:border-slate-700",
       )}
     >
-      <div className="p-3 pb-2">
-        <div className="text-xs text-slate-400 mb-2 flex justify-between items-start leading-none uppercase tracking-wide">
-          <MatchDateTime 
-            utcDate={match.utcDate} 
-            matchId={match.id} 
-            dateClassName="font-medium text-slate-500 dark:text-slate-400 text-[10px]" 
-          />
-          {match.location && (
-            <div className="flex flex-col items-end max-w-[140px] gap-0.5">
-              <span
-                className="truncate w-full text-right font-medium text-slate-500 dark:text-slate-400 text-[10px]"
-                title={match.location}
-              >
-                {match.location.split(" - ")[0]}
-              </span>
-              {match.location.includes(" - ") && (
-                <span
-                  className="text-[9px] text-slate-400 dark:text-slate-500 truncate w-full text-right"
-                  title={match.location.split(" - ")[1]}
-                >
-                  {match.location.split(" - ")[1]}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
+      {/* Header: Date + Time */}
+      <div className="flex items-center justify-between px-2.5 py-1.5 bg-slate-50/80 dark:bg-slate-900/80 border-b border-slate-100 dark:border-slate-700/50 backdrop-blur-sm">
+        <MatchDateTime 
+          utcDate={match.utcDate} 
+          dateClassName="text-[9px] font-medium text-slate-500 dark:text-slate-400" 
+          timeClassName="text-[10px] font-bold text-slate-600 dark:text-slate-300" 
+        />
+      </div>
 
+      <div className="p-2.5">
         {isPenaltyTied && (
           <div
-            className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-bold shadow-sm z-20"
+            className="absolute top-8 right-2 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-bold shadow-sm z-20"
             title="Penalties cannot be tied"
           >
             !
@@ -251,18 +234,19 @@ function MatchCard({
           {/* Home Team */}
           <div className="flex justify-between items-center gap-2">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className="flex items-center gap-1 min-w-0">
+              <div className="flex items-center gap-1.5 min-w-0">
                 <TeamFlag
                   teamName={homeName || ""}
                   className="w-5 h-3.5 shrink-0"
                 />
                 <span
                   className={clsx(
-                    "font-medium text-sm",
+                    "font-medium text-[11px] truncate max-w-[75px]",
                     isHomePlaceholder
                       ? "text-slate-400 italic"
                       : "text-slate-900 dark:text-slate-100",
                     isHomeProjected && "text-blue-600 dark:text-blue-400",
+                    homeIsFavorite && "font-bold text-indigo-700 dark:text-indigo-300",
                   )}
                   title={homeName}
                 >
@@ -277,14 +261,14 @@ function MatchCard({
                       />
                     }
                   >
-                    <Info className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0 cursor-help" />
+                    <Info className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0 cursor-help" />
                   </Tooltip>
                 )}
               </div>
               {showTeamProbabilities &&
                 isHomeProjected &&
                 (prob!.homeTeamProb * 100).toFixed(0) !== "100" && (
-                  <span className="text-[10px] text-blue-500/70 dark:text-blue-400/70 font-mono whitespace-nowrap shrink-0">
+                  <span className="text-[9px] text-blue-500/70 dark:text-blue-400/70 font-mono whitespace-nowrap shrink-0">
                     {(prob!.homeTeamProb * 100).toFixed(0)}%
                   </span>
                 )}
@@ -319,7 +303,7 @@ function MatchCard({
               <input
                 type="number"
                 min="0"
-                className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
+                className="w-7 h-7 text-center text-[11px] font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
                 value={match.homeScore ?? ""}
                 onChange={(e) => {
                   const val =
@@ -341,7 +325,7 @@ function MatchCard({
           {/* Away Team */}
           <div className="flex justify-between items-center gap-2">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className="flex items-center gap-1 min-w-0">
+              <div className="flex items-center gap-1.5 min-w-0">
                 <TeamFlag
                   teamName={awayName || ""}
                   className="w-5 h-3.5 shrink-0"
@@ -349,7 +333,7 @@ function MatchCard({
                 />
                 <span
                   className={clsx(
-                    "font-medium text-sm",
+                    "font-medium text-[11px] truncate max-w-[75px]",
                     isAwayPlaceholder
                       ? "text-slate-400 italic"
                       : "text-slate-900 dark:text-slate-100",
@@ -370,7 +354,7 @@ function MatchCard({
                       />
                     }
                   >
-                    <Info className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0 cursor-help" />
+                    <Info className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0 cursor-help" />
                   </Tooltip>
                 )}
               </div>
@@ -379,7 +363,7 @@ function MatchCard({
                 (prob!.awayTeamProb * 100).toFixed(0) !== "100" && (
                   <span
                     className={clsx(
-                      "text-[10px] font-mono whitespace-nowrap shrink-0 transition-colors",
+                      "text-[9px] font-mono whitespace-nowrap shrink-0 transition-colors",
                       isAwayProjected
                         ? "text-blue-500/70 dark:text-blue-400/70"
                         : awayIsFavorite
@@ -421,7 +405,7 @@ function MatchCard({
               <input
                 type="number"
                 min="0"
-                className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
+                className="w-7 h-7 text-center text-[11px] font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
                 value={match.awayScore ?? ""}
                 onChange={(e) => {
                   const val =
@@ -443,65 +427,69 @@ function MatchCard({
       </div>
 
       {/* Footer Section: Probability & Controls */}
-      <div className="border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/30 px-3 py-1.5 flex justify-between items-center mt-auto rounded-b-lg gap-2 min-h-[32px]">
-        <div className="flex items-center">
+      <div className="border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/30 px-2.5 py-1.5 flex justify-between items-center mt-auto gap-1 min-h-[32px]">
+        <div className="flex items-center min-w-0 flex-1">
           {prob &&
-            prob.matchupProb > 0 &&
-            (prob.matchupProb * 100).toFixed(0) !== "100" &&
-            !isMatchupDetermined && (
-              <Tooltip
-                placement={tooltipPlacement}
-                content={
-                  <div className="flex gap-1 whitespace-nowrap">
-                    <span>Probabilidad de cruce entre</span>
-                    <span className="font-bold text-yellow-300">
-                      {homeName}
-                    </span>{" "}
-                    y{" "}
-                    <span className="font-bold text-yellow-300">
-                      {awayName}
-                    </span>
-                  </div>
-                }
-              >
-                <div className="flex items-center gap-1.5 cursor-help">
-                  <span className="text-[9px] font-medium text-slate-400 uppercase tracking-tight">
-                    Cruce:
-                  </span>
-                  <span
-                    className={clsx(
-                      "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-                      prob.matchupProb > 0.8
-                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                        : prob.matchupProb > 0.5
-                          ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                          : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400",
-                    )}
-                  >
-                    {(prob.matchupProb * 100).toFixed(0)}%
+          prob.matchupProb > 0 &&
+          (prob.matchupProb * 100).toFixed(0) !== "100" &&
+          !isMatchupDetermined ? (
+            <Tooltip
+              placement={tooltipPlacement}
+              content={
+                <div className="flex gap-1 whitespace-nowrap">
+                  <span>Probabilidad de cruce entre</span>
+                  <span className="font-bold text-yellow-300">
+                    {homeName}
+                  </span>{" "}
+                  y{" "}
+                  <span className="font-bold text-yellow-300">
+                    {awayName}
                   </span>
                 </div>
-              </Tooltip>
-            )}
+              }
+            >
+              <div className="flex items-center gap-1 cursor-help overflow-hidden">
+                <span className="text-[9px] font-medium text-slate-400 uppercase tracking-tight shrink-0">
+                  Cruce:
+                </span>
+                <span
+                  className={clsx(
+                    "text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0",
+                    prob.matchupProb > 0.8
+                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                      : prob.matchupProb > 0.5
+                        ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                        : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400",
+                  )}
+                >
+                  {(prob.matchupProb * 100).toFixed(0)}%
+                </span>
+              </div>
+            </Tooltip>
+          ) : match.location ? (
+            <p className="text-[9px] text-slate-400 dark:text-slate-500 truncate" title={match.location}>
+              📍 {match.location.split(" - ")[0]}
+            </p>
+          ) : null}
         </div>
 
         {canEdit && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
             {hasResult && (
               <button
                 onClick={() => onReset?.(match)}
                 className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                 title="Resetear resultado"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <RotateCcw className="w-3 h-3" />
               </button>
             )}
             <button
               onClick={() => onSimulate?.(match)}
-              className="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-              title="Simular este partido"
+              className="p-1 rounded text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+              title="Simular resultado"
             >
-              <Play className="w-3.5 h-3.5 fill-current opacity-80" />
+              <Play className="w-3 h-3 fill-current" />
             </button>
           </div>
         )}
@@ -576,7 +564,7 @@ const STAGES = [
   {
     id: "r16",
     label: "Octavos de Final",
-    colStart: 2,
+    colStart: 3,
     bgClass: "bg-indigo-50/50 dark:bg-indigo-900/10",
     headerClass:
       "bg-indigo-100/95 dark:bg-indigo-900/90 text-indigo-700 dark:text-indigo-300",
@@ -584,7 +572,7 @@ const STAGES = [
   {
     id: "qf",
     label: "Cuartos de Final",
-    colStart: 3,
+    colStart: 5,
     bgClass: "bg-violet-50/50 dark:bg-violet-900/10",
     headerClass:
       "bg-violet-100/95 dark:bg-violet-900/90 text-violet-700 dark:text-violet-300",
@@ -592,7 +580,7 @@ const STAGES = [
   {
     id: "sf",
     label: "Semifinales",
-    colStart: 4,
+    colStart: 7,
     bgClass: "bg-purple-50/50 dark:bg-purple-900/10",
     headerClass:
       "bg-purple-100/95 dark:bg-purple-900/90 text-purple-700 dark:text-purple-300",
@@ -600,10 +588,18 @@ const STAGES = [
   {
     id: "f",
     label: "Finales",
-    colStart: 5,
+    colStart: 9,
     bgClass: "bg-fuchsia-50/50 dark:bg-fuchsia-900/10",
     headerClass:
       "bg-fuchsia-100/95 dark:bg-fuchsia-900/90 text-fuchsia-700 dark:text-fuchsia-300",
+  },
+  {
+    id: "champion",
+    label: "Campeón",
+    colStart: 11,
+    bgClass: "bg-amber-50/50 dark:bg-amber-900/10",
+    headerClass:
+      "bg-amber-100/95 dark:bg-amber-900/90 text-amber-700 dark:text-amber-300",
   },
 ] as const;
 
@@ -735,9 +731,9 @@ export function KnockoutStage({
     <div className="flex flex-col gap-4 animate-fade-in-up">
       <div className="pb-4">
         <div
-          className="grid gap-x-12 gap-y-4 min-w-max px-4"
+          className="grid gap-x-8 gap-y-4 px-4 w-full"
           style={{
-            gridTemplateColumns: "repeat(5, minmax(240px, 1fr))",
+            gridTemplateColumns: "repeat(12, 1fr)",
             gridTemplateRows: "auto repeat(8, minmax(220px, auto)) auto",
           }}
         >
@@ -748,20 +744,20 @@ export function KnockoutStage({
               <div
                 key={`bg-${stage.id}`}
                 className={clsx(
-                  "row-start-1 row-span-full rounded-2xl -mx-4",
+                  "row-start-1 row-span-full rounded-2xl",
                   stage.bgClass,
                 )}
-                style={{ gridColumnStart: stage.colStart }}
+                style={{ gridColumn: `${stage.colStart} / span 2` }}
               />
               {/* Top Header */}
               <div
                 key={`top-header-${stage.id}`}
                 className="row-start-1"
-                style={{ gridColumnStart: stage.colStart }}
+                style={{ gridColumn: `${stage.colStart} / span 2` }}
               >
                 <h3
                   className={clsx(
-                    "text-center py-2 px-3 rounded-xl font-semibold text-sm mb-4 -mx-4",
+                    "text-center py-2 px-3 rounded-xl font-semibold text-sm mb-4",
                     stage.headerClass,
                   )}
                 >
@@ -772,11 +768,11 @@ export function KnockoutStage({
               <div
                 key={`bottom-header-${stage.id}`}
                 className="row-start-10"
-                style={{ gridColumnStart: stage.colStart }}
+                style={{ gridColumn: `${stage.colStart} / span 2` }}
               >
                 <h3
                   className={clsx(
-                    "text-center py-2 px-3 rounded-xl font-semibold text-sm mt-4 -mx-4",
+                    "text-center py-2 px-3 rounded-xl font-semibold text-sm mt-4",
                     stage.headerClass,
                   )}
                 >
@@ -786,12 +782,11 @@ export function KnockoutStage({
             </div>
           ))}
 
-          {/* Round of 32 */}
           {r32Pairs.map((pair, i) => (
             <div
               key={`r32-${i}`}
-              className="col-start-1"
-              style={{ gridRow: i + 2 }}
+              className="col-span-2"
+              style={{ gridColumnStart: 1, gridRow: i + 2 }}
             >
               <MatchPair
                 match1={pair.m1}
@@ -805,12 +800,11 @@ export function KnockoutStage({
             </div>
           ))}
 
-          {/* Round of 16 */}
           {r16Pairs.map((pair, i) => (
             <div
               key={`r16-${i}`}
-              className="col-start-2"
-              style={{ gridRow: `${i * 2 + 2} / span 2` }}
+              className="col-span-2"
+              style={{ gridColumnStart: 3, gridRow: `${i * 2 + 2} / span 2` }}
             >
               <MatchPair
                 match1={pair.m1}
@@ -823,12 +817,11 @@ export function KnockoutStage({
             </div>
           ))}
 
-          {/* Quarter Finals */}
           {qfPairs.map((pair, i) => (
             <div
               key={`qf-${i}`}
-              className="col-start-3"
-              style={{ gridRow: `${i * 4 + 2} / span 4` }}
+              className="col-span-2"
+              style={{ gridColumnStart: 5, gridRow: `${i * 4 + 2} / span 4` }}
             >
               <MatchPair
                 match1={pair.m1}
@@ -841,12 +834,11 @@ export function KnockoutStage({
             </div>
           ))}
 
-          {/* Semi Finals */}
           {sfPairs.map((pair, i) => (
             <div
               key={`sf-${i}`}
-              className="col-start-4"
-              style={{ gridRow: `${i * 8 + 2} / span 8` }}
+              className="col-span-2"
+              style={{ gridColumnStart: 7, gridRow: `${i * 8 + 2} / span 8` }}
             >
               <MatchPair
                 match1={pair.m1}
@@ -879,17 +871,7 @@ export function KnockoutStage({
                 ref={finalMatchRef}
                 className="absolute top-1/2 left-0 right-0 -translate-y-1/2 z-10 flex flex-col items-center"
               >
-                {/* Static Champion Banner (visible when final match is in view) */}
-                {champion ? (
-                  <div
-                    className={clsx(
-                      "absolute bottom-full left-1/2 -translate-x-1/2 mb-6 w-max transition-opacity duration-300",
-                      isFinalMatchVisible ? "opacity-100" : "opacity-0",
-                    )}
-                  >
-                    <ChampionBanner champion={champion} />
-                  </div>
-                ) : (
+                {!champion && (
                   <h4 className="text-sm font-semibold text-center mb-2 text-slate-500">
                     Final
                   </h4>
@@ -921,6 +903,20 @@ export function KnockoutStage({
                   onReset={handleResetMatch}
                   tooltipPlacement="left"
                 />
+              </div>
+            )}
+          </div>
+
+          {/* Winner Column */}
+          <div
+            className="col-span-2 relative flex flex-col items-center justify-center"
+            style={{ gridColumnStart: 11, gridRow: "2 / span 8" }}
+          >
+            {champion && (
+              <div className="animate-fade-in">
+                <ChampionBanner champion={champion} />
+                {/* Connector from Final */}
+                <div className="absolute top-1/2 left-0 w-4 h-[2px] bg-slate-300 dark:bg-slate-600 transform -translate-y-1/2 -translate-x-full" />
               </div>
             )}
           </div>
