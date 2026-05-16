@@ -314,12 +314,12 @@ export function DailySchedule({
         <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white dark:from-[#0a0a0a] to-transparent pointer-events-none z-20 transition-opacity duration-300" />
         
         <div className="h-full overflow-y-auto scrollbar-hide pt-8 pb-16">
-          <div className="space-y-6">
+          <div key={currentDay} className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {sortedHours.length > 0 ? (
               sortedHours.map((hour) => {
                 const hourMatches = matchesByHour.get(hour)!;
                 return (
-                  <div key={hour} className="animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div key={hour}>
                     {/* Hour Header */}
                     <div className="flex items-center gap-3 mb-4">
                       <span className="text-sm font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 font-mono">
