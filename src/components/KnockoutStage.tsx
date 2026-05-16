@@ -233,7 +233,11 @@ function MatchCard({
                   teamName={homeName || ""}
                   className="w-4 h-3 shrink-0"
                 />
-                <Tooltip content={homeName} placement="top">
+                <Tooltip
+                  content={homeName}
+                  placement="top"
+                  wrapperClassName="min-w-0 flex-1"
+                >
                   <span
                     className={clsx(
                       "font-medium text-xs truncate block",
@@ -325,7 +329,11 @@ function MatchCard({
                   className="w-4 h-3 shrink-0"
                   showPlaceholder={false}
                 />
-                <Tooltip content={awayName} placement="top">
+                <Tooltip
+                  content={awayName}
+                  placement="top"
+                  wrapperClassName="min-w-0 flex-1"
+                >
                   <span
                     className={clsx(
                       "font-medium text-xs truncate block",
@@ -426,7 +434,11 @@ function MatchCard({
         {/* Stadium & Location */}
         {match.location && (
           <div className="flex items-center gap-1.5">
-            <Tooltip content={match.location} placement="bottom">
+            <Tooltip
+              content={match.location}
+              placement="bottom"
+              wrapperClassName="min-w-0"
+            >
               <span className="text-[9px] text-slate-400 dark:text-slate-500 truncate block cursor-help">
                 📍 {match.location.split(" - ")[0]}
                 {match.location.includes(" - ") && (
