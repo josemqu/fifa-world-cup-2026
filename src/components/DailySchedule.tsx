@@ -166,6 +166,7 @@ export function DailySchedule({
 
   const [mounted, setMounted] = useState(false);
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
+  const [direction, setDirection] = useState<'left' | 'right' | null>(null);
 
   useEffect(() => {
     if (!mounted) {
@@ -173,6 +174,54 @@ export function DailySchedule({
       setCurrentDayIndex(getInitialDayIndex());
     }
   }, [getInitialDayIndex, mounted]);
+
+  const goToPrevDay = useCallback(() => {
+    setCurrentDayIndex((i) => {
+      if (i > 0) {
+        setDirection("left");
+        return i - 1;
+      }
+      return i;
+    });
+  }, []);
+
+  const goToNextDay = useCallback(() => {
+    setCurrentDayIndex((i) => {
+      if (i < sortedDays.length - 1) {
+        setDirection("right");
+        return i + 1;
+      }
+      return i;
+    });
+  }, [sortedDays.length]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA"
+      ) {
+        return;
+      }
+
+      if (e.key === "ArrowLeft") {
+        goToPrevDay();
+      } else if (e.key === "ArrowRight") {
+        goToNextDay();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [goToPrevDay, goToNextDay]);
+
+  const goToToday = useCallback(() => {
+    const todayIndex = getInitialDayIndex();
+    if (todayIndex !== currentDayIndex) {
+      setDirection(todayIndex > currentDayIndex ? "right" : "left");
+      setCurrentDayIndex(todayIndex);
+    }
+  }, [getInitialDayIndex, currentDayIndex]);
 
   if (!mounted) {
     return (
@@ -229,17 +278,6 @@ export function DailySchedule({
   // Capitalize first letter
   const displayDay = formattedDay.charAt(0).toUpperCase() + formattedDay.slice(1);
 
-  const goToPrevDay = () => {
-    setCurrentDayIndex((i) => Math.max(0, i - 1));
-  };
-
-  const goToNextDay = () => {
-    setCurrentDayIndex((i) => Math.min(sortedDays.length - 1, i + 1));
-  };
-
-  const goToToday = () => {
-    setCurrentDayIndex(getInitialDayIndex());
-  };
 
   return (
     <div className="animate-fade-in-up flex flex-col h-[calc(100vh-180px)] md:h-[calc(100vh-220px)] min-h-[500px]">
@@ -309,12 +347,20 @@ export function DailySchedule({
       </div>
 
       {/* Matches by Hour */}
-      <div className="relative flex-1 min-h-0 group/schedule overflow-hidden">
+      <div className="relative flex-1 min-h-0 group/schedule">
         {/* Top Gradient Fade */}
         <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white dark:from-[#0a0a0a] to-transparent pointer-events-none z-20 transition-opacity duration-300" />
         
-        <div className="h-full overflow-y-auto scrollbar-hide pt-8 pb-16">
-          <div key={currentDay} className="space-y-6 animate-fast-fade">
+        <div className="h-full overflow-y-auto scrollbar-hide pt-8 pb-16 px-4 -mx-4">
+          <div 
+            key={currentDay} 
+            className={clsx(
+              "space-y-6",
+              direction === "right" && "animate-slide-from-right",
+              direction === "left" && "animate-slide-from-left",
+              !direction && "animate-fast-fade"
+            )}
+          >
             {sortedHours.length > 0 ? (
               sortedHours.map((hour) => {
                 const hourMatches = matchesByHour.get(hour)!;
