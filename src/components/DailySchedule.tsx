@@ -287,7 +287,7 @@ export function DailySchedule({
 
 
   return (
-    <div className="animate-fade-in-up flex flex-col h-[calc(100vh-180px)] md:h-[calc(100vh-220px)] min-h-[500px]">
+    <div className="animate-fade-in-up flex flex-col h-[calc(100dvh-170px)] md:h-[calc(100vh-200px)] min-h-[400px]">
       {/* Day Navigation */}
       <div className="flex-shrink-0 flex items-center justify-between mb-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 px-4 py-3">
         <Tooltip content="Día anterior" placement="top">
