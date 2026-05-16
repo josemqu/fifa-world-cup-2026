@@ -206,7 +206,7 @@ function MatchCard({
   return (
     <div
       className={clsx(
-        "bg-white dark:bg-slate-800 border rounded-lg shadow-sm min-w-[220px] relative z-10 transition-colors flex flex-col",
+        "bg-white dark:bg-slate-800 border rounded-lg shadow-sm min-w-[160px] relative z-10 transition-colors flex flex-col",
         isPenaltyTied
           ? "border-red-300 dark:border-red-900/50"
           : "border-slate-200 dark:border-slate-700",
@@ -254,11 +254,11 @@ function MatchCard({
               <div className="flex items-center gap-1 min-w-0">
                 <TeamFlag
                   teamName={homeName || ""}
-                  className="w-5 h-3.5 shrink-0"
+                  className="w-4 h-3 shrink-0"
                 />
                 <span
                   className={clsx(
-                    "font-medium text-sm",
+                    "font-medium text-xs truncate",
                     isHomePlaceholder
                       ? "text-slate-400 italic"
                       : "text-slate-900 dark:text-slate-100",
@@ -344,12 +344,12 @@ function MatchCard({
               <div className="flex items-center gap-1 min-w-0">
                 <TeamFlag
                   teamName={awayName || ""}
-                  className="w-5 h-3.5 shrink-0"
+                  className="w-4 h-3 shrink-0"
                   showPlaceholder={false}
                 />
                 <span
                   className={clsx(
-                    "font-medium text-sm",
+                    "font-medium text-xs truncate",
                     isAwayPlaceholder
                       ? "text-slate-400 italic"
                       : "text-slate-900 dark:text-slate-100",
@@ -554,9 +554,9 @@ function MatchPair({
       />
 
       {/* Connector Bracket */}
-      <div className="absolute right-0 top-1/4 bottom-1/4 w-8 translate-x-full pointer-events-none">
+      <div className="absolute right-0 top-1/4 bottom-1/4 w-4 translate-x-full pointer-events-none">
         {/* Vertical Line and Horizontal Arms */}
-        <div className="absolute inset-0 border-r-2 border-y-2 border-slate-300 dark:border-slate-600 rounded-r-xl" />
+        <div className="absolute inset-0 border-r-2 border-y-2 border-slate-300 dark:border-slate-600 rounded-r-lg" />
         {/* Horizontal Tail to next round */}
         <div className="absolute top-1/2 right-0 w-4 h-[2px] bg-slate-300 dark:bg-slate-600 translate-x-full transform -translate-y-1/2" />
       </div>
@@ -735,20 +735,19 @@ export function KnockoutStage({
     <div className="flex flex-col gap-4 animate-fade-in-up">
       <div className="pb-4">
         <div
-          className="grid gap-x-12 gap-y-4 min-w-max px-4"
+          className="grid gap-x-8 gap-y-4 px-4"
           style={{
-            gridTemplateColumns: "repeat(5, minmax(240px, 1fr))",
+            gridTemplateColumns: "repeat(5, minmax(170px, 1fr))",
             gridTemplateRows: "auto repeat(8, minmax(220px, auto)) auto",
           }}
         >
           {/* Stage Backgrounds & Headers */}
           {STAGES.map((stage) => (
             <div key={`stage-group-${stage.id}`} className="contents">
-              {/* Background Column */}
               <div
                 key={`bg-${stage.id}`}
                 className={clsx(
-                  "row-start-1 row-span-full rounded-2xl -mx-4",
+                  "row-start-1 row-span-full rounded-2xl -mx-2",
                   stage.bgClass,
                 )}
                 style={{ gridColumnStart: stage.colStart }}
@@ -761,7 +760,7 @@ export function KnockoutStage({
               >
                 <h3
                   className={clsx(
-                    "text-center py-2 px-3 rounded-xl font-semibold text-sm mb-4 -mx-4",
+                    "text-center py-2 px-3 rounded-xl font-semibold text-sm mb-4 -mx-2",
                     stage.headerClass,
                   )}
                 >
@@ -776,7 +775,7 @@ export function KnockoutStage({
               >
                 <h3
                   className={clsx(
-                    "text-center py-2 px-3 rounded-xl font-semibold text-sm mt-4 -mx-4",
+                    "text-center py-2 px-3 rounded-xl font-semibold text-sm mt-4 -mx-2",
                     stage.headerClass,
                   )}
                 >
