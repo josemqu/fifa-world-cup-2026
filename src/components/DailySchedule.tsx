@@ -360,7 +360,7 @@ export function DailySchedule({
         
         <div 
           ref={scrollContainerRef}
-          className="h-full overflow-y-auto scrollbar-hide pt-8 pb-16 px-4 -mx-4"
+          className="h-full overflow-y-auto scrollbar-hide pt-8 pb-8 px-4 -mx-4"
         >
           <div 
             key={currentDay} 
@@ -413,7 +413,7 @@ export function DailySchedule({
         </div>
         
         {/* Bottom Gradient Fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white dark:from-[#0a0a0a] to-transparent pointer-events-none z-20 transition-opacity duration-300" />
+        <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white dark:from-[#0a0a0a] to-transparent pointer-events-none z-20 transition-opacity duration-300" />
       </div>
     </div>
   );
