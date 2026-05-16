@@ -64,29 +64,16 @@ function CandidatesTooltip({
   candidates: { team: Team; probability: number }[];
 }) {
   const sorted = [...candidates].sort((a, b) => b.probability - a.probability);
-  const limit = 10;
+  const limit = 5;
   const topCandidates = sorted.slice(0, limit);
   const remaining = sorted.length - limit;
 
-  // Use 2 columns if we have more than 5 candidates to show
-  const useColumns = topCandidates.length > 5;
-
   return (
-    <div
-      className={clsx(
-        "flex flex-col gap-1",
-        useColumns ? "min-w-[300px]" : "min-w-[150px]",
-      )}
-    >
+    <div className="flex flex-col gap-1 min-w-[150px]">
       <span className="font-bold text-xs border-b border-slate-700/50 pb-1 mb-1">
         Candidatos Posibles
       </span>
-      <div
-        className={clsx(
-          "grid gap-x-6 gap-y-1",
-          useColumns ? "grid-cols-2" : "grid-cols-1",
-        )}
-      >
+      <div className="grid grid-cols-1 gap-y-1">
         {topCandidates.map((c) => (
           <div
             key={c.team.id}
