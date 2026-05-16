@@ -309,45 +309,50 @@ export function DailySchedule({
       </div>
 
       {/* Matches by Hour */}
-      <div className="space-y-6">
-        {sortedHours.length > 0 ? (
-          sortedHours.map((hour) => {
-            const hourMatches = matchesByHour.get(hour)!;
-            return (
-              <div key={hour} className="animate-in fade-in slide-in-from-top-2 duration-300">
-                {/* Hour Header */}
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-sm font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 font-mono">
-                    {hour}
-                  </span>
-                  <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest font-bold">
-                    {hourMatches.length} partido{hourMatches.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
+      <div className="relative group/schedule">
+        <div className="space-y-6 max-h-[70vh] overflow-y-auto scrollbar-hide pb-20 -mb-20">
+          {sortedHours.length > 0 ? (
+            sortedHours.map((hour) => {
+              const hourMatches = matchesByHour.get(hour)!;
+              return (
+                <div key={hour} className="animate-in fade-in slide-in-from-top-2 duration-300">
+                  {/* Hour Header */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="text-sm font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 font-mono">
+                      {hour}
+                    </span>
+                    <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest font-bold">
+                      {hourMatches.length} partido{hourMatches.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
 
-                {/* Match Cards */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {hourMatches.map((match) => (
-                    <ScheduleMatchCard key={match.id} match={match} />
-                  ))}
+                  {/* Match Cards */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {hourMatches.map((match) => (
+                      <ScheduleMatchCard key={match.id} match={match} />
+                    ))}
+                  </div>
                 </div>
+              );
+            })
+          ) : (
+            <div className="flex flex-col items-center justify-center py-24 px-4 text-center bg-slate-50 dark:bg-slate-900/50 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800/50 animate-in fade-in zoom-in-95 duration-500">
+              <div className="w-20 h-20 bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex items-center justify-center mb-6 border border-slate-100 dark:border-slate-700">
+                <Calendar className="w-10 h-10 text-slate-300 dark:text-slate-600" />
               </div>
-            );
-          })
-        ) : (
-          <div className="flex flex-col items-center justify-center py-24 px-4 text-center bg-slate-50 dark:bg-slate-900/50 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800/50 animate-in fade-in zoom-in-95 duration-500">
-            <div className="w-20 h-20 bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex items-center justify-center mb-6 border border-slate-100 dark:border-slate-700">
-              <Calendar className="w-10 h-10 text-slate-300 dark:text-slate-600" />
+              <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 mb-2 uppercase tracking-tight">
+                Sin partidos
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs leading-relaxed">
+                No hay encuentros programados para esta fecha. ¡Aprovecha para repasar las posiciones de los grupos o los cruces de eliminatorias!
+              </p>
             </div>
-            <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 mb-2 uppercase tracking-tight">
-              Sin partidos
-            </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs leading-relaxed">
-              No hay encuentros programados para esta fecha. ¡Aprovecha para repasar las posiciones de los grupos o los cruces de eliminatorias!
-            </p>
-          </div>
-        )}
+          )}
+        </div>
+        
+        {/* Bottom Gradient Fade */}
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white dark:from-[#0a0a0a] to-transparent pointer-events-none z-10 transition-opacity duration-300" />
       </div>
     </div>
   );
