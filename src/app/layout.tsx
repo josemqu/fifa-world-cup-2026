@@ -11,6 +11,7 @@ import { JsonLd } from "@/components/JsonLd";
 import { Analytics } from "@vercel/analytics/next";
 import { GoogleOneTap } from "@/components/auth/GoogleOneTap";
 import { LiveScoreSync } from "@/components/LiveScoreSync";
+import { LiveSimulationPanel } from "@/components/LiveSimulationPanel";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -108,6 +109,7 @@ export default function RootLayout({
               <UserProfileModal />
               <GoogleOneTap />
               <LiveScoreSync />
+              <LiveSimulationPanel />
             </LanguageProvider>
           </TournamentProvider>
         </AuthProvider>

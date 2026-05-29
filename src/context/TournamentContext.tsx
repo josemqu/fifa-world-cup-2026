@@ -6,6 +6,7 @@ import React, {
   useState,
   ReactNode,
   useEffect,
+  useCallback,
   useMemo,
 } from "react";
 import { Group, Team, KnockoutMatch } from "@/data/types";
@@ -198,7 +199,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(timer);
   }, [groups, knockoutMatches]);
 
-  const updateMatch = (
+  const updateMatch = useCallback((
     groupId: string,
     matchId: string,
     homeScore: number | null,
@@ -223,9 +224,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         return recalculateGroupStats(updatedGroup);
       });
     });
-  };
+  }, []);
 
-  const updateKnockoutMatch = (
+  const updateKnockoutMatch = useCallback((
     matchId: string,
     homeScore: number | null,
     awayScore: number | null,
@@ -407,7 +408,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
 
       return newMatches;
     });
-  };
+  }, []);
 
   const simulateGroups = () => {
     setGroups((currentGroups) => {

@@ -9,6 +9,8 @@ import { Tooltip } from "@/components/ui/Tooltip";
 import { useTournament } from "@/context/TournamentContext";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { clsx } from "clsx";
+import { FlashScoreInput } from "@/components/ui/FlashScoreInput";
+
 
 interface DailyScheduleProps {
   groups: Group[];
@@ -495,7 +497,7 @@ function ScheduleMatchCard({ match }: { match: NormalizedMatch }) {
 
           {/* Score Inputs */}
           <div className="flex items-center gap-1 shrink-0 mx-2">
-            <input
+            <FlashScoreInput
               type="number"
               min="0"
               placeholder="-"
@@ -507,7 +509,7 @@ function ScheduleMatchCard({ match }: { match: NormalizedMatch }) {
             <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
               :
             </span>
-            <input
+            <FlashScoreInput
               type="number"
               min="0"
               placeholder="-"

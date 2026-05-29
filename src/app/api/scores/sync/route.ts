@@ -106,6 +106,169 @@ function isAuthorized(request: Request): boolean {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const action = searchParams.get("action");
+  const mockParam = searchParams.get("mock");
+
+  // ─── Mock simulation trigger ────────────────────────────────
+  if (mockParam === "true") {
+    if (process.env.NODE_ENV !== "development") {
+      return NextResponse.json(
+        { error: "Mock simulation is only allowed in the development environment." },
+        { status: 403 }
+      );
+    }
+
+    try {
+      await connectDB();
+      const mockMatchIds = ["MA1", "MA2", "MB1"];
+
+      if (action === "clear") {
+        await LiveScore.deleteMany({ matchId: { $in: mockMatchIds } });
+        return NextResponse.json({
+          success: true,
+          scores: [],
+          meta: { total: 0, liveCount: 0, lastSync: null }
+        });
+      }
+
+      if (action === "force-goal") {
+        const currentScores = await LiveScore.find({ matchId: { $in: mockMatchIds } });
+        if (currentScores.length > 0) {
+          const activeMatches = currentScores.filter(s => s.status === "live" || s.status === "halftime");
+          if (activeMatches.length > 0) {
+            const randomMatch = activeMatches[Math.floor(Math.random() * activeMatches.length)];
+            const isHome = Math.random() < 0.5;
+            const scoreToUpdate = isHome ? "homeScore" : "awayScore";
+            await LiveScore.findOneAndUpdate(
+              { matchId: randomMatch.matchId },
+              {
+                $inc: { [scoreToUpdate]: 1 },
+                $set: { lastSyncAt: new Date() }
+              }
+            );
+          }
+        }
+      }
+
+      let scores = await LiveScore.find({ matchId: { $in: mockMatchIds } }).lean();
+
+      if (scores.length < 3 || action === "reset") {
+        await LiveScore.deleteMany({ matchId: { $in: mockMatchIds } });
+        
+        const mockMatches = [
+          {
+            matchId: "MA1",
+            externalId: 999001,
+            homeTeamName: "México",
+            awayTeamName: "Sudáfrica",
+            homeScore: 0,
+            awayScore: 0,
+            status: "live",
+            elapsed: 1,
+            stage: "group",
+            groupId: "A",
+            lastSyncAt: new Date()
+          },
+          {
+            matchId: "MA2",
+            externalId: 999002,
+            homeTeamName: "Corea del Sur",
+            awayTeamName: "Chequia",
+            homeScore: 0,
+            awayScore: 0,
+            status: "live",
+            elapsed: 1,
+            stage: "group",
+            groupId: "A",
+            lastSyncAt: new Date()
+          },
+          {
+            matchId: "MB1",
+            externalId: 999003,
+            homeTeamName: "Canadá",
+            awayTeamName: "Bosnia y Herzegovina",
+            homeScore: 0,
+            awayScore: 0,
+            status: "live",
+            elapsed: 1,
+            stage: "group",
+            groupId: "B",
+            lastSyncAt: new Date()
+          }
+        ];
+
+        await LiveScore.insertMany(mockMatches);
+        scores = await LiveScore.find({ matchId: { $in: mockMatchIds } }).lean();
+      } else {
+        // Increment simulation tick
+        for (const existing of scores) {
+          if (existing.status === "finished") continue;
+
+          let newStatus: "scheduled" | "live" | "halftime" | "finished" = existing.status;
+          let newElapsed = (existing.elapsed || 0);
+          let newHomeScore = existing.homeScore ?? 0;
+          let newAwayScore = existing.awayScore ?? 0;
+
+          if (existing.status === "live") {
+            newElapsed += 5;
+            if (newElapsed >= 45 && (existing.elapsed || 0) < 45) {
+              newStatus = "halftime";
+              newElapsed = 45;
+            } else if (newElapsed >= 90) {
+              newStatus = "finished";
+              newElapsed = 90;
+            }
+
+            // Goal chance (12%)
+            if (newStatus === "live" && Math.random() < 0.12) {
+              if (Math.random() < 0.5) {
+                newHomeScore += 1;
+              } else {
+                newAwayScore += 1;
+              }
+            }
+          } else if (existing.status === "halftime") {
+            newStatus = "live";
+            newElapsed = 46;
+          }
+
+          await LiveScore.findOneAndUpdate(
+            { matchId: existing.matchId },
+            {
+              $set: {
+                elapsed: newElapsed,
+                status: newStatus,
+                homeScore: newHomeScore,
+                awayScore: newAwayScore,
+                lastSyncAt: new Date(),
+              }
+            }
+          );
+        }
+
+        scores = await LiveScore.find({ matchId: { $in: mockMatchIds } }).lean();
+      }
+
+      const liveCount = scores.filter(
+        (s) => s.status === "live" || s.status === "halftime"
+      ).length;
+
+      return NextResponse.json({
+        success: true,
+        scores,
+        meta: {
+          total: scores.length,
+          liveCount,
+          lastSync: scores.length > 0 ? scores[0].lastSyncAt : null,
+        },
+      });
+    } catch (error: any) {
+      console.error("[scores/sync] Mock error:", error);
+      return NextResponse.json(
+        { error: error?.message || "Internal Server Error" },
+        { status: 500 }
+      );
+    }
+  }
 
   // ─── Cron trigger ──────────────────────────────────────────
   if (action === "cron") {

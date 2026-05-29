@@ -18,6 +18,8 @@ import {
   FloatingButton,
 } from "@/components/ui/FloatingActions";
 import { MatchDateTime } from "@/components/ui/MatchDateTime";
+import { FlashScoreInput } from "@/components/ui/FlashScoreInput";
+
 
 interface KnockoutStageProps {
   groups: Group[];
@@ -273,7 +275,7 @@ function MatchCard({
             </div>
             <div className="flex items-center gap-1 shrink-0">
               {isTied && (
-                <input
+                <FlashScoreInput
                   type="number"
                   min="0"
                   className={clsx(
@@ -298,7 +300,7 @@ function MatchCard({
                   disabled={!canEdit}
                 />
               )}
-              <input
+              <FlashScoreInput
                 type="number"
                 min="0"
                 className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
@@ -380,7 +382,7 @@ function MatchCard({
             </div>
             <div className="flex items-center gap-1 shrink-0">
               {isTied && (
-                <input
+                <FlashScoreInput
                   type="number"
                   min="0"
                   className={clsx(
@@ -405,7 +407,7 @@ function MatchCard({
                   disabled={!canEdit}
                 />
               )}
-              <input
+              <FlashScoreInput
                 type="number"
                 min="0"
                 className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"

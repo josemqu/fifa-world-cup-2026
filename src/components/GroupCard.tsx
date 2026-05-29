@@ -7,6 +7,8 @@ import { ChevronDown, ChevronUp, CheckCircle2, Lock } from "lucide-react";
 import { analyzeGroup } from "@/utils/groupAnalysis";
 import { useMemo } from "react";
 import { MatchDateTime } from "@/components/ui/MatchDateTime";
+import { FlashScoreInput } from "@/components/ui/FlashScoreInput";
+
 
 interface GroupCardProps {
   group: Group;
@@ -284,7 +286,7 @@ export function GroupCard({
                     </div>
 
                     <div className="flex items-center gap-1.5 mx-2">
-                      <input
+                      <FlashScoreInput
                         type="number"
                         min="0"
                         className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -304,7 +306,7 @@ export function GroupCard({
                       <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
                         :
                       </span>
-                      <input
+                      <FlashScoreInput
                         type="number"
                         min="0"
                         className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
