@@ -37,13 +37,16 @@ export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
   const [groupPositionProbs, setGroupPositionProbs] =
     useState<AllGroupPositionProbs | null>(null);
 
-  const [showProbabilitiesIcon, setShowProbabilitiesIcon] = useState(() => {
+  const [showProbabilitiesIcon, setShowProbabilitiesIcon] = useState(true);
+
+  useEffect(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("showProbabilitiesIcon");
-      if (stored !== null) return stored === "true";
+      if (stored !== null) {
+        setShowProbabilitiesIcon(stored === "true");
+      }
     }
-    return true;
-  });
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("showProbabilitiesIcon", String(showProbabilitiesIcon));
