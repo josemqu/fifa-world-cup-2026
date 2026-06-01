@@ -13,6 +13,10 @@ import {
 } from "@/utils/knockoutUtils";
 import { ThirdPlaceTable } from "@/components/ThirdPlaceTable";
 import { estimateBestThirdQualificationProbabilities } from "@/utils/thirdPlaceMonteCarlo";
+import {
+  estimateGroupPositionProbabilities,
+  AllGroupPositionProbs,
+} from "@/utils/groupPositionMonteCarlo";
 
 interface GroupStageProps {
   groups: Group[];
@@ -29,6 +33,39 @@ export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
 
   const [thirdQualificationProbabilities, setThirdQualificationProbabilities] =
     useState<Map<string, number> | null>(null);
+
+  const [groupPositionProbs, setGroupPositionProbs] =
+    useState<AllGroupPositionProbs | null>(null);
+
+  const [showProbabilitiesIcon, setShowProbabilitiesIcon] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("showProbabilitiesIcon");
+      if (stored !== null) return stored === "true";
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("showProbabilitiesIcon", String(showProbabilitiesIcon));
+  }, [showProbabilitiesIcon]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in an input
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+      if (e.key === "p" || e.key === "P") {
+        setShowProbabilitiesIcon((prev) => !prev);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const { sortedThirds, qualifiedThirdIds, isGroupStageComplete } =
     useMemo(() => {
@@ -50,9 +87,13 @@ export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
   useEffect(() => {
     // Monte Carlo estimation can be a bit heavy; defer it to avoid blocking render.
     setThirdQualificationProbabilities(null);
+    setGroupPositionProbs(null);
     const t = setTimeout(() => {
       setThirdQualificationProbabilities(
         estimateBestThirdQualificationProbabilities(groups, 1200)
+      );
+      setGroupPositionProbs(
+        estimateGroupPositionProbabilities(groups, 1200)
       );
     }, 0);
     return () => clearTimeout(t);
@@ -94,6 +135,8 @@ export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
             showMatches={!hiddenGroups.get(group.name)}
             onToggleMatches={() => toggleGroup(group.name)}
             qualifiedThirdIds={qualifiedThirdIds}
+            positionProbabilities={groupPositionProbs?.get(group.name) ?? undefined}
+            showPositionProbabilitiesIcon={showProbabilitiesIcon}
           />
         ))}
       </div>

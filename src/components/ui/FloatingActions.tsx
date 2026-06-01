@@ -47,7 +47,7 @@ export function FloatingButton({
   return (
     <button
       className={clsx(
-        "text-white text-sm px-4 py-2 rounded-full font-medium transition-all shadow-xl flex items-center gap-2 hover:scale-105 hover:shadow-2xl transform duration-200",
+        "text-white text-sm px-4 py-2 rounded-full font-medium transition-all shadow-xl flex items-center gap-2 hover:scale-105 hover:shadow-2xl transform duration-200 opacity-70 hover:opacity-100",
         className
       )}
       {...props}

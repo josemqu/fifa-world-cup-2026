@@ -3,11 +3,12 @@ import { clsx } from "clsx";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { getTeamAbbreviation } from "@/utils/teamAbbreviations";
-import { ChevronDown, ChevronUp, CheckCircle2, Lock } from "lucide-react";
+import { ChevronDown, ChevronUp, CheckCircle2, Lock, Info } from "lucide-react";
 import { analyzeGroup } from "@/utils/groupAnalysis";
 import { useMemo } from "react";
 import { MatchDateTime } from "@/components/ui/MatchDateTime";
 import { FlashScoreInput } from "@/components/ui/FlashScoreInput";
+import { GroupPositionProbMap } from "@/utils/groupPositionMonteCarlo";
 
 
 interface GroupCardProps {
@@ -21,6 +22,8 @@ interface GroupCardProps {
   showMatches?: boolean;
   onToggleMatches?: () => void;
   qualifiedThirdIds?: Set<string>;
+  positionProbabilities?: GroupPositionProbMap;
+  showPositionProbabilitiesIcon?: boolean;
 }
 
 export function GroupCard({
@@ -29,6 +32,8 @@ export function GroupCard({
   showMatches = true,
   onToggleMatches,
   qualifiedThirdIds,
+  positionProbabilities,
+  showPositionProbabilitiesIcon = true,
 }: GroupCardProps) {
   const sortedTeams = useMemo(() => {
     return [...group.teams].sort((a, b) => {
@@ -52,15 +57,177 @@ export function GroupCard({
         <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">
           Grupo {group.name}
         </h3>
-        {onToggleMatches && (
-          <button
-            onClick={onToggleMatches}
-            className="p-1 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 rounded-md transition-colors"
-            title={showMatches ? "Ocultar partidos" : "Mostrar partidos"}
-          >
-            {showMatches ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          {/* Position Probabilities Tooltip */}
+          {showPositionProbabilitiesIcon && positionProbabilities && positionProbabilities.size > 0 && (
+            <Tooltip
+              placement="bottom"
+              className="!text-left !max-w-none !w-auto"
+              content={
+                <div className="min-w-[280px] p-1">
+                  <div className="text-[10px] uppercase tracking-wider text-slate-400 mb-2 font-semibold">
+                    Probabilidad por posición
+                  </div>
+                  <table className="w-full text-[11px]">
+                    <thead>
+                      <tr className="text-slate-400 border-b border-slate-700/50">
+                        <th className="text-left pb-1 pr-3 font-medium">Equipo</th>
+                        {sortedTeams.map((_, i) => (
+                          <th key={i} className="text-center pb-1 px-1.5 font-medium min-w-[36px]">
+                            {i + 1}º
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedTeams.map((team) => {
+                        const probs = positionProbabilities.get(team.id);
+                        return (
+                          <tr key={team.id} className="border-b border-slate-700/20 last:border-none">
+                            <td className="py-1 pr-3 text-white font-medium whitespace-nowrap">
+                              {getTeamAbbreviation(team.name)}
+                            </td>
+                            {probs ? (
+                              probs.map((p, i) => {
+                                const pct = Math.round(p * 100);
+                                return (
+                                  <td
+                                    key={i}
+                                    className="text-center py-1 px-1.5 font-mono tabular-nums"
+                                    style={{
+                                      color:
+                                        pct >= 70
+                                          ? "#4ade80"
+                                          : pct >= 40
+                                          ? "#fbbf24"
+                                          : pct >= 15
+                                          ? "#fb923c"
+                                          : "#94a3b8",
+                                    }}
+                                  >
+                                    {pct}%
+                                  </td>
+                                );
+                              })
+                            ) : (
+                              sortedTeams.map((_, i) => (
+                                <td key={i} className="text-center py-1 px-1.5 text-slate-500">—</td>
+                              ))
+                            )}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+
+                  {/* Most Probable Ordering with Esperanza */}
+                  {(() => {
+                    // Calculate expected position for each team: E[pos] = Σ (pos+1) * P(pos)
+                    const teamExpected = sortedTeams.map((team) => {
+                      const probs = positionProbabilities.get(team.id);
+                      if (!probs) return { team, expected: 2.5, confidence: 0, assignedPos: -1 };
+                      const expected = probs.reduce((sum, p, i) => sum + (i + 1) * p, 0);
+                      return { team, expected, confidence: 0, assignedPos: -1 };
+                    });
+
+                    // Sort by expected position (lowest = most likely 1st)
+                    const ordered = [...teamExpected].sort((a, b) => a.expected - b.expected);
+
+                    // Assign positions and get confidence (prob of that position)
+                    ordered.forEach((entry, idx) => {
+                      entry.assignedPos = idx;
+                      const probs = positionProbabilities.get(entry.team.id);
+                      entry.confidence = probs ? probs[idx] : 0;
+                    });
+
+                    // Overall certainty: geometric mean of individual confidences
+                    const overallCertainty = ordered.length > 0
+                      ? Math.round(
+                          ordered.reduce((prod, e) => prod * e.confidence, 1) ** (1 / ordered.length) * 100
+                        )
+                      : 0;
+
+                    return (
+                      <div className="mt-3 pt-2.5 border-t border-slate-700/40">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+                            Orden más probable
+                          </div>
+                          <div className="text-[10px] font-mono text-slate-500">
+                            Certeza: <span className="text-white font-semibold">{overallCertainty}%</span>
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          {ordered.map((entry) => {
+                            const confPct = Math.round(entry.confidence * 100);
+                            return (
+                              <div key={entry.team.id} className="flex items-center gap-2">
+                                <span className="text-[10px] text-slate-500 font-mono w-4 shrink-0">
+                                  {entry.assignedPos + 1}º
+                                </span>
+                                <span className="text-[11px] text-white font-medium w-10 shrink-0">
+                                  {getTeamAbbreviation(entry.team.name)}
+                                </span>
+                                <div className="flex-1 h-3 bg-slate-800 rounded-full overflow-hidden relative">
+                                  <div
+                                    className="h-full rounded-full transition-all"
+                                    style={{
+                                      width: `${confPct}%`,
+                                      background:
+                                        confPct >= 70
+                                          ? "linear-gradient(90deg, #22c55e, #4ade80)"
+                                          : confPct >= 40
+                                          ? "linear-gradient(90deg, #eab308, #fbbf24)"
+                                          : confPct >= 15
+                                          ? "linear-gradient(90deg, #ea580c, #fb923c)"
+                                          : "linear-gradient(90deg, #475569, #64748b)",
+                                    }}
+                                  />
+                                </div>
+                                <span
+                                  className="text-[10px] font-mono tabular-nums w-8 text-right shrink-0"
+                                  style={{
+                                    color:
+                                      confPct >= 70
+                                        ? "#4ade80"
+                                        : confPct >= 40
+                                        ? "#fbbf24"
+                                        : confPct >= 15
+                                        ? "#fb923c"
+                                        : "#94a3b8",
+                                  }}
+                                >
+                                  {confPct}%
+                                </span>
+                                <span className="text-[9px] text-slate-500 font-mono w-10 text-right shrink-0" title="Esperanza (posición esperada)">
+                                  E={entry.expected.toFixed(2)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              }
+            >
+              <div className="p-1 cursor-help text-slate-400 hover:text-blue-600 dark:text-slate-500 dark:hover:text-blue-400 transition-colors flex items-center justify-center rounded-md hover:bg-slate-200/50 dark:hover:bg-slate-700/50">
+                <Info size={16} />
+              </div>
+            </Tooltip>
+          )}
+
+          {onToggleMatches && (
+            <button
+              onClick={onToggleMatches}
+              className="p-1 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 rounded-md transition-colors"
+              title={showMatches ? "Ocultar partidos" : "Mostrar partidos"}
+            >
+              {showMatches ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Standings Table */}
