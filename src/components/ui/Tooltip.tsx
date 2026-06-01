@@ -22,7 +22,9 @@ export function Tooltip({
 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
+  const [arrowStyle, setArrowStyle] = useState<React.CSSProperties>({});
   const triggerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -56,21 +58,68 @@ export function Tooltip({
               left = rect.left - gap;
               break;
           }
+
+          // Adjust for viewport boundaries if tooltip is rendered
+          let newArrowStyle: React.CSSProperties = {};
+          if (tooltipRef.current) {
+            const tooltipRect = tooltipRef.current.getBoundingClientRect();
+            const padding = 10;
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            if (placement === "top" || placement === "bottom") {
+              const tooltipHalfWidth = tooltipRect.width / 2;
+              const expectedLeft = left - tooltipHalfWidth;
+              const expectedRight = left + tooltipHalfWidth;
+
+              if (expectedRight > viewportWidth - padding) {
+                const shift = expectedRight - (viewportWidth - padding);
+                left -= shift;
+                newArrowStyle = { left: `calc(50% + ${shift}px)` };
+              } else if (expectedLeft < padding) {
+                const shift = padding - expectedLeft;
+                left += shift;
+                newArrowStyle = { left: `calc(50% - ${shift}px)` };
+              }
+            } else if (placement === "left" || placement === "right") {
+              const tooltipHalfHeight = tooltipRect.height / 2;
+              const expectedTop = top - tooltipHalfHeight;
+              const expectedBottom = top + tooltipHalfHeight;
+
+              if (expectedBottom > viewportHeight - padding) {
+                const shift = expectedBottom - (viewportHeight - padding);
+                top -= shift;
+                newArrowStyle = { top: `calc(50% + ${shift}px)` };
+              } else if (expectedTop < padding) {
+                const shift = padding - expectedTop;
+                top += shift;
+                newArrowStyle = { top: `calc(50% - ${shift}px)` };
+              }
+            }
+          }
+
           setPosition({ top, left });
+          setArrowStyle(newArrowStyle);
         }
       };
 
       updatePosition();
+      // We need to measure it once it's rendered to adjust bounds
+      const raf = requestAnimationFrame(() => {
+        updatePosition();
+      });
+
       // Update on scroll/resize
       window.addEventListener("scroll", updatePosition, true);
       window.addEventListener("resize", updatePosition);
 
       return () => {
+        cancelAnimationFrame(raf);
         window.removeEventListener("scroll", updatePosition, true);
         window.removeEventListener("resize", updatePosition);
       };
     }
-  }, [isVisible, placement]);
+  }, [isVisible, placement, content]);
 
 
   const variants = {
@@ -103,16 +152,6 @@ export function Tooltip({
     left: "right-[-5px] top-1/2 -translate-y-1/2 border-r border-t",
   };
 
-  // Determine the transform class for the fixed container (not the motion div, but keeping consistent with previous logic)
-  // Actually, simpler to just rely on motion div for transform and fixed position.
-  // The previous implementation used `className="pointer-events-none -translate-y-full"` for top placement.
-  // We need to adjust this base translation based on placement because the motion div handles the entry animation offset, but the base positioning logic expects an origin.
-  //
-  // 'top': position is at (top-gap, center). We need to translate(-50%, -100%).
-  // 'bottom': position is at (bottom+gap, center). We need to translate(-50%, 0).
-  // 'right': position is at (center, right+gap). We need to translate(0, -50%).
-  // 'left': position is at (center, left-gap). We need to translate(-100%, -50%).
-
   const baseClasses = {
     top: "-translate-x-1/2 -translate-y-full",
     bottom: "-translate-x-1/2",
@@ -138,6 +177,7 @@ export function Tooltip({
       {isVisible && (
         <Portal>
           <div
+            ref={tooltipRef}
             style={{
               top: position.top,
               left: position.left,
@@ -156,6 +196,7 @@ export function Tooltip({
               {content}
               {/* Arrow */}
               <div
+                style={arrowStyle}
                 className={clsx(
                   "absolute w-2 h-2 bg-slate-900 dark:bg-slate-950 rotate-45 border-slate-700/50 dark:border-slate-800",
                   arrowClasses[placement]
