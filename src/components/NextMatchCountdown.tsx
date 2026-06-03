@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Timer } from "lucide-react";
 
 interface NextMatchInfo {
+  matchId: string;
   homeTeam: string;
   awayTeam: string;
   utcDate: string;
@@ -38,7 +39,7 @@ export function NextMatchCountdown() {
     const currentTime = now.getTime();
 
     // Collect all matches with team names resolved
-    type CandidateMatch = { utcDate: string; homeTeam: string; awayTeam: string; location: string; stage: string };
+    type CandidateMatch = { id: string; utcDate: string; homeTeam: string; awayTeam: string; location: string; stage: string };
     const candidates: CandidateMatch[] = [];
 
     // Group stage matches
@@ -51,6 +52,7 @@ export function NextMatchCountdown() {
           const awayTeam = group.teams.find((t) => t.id === match.awayTeamId);
           const matchday = Math.floor(i / 2) + 1;
           candidates.push({
+            id: match.id,
             utcDate: match.utcDate,
             homeTeam: homeTeam?.name || match.homeTeamId,
             awayTeam: awayTeam?.name || match.awayTeamId,
@@ -75,6 +77,7 @@ export function NextMatchCountdown() {
       const matchTime = new Date(match.utcDate).getTime();
       if (matchTime > currentTime) {
         candidates.push({
+          id: match.id,
           utcDate: match.utcDate,
           homeTeam: getTeamNameFromKnockout(match.homeTeam as { name?: string; placeholder?: string } | null),
           awayTeam: getTeamNameFromKnockout(match.awayTeam as { name?: string; placeholder?: string } | null),
@@ -95,6 +98,7 @@ export function NextMatchCountdown() {
     const matchDay = localDate.toLocaleDateString("sv-SE"); // YYYY-MM-DD
 
     return {
+      matchId: next.id,
       homeTeam: next.homeTeam,
       awayTeam: next.awayTeam,
       utcDate: next.utcDate,
@@ -142,7 +146,7 @@ export function NextMatchCountdown() {
 
   return (
     <Link
-      href={`/schedule?day=${nextMatch.matchDay}`}
+      href={`/schedule?day=${nextMatch.matchDay}&match=${nextMatch.matchId}`}
       className="group/countdown relative hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg 
         bg-blue-50/80 dark:bg-blue-950/40 
         border border-blue-200/60 dark:border-blue-800/40 

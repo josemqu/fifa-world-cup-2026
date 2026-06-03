@@ -399,7 +399,7 @@ export function DailySchedule({
                     {/* Match Cards */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {hourMatches.map((match) => (
-                        <ScheduleMatchCard key={match.id} match={match} />
+                        <ScheduleMatchCard key={match.id} match={match} highlightMatchId={searchParams.get("match")} />
                       ))}
                     </div>
                   </div>
@@ -428,8 +428,20 @@ export function DailySchedule({
   );
 }
 
-function ScheduleMatchCard({ match }: { match: NormalizedMatch }) {
+function ScheduleMatchCard({ match, highlightMatchId }: { match: NormalizedMatch; highlightMatchId?: string | null }) {
   const { updateMatch, updateKnockoutMatch } = useTournament();
+  const cardRef = useRef<HTMLDivElement>(null);
+  const isHighlighted = highlightMatchId === match.id;
+
+  useEffect(() => {
+    if (isHighlighted && cardRef.current) {
+      // Small delay to allow the page to render first
+      const timeout = setTimeout(() => {
+        cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 400);
+      return () => clearTimeout(timeout);
+    }
+  }, [isHighlighted]);
 
   const handleScoreChange = (
     side: "home" | "away",
@@ -455,8 +467,13 @@ function ScheduleMatchCard({ match }: { match: NormalizedMatch }) {
   const isPlaceholder = match.homeTeamName === "Por definir" || match.awayTeamName === "Por definir";
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden transition-colors hover:border-slate-300 dark:hover:border-slate-600">
-      {/* Header: Stage + Status */}
+    <div
+      ref={cardRef}
+      className={clsx(
+        "bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden transition-colors hover:border-slate-300 dark:hover:border-slate-600",
+        isHighlighted && "animate-highlight-match"
+      )}
+    >      {/* Header: Stage + Status */}
       <div className="flex items-center justify-between px-3 py-2 bg-slate-50/80 dark:bg-slate-900/80 border-b border-slate-100 dark:border-slate-700/50 backdrop-blur-sm">
         <div className="flex items-center gap-2">
           {match.isKnockout ? (
