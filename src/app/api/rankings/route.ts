@@ -3,15 +3,22 @@ import { NextResponse } from "next/server";
 // FIFA Live Ranking API (Dynamic)
 const LIVE_RANKING_URL = "https://api.fifa.com/api/v3/fifarankings/rankings/live?gender=1&sportType=0&language=es";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
     const response = await fetch(LIVE_RANKING_URL, {
-      next: { revalidate: 3600 }, // Live rankings can change faster, revalidate every hour
+      signal: controller.signal,
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       },
     });
+
+    clearTimeout(timeout);
 
     if (!response.ok) {
       console.error(`Failed to fetch live rankings from FIFA`, response.status);
