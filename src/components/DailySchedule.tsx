@@ -155,6 +155,13 @@ export function DailySchedule({
   const getInitialDayIndex = useCallback(() => {
     if (sortedDays.length === 0) return 0;
     
+    // Check if a specific day is requested via query param
+    const requestedDay = searchParams.get("day");
+    if (requestedDay) {
+      const dayIndex = sortedDays.indexOf(requestedDay);
+      if (dayIndex !== -1) return dayIndex;
+    }
+    
     const todayIndex = sortedDays.indexOf(todayKey);
     if (todayIndex !== -1) return todayIndex;
 
@@ -164,7 +171,7 @@ export function DailySchedule({
 
     // All days are past, show the last day
     return sortedDays.length - 1;
-  }, [sortedDays, todayKey]);
+  }, [sortedDays, todayKey, searchParams]);
 
   const [mounted, setMounted] = useState(false);
   const [currentDayIndex, setCurrentDayIndex] = useState(0);

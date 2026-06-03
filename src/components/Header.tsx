@@ -8,6 +8,7 @@ import { LogOut, User as UserIcon, Settings, ChevronDown } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
+import { NextMatchCountdown } from "@/components/NextMatchCountdown";
 
 export function Header() {
   const pathname = usePathname();
@@ -82,8 +83,8 @@ export function Header() {
           </Link>
         </div>
 
-        {/* Tabs Section */}
-        <div className="flex-1 flex justify-center w-full md:w-auto order-3 md:order-2">
+        {/* Tabs + Countdown Section */}
+        <div className="flex-1 flex items-center justify-center gap-3 w-full md:w-auto order-3 md:order-2">
           <nav className="flex p-1 gap-2 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl w-full md:w-auto backdrop-blur-sm shadow-inner border border-slate-200/50 dark:border-slate-700/50">
           <Link
             href="/"
@@ -176,6 +177,7 @@ export function Header() {
             <span className="relative z-10">Predicciones</span>
           </Link>
         </nav>
+          <NextMatchCountdown />
       </div>
 
         {/* User Section */}
