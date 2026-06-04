@@ -232,18 +232,18 @@ export default function PredictionsPage() {
               </p>
             </div>
 
-            <div className="flex flex-col items-end gap-2">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col items-stretch md:items-end gap-3 w-full md:w-auto">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 md:gap-4 w-full">
                 <Link
                   href="/predictions/metodologia"
-                  className="px-4 py-2 rounded-lg font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
+                  className="px-4 py-2 rounded-lg font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
                 >
                   <Info className="w-4 h-4" />
                   Cómo funciona
                 </Link>
                 <button
                   onClick={handleVerify}
-                  className="px-4 py-2 rounded-lg font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
+                  className="px-4 py-2 rounded-lg font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   Verificar
@@ -259,7 +259,7 @@ export default function PredictionsPage() {
                     }
                   }}
                   disabled={isRunning || !canRunSimulation}
-                  className="bg-slate-100 dark:bg-slate-800 border-none rounded-lg px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="bg-slate-100 dark:bg-slate-800 border-none rounded-lg px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-auto"
                 >
                   <option value={100}>100 simulaciones</option>
                   <option value={1000}>1.000 simulaciones</option>
@@ -270,11 +270,11 @@ export default function PredictionsPage() {
                 </select>
 
                 {isMounted ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
                     {predictions.length > 0 && !isRunning && (
                       <button
                         onClick={clearPredictions}
-                        className="px-4 py-2 rounded-lg font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
+                        className="px-4 py-2 rounded-lg font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center justify-center gap-2 w-full sm:w-auto shrink-0"
                       >
                         <X className="w-4 h-4" />
                         Limpiar
@@ -284,7 +284,7 @@ export default function PredictionsPage() {
                       onClick={() => handleRun()}
                       disabled={isRunning || !canRunSimulation}
                       className={clsx(
-                        "min-w-[220px] px-6 py-2 rounded-lg font-bold text-white transition-all shadow-md active:scale-95 flex justify-center items-center gap-2",
+                        "w-full sm:w-auto min-w-[220px] px-6 py-2 rounded-lg font-bold text-white transition-all shadow-md active:scale-95 flex justify-center items-center gap-2",
                         isRunning || !canRunSimulation
                           ? "bg-slate-400 cursor-not-allowed"
                           : "bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25",
@@ -321,7 +321,7 @@ export default function PredictionsPage() {
                   </div>
                 ) : (
                   // Placeholder for SSR to maintain layout if possible
-                  <div className="min-w-[220px] h-10" />
+                  <div className="w-full sm:w-auto min-w-[220px] h-10" />
                 )}
               </div>
               {!loading && !user && (

@@ -55,14 +55,14 @@ export function Header() {
       >
         Saltar al contenido
       </a>
-      <div className="relative max-w-[1600px] mx-auto px-4 md:px-8 py-5 md:py-6 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="relative max-w-[1600px] mx-auto px-4 md:px-8 py-3.5 md:py-6 flex flex-wrap md:flex-nowrap items-center justify-between gap-y-3 gap-x-4 md:gap-6">
         {/* Title Section */}
-        <div className="shrink-0 text-center md:text-left order-1">
+        <div className="shrink-0 order-1">
           <Link
             href="/"
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2.5 md:gap-3 hover:opacity-80 transition-opacity"
           >
-            <div className="relative w-10 h-12 md:w-12 md:h-14">
+            <div className="relative w-9 h-11 md:w-12 md:h-14">
               <Image
                 src="https://digitalhub.fifa.com/transform/157d23bf-7e13-4d7b-949e-5d27d340987e/WC26_Logo?&io=transform:fill,height:210&quality=75"
                 alt="World Cup 2026 Logo"
@@ -72,11 +72,11 @@ export function Header() {
               />
             </div>
             <div>
-              <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
+              <h1 className="text-xl md:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
                 World Cup{" "}
                 <span className="text-blue-600 dark:text-blue-400">2026</span>
               </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              <p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 font-medium">
                 Fixture & Simulador
               </p>
             </div>
@@ -85,11 +85,11 @@ export function Header() {
 
         {/* Tabs + Countdown Section */}
         <div className="flex-1 flex items-center justify-center gap-3 w-full md:w-auto order-3 md:order-2">
-          <nav className="flex p-1 gap-2 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl w-full md:w-auto backdrop-blur-sm shadow-inner border border-slate-200/50 dark:border-slate-700/50">
+          <nav className="flex p-1 gap-1 md:gap-2 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl w-full md:w-auto backdrop-blur-sm shadow-inner border border-slate-200/50 dark:border-slate-700/50 overflow-x-auto scrollbar-none">
           <Link
             href="/"
             className={clsx(
-              "relative px-4 md:px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center focus:outline-none transition-all duration-200 whitespace-nowrap",
+              "relative px-3.5 md:px-5 rounded-lg py-1.5 md:py-2 text-[11px] md:text-xs font-bold leading-5 text-center focus:outline-none transition-all duration-200 whitespace-nowrap",
               isHome
                 ? "text-blue-600 dark:text-blue-100"
                 : "text-slate-500 dark:text-slate-400 hover:bg-white/20 hover:text-slate-700 dark:hover:text-slate-200"
@@ -107,7 +107,7 @@ export function Header() {
           <Link
             href="/schedule"
             className={clsx(
-              "relative px-4 md:px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center focus:outline-none transition-all duration-200 whitespace-nowrap",
+              "relative px-3.5 md:px-5 rounded-lg py-1.5 md:py-2 text-[11px] md:text-xs font-bold leading-5 text-center focus:outline-none transition-all duration-200 whitespace-nowrap",
               isSchedule
                 ? "text-blue-600 dark:text-blue-100"
                 : "text-slate-500 dark:text-slate-400 hover:bg-white/20 hover:text-slate-700 dark:hover:text-slate-200"
@@ -125,7 +125,7 @@ export function Header() {
           <Link
             href="/groups"
             className={clsx(
-              "relative px-4 md:px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center focus:outline-none transition-all duration-200 whitespace-nowrap",
+              "relative px-3.5 md:px-5 rounded-lg py-1.5 md:py-2 text-[11px] md:text-xs font-bold leading-5 text-center focus:outline-none transition-all duration-200 whitespace-nowrap",
               isGroups
                 ? "text-blue-600 dark:text-blue-100"
                 : "text-slate-500 dark:text-slate-400 hover:bg-white/20 hover:text-slate-700 dark:hover:text-slate-200"
@@ -143,7 +143,7 @@ export function Header() {
           <Link
             href="/knockout"
             className={clsx(
-              "relative px-4 md:px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center focus:outline-none transition-all duration-200 whitespace-nowrap",
+              "relative px-3.5 md:px-5 rounded-lg py-1.5 md:py-2 text-[11px] md:text-xs font-bold leading-5 text-center focus:outline-none transition-all duration-200 whitespace-nowrap",
               isKnockout
                 ? "text-blue-600 dark:text-blue-100"
                 : "text-slate-500 dark:text-slate-400 hover:bg-white/20 hover:text-slate-700 dark:hover:text-slate-200"
@@ -161,7 +161,7 @@ export function Header() {
           <Link
             href="/predictions"
             className={clsx(
-              "relative px-4 md:px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center focus:outline-none transition-all duration-200 whitespace-nowrap",
+              "relative px-3.5 md:px-5 rounded-lg py-1.5 md:py-2 text-[11px] md:text-xs font-bold leading-5 text-center focus:outline-none transition-all duration-200 whitespace-nowrap",
               isPredictions
                 ? "text-blue-600 dark:text-blue-100"
                 : "text-slate-500 dark:text-slate-400 hover:bg-white/20 hover:text-slate-700 dark:hover:text-slate-200"

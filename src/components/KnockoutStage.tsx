@@ -745,9 +745,151 @@ export function KnockoutStage({
   const qfPairs = pairMatches(qfMatches);
   const sfPairs = pairMatches(sfMatches);
 
+  const [activeMobileRound, setActiveMobileRound] = useState<"r32" | "r16" | "qf" | "sf" | "f">("r32");
+
   return (
     <div className="flex flex-col gap-4 animate-fade-in-up mt-4 md:mt-8">
-      <div className="pb-4">
+      {/* Mobile Round Selector */}
+      <div className="md:hidden px-4 mb-2">
+        <div className="flex p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl overflow-x-auto scrollbar-none gap-1 border border-slate-200/50 dark:border-slate-700/50">
+          {STAGES.map((stage) => (
+            <button
+              key={stage.id}
+              onClick={() => setActiveMobileRound(stage.id)}
+              className={clsx(
+                "flex-1 px-3 py-2 text-[11px] font-bold rounded-lg text-center whitespace-nowrap transition-all duration-200 focus:outline-none",
+                activeMobileRound === stage.id
+                  ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              )}
+            >
+              {stage.label.split(" ")[0]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Mobile Vertical Bracket View */}
+      <div className="md:hidden px-4 space-y-4">
+        {activeMobileRound === "r32" && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wider">
+              16avos de Final
+            </h3>
+            <div className="grid grid-cols-1 gap-3">
+              {r32Matches.map((match) => (
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  roundName="R32"
+                  onUpdate={onMatchUpdate}
+                  onSimulate={handleSimulateMatch}
+                  onReset={handleResetMatch}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        {activeMobileRound === "r16" && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wider">
+              Octavos de Final
+            </h3>
+            <div className="grid grid-cols-1 gap-3">
+              {r16Matches.map((match) => (
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  roundName="R16"
+                  onUpdate={onMatchUpdate}
+                  onSimulate={handleSimulateMatch}
+                  onReset={handleResetMatch}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        {activeMobileRound === "qf" && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wider">
+              Cuartos de Final
+            </h3>
+            <div className="grid grid-cols-1 gap-3">
+              {qfMatches.map((match) => (
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  roundName="QF"
+                  onUpdate={onMatchUpdate}
+                  onSimulate={handleSimulateMatch}
+                  onReset={handleResetMatch}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        {activeMobileRound === "sf" && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wider">
+              Semifinales
+            </h3>
+            <div className="grid grid-cols-1 gap-3">
+              {sfMatches.map((match) => (
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  roundName="SF"
+                  onUpdate={onMatchUpdate}
+                  onSimulate={handleSimulateMatch}
+                  onReset={handleResetMatch}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        {activeMobileRound === "f" && (
+          <div className="space-y-6">
+            {champion && (
+              <div className="flex justify-center">
+                <ChampionBanner champion={champion} />
+              </div>
+            )}
+            
+            {finalMatch && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-center">
+                  Final
+                </h3>
+                <MatchCard
+                  match={finalMatch}
+                  roundName="Final"
+                  onUpdate={onMatchUpdate}
+                  onSimulate={handleSimulateMatch}
+                  onReset={handleResetMatch}
+                />
+              </div>
+            )}
+
+            {thirdPlaceMatch && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-center">
+                  Tercer Puesto
+                </h3>
+                <MatchCard
+                  match={thirdPlaceMatch}
+                  roundName="3rdPlace"
+                  onUpdate={onMatchUpdate}
+                  onSimulate={handleSimulateMatch}
+                  onReset={handleResetMatch}
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Horizontal Bracket View */}
+      <div className="hidden md:block pb-4">
         <div
           className="grid gap-x-8 gap-y-4 px-4"
           style={{
