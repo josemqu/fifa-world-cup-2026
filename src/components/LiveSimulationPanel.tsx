@@ -387,7 +387,7 @@ function RealLiveSimulationPanel() {
                         type="datetime-local"
                         value={tempTime}
                         onChange={(e) => setTempTime(e.target.value)}
-                        className="flex-1 bg-white dark:bg-slate-800 text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-slate-900 dark:text-white"
+                        className="flex-1 bg-white dark:bg-slate-800 text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-slate-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
                       />
                       <button
                         onClick={handleSaveTime}
