@@ -41,6 +41,11 @@ interface GoalAlert {
 }
 
 export function LiveSimulationPanel() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const { dbUser, user } = useAuth();
   
   const isDev = process.env.NODE_ENV === "development";
@@ -48,6 +53,10 @@ export function LiveSimulationPanel() {
   const isAllowedEmail = 
     user?.email?.toLowerCase().includes("mailjmq") || 
     dbUser?.email?.toLowerCase().includes("mailjmq");
+
+  if (!mounted) {
+    return null;
+  }
 
   if (!isDev && !isAdmin && !isAllowedEmail) {
     return null;
