@@ -40,6 +40,16 @@ function getRelativeTime(matchDate: Date, now: Date): string | null {
   return "Comienza ahora";
 }
 
+function getLiveMinuteText(matchDate: Date, now: Date): string {
+  const elapsed = Math.floor((now.getTime() - matchDate.getTime()) / 60000);
+  if (elapsed < 0) return "0'";
+  if (elapsed <= 45) return `${elapsed}'`;
+  if (elapsed < 50) return `45+${elapsed - 45}'`;
+  if (elapsed < 65) return "ET";
+  if (elapsed <= 110) return `${elapsed - 20}'`;
+  return `90+${elapsed - 110}'`;
+}
+
 export function MatchDateTime({
   utcDate,
   matchId,
@@ -92,19 +102,22 @@ export function MatchDateTime({
         dateTimeContent
       )}
       
-      {now && (isPlaying || isFinished) && (
-        <Tooltip 
-          content={isPlaying ? "En juego" : "Finalizado"} 
-          placement="top"
-        >
-          <div className="relative flex h-2 w-2 cursor-help ml-0.5">
-            {isPlaying && (
+      {now && isPlaying && (
+        <Tooltip content="En juego" placement="top">
+          <div className="flex items-center gap-1 bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded text-[10px] font-bold border border-green-200/30 animate-pulse">
+            <span className="relative flex h-1.5 w-1.5 mr-0.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            )}
-            <span className={clsx(
-              "relative inline-flex rounded-full h-2 w-2",
-              isPlaying ? "bg-green-500" : "bg-slate-400 dark:bg-slate-600"
-            )}></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+            </span>
+            {getLiveMinuteText(matchDate, now)}
+          </div>
+        </Tooltip>
+      )}
+
+      {now && isFinished && (
+        <Tooltip content="Finalizado" placement="top">
+          <div className="text-slate-400 dark:text-slate-500 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 dark:bg-slate-800/50 border border-slate-200/20 dark:border-slate-700/20">
+            Fin
           </div>
         </Tooltip>
       )}
