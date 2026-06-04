@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import { LogOut, User as UserIcon, Settings, ChevronDown } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
 import { NextMatchCountdown } from "@/components/NextMatchCountdown";
 
@@ -177,7 +177,9 @@ export function Header() {
             <span className="relative z-10">Predicciones</span>
           </Link>
         </nav>
+        <Suspense fallback={<div className="w-32 h-8 bg-blue-50/40 dark:bg-blue-950/20 rounded-lg animate-pulse" />}>
           <NextMatchCountdown />
+        </Suspense>
       </div>
 
         {/* User Section */}

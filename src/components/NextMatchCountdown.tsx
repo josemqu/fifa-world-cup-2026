@@ -6,6 +6,7 @@ import { useTournament } from "@/context/TournamentContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { Timer } from "lucide-react";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { useSearchParams } from "next/navigation";
 
 interface NextMatchInfo {
   matchId: string;
@@ -28,12 +29,31 @@ function getTeamNameFromKnockout(
 export function NextMatchCountdown() {
   const { groups, knockoutMatches } = useTournament();
   const [now, setNow] = useState<Date | null>(null);
+  const searchParams = useSearchParams();
+  const simulatedTimeStr = searchParams.get("simulatedTime");
 
   useEffect(() => {
-    setNow(new Date());
-    const timer = setInterval(() => setNow(new Date()), 1000);
+    let timer: NodeJS.Timeout;
+    if (simulatedTimeStr) {
+      const baseTime = new Date(simulatedTimeStr).getTime();
+      if (!isNaN(baseTime)) {
+        const startTime = Date.now();
+        setNow(new Date(baseTime));
+        
+        timer = setInterval(() => {
+          const elapsed = Date.now() - startTime;
+          setNow(new Date(baseTime + elapsed));
+        }, 1000);
+      } else {
+        setNow(new Date());
+        timer = setInterval(() => setNow(new Date()), 1000);
+      }
+    } else {
+      setNow(new Date());
+      timer = setInterval(() => setNow(new Date()), 1000);
+    }
     return () => clearInterval(timer);
-  }, []);
+  }, [simulatedTimeStr]);
 
   const nextMatch = useMemo<NextMatchInfo | null>(() => {
     if (!now) return null;
