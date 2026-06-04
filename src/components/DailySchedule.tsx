@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Group, Match, KnockoutMatch, Team } from "@/data/types";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { MatchDateTime } from "@/components/ui/MatchDateTime";
@@ -135,6 +135,7 @@ export function DailySchedule({
 
   // Find the "best" initial day - today if there are matches, otherwise the first day
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { todayKey, yesterdayKey, tomorrowKey } = useMemo(() => {
     const simulatedTime = searchParams.get("simulatedTime");
     const now = simulatedTime ? new Date(simulatedTime) : new Date();
@@ -177,33 +178,80 @@ export function DailySchedule({
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
   const [direction, setDirection] = useState<'left' | 'right' | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
 
+  // Initial load sync
   useEffect(() => {
     if (!mounted) {
       setMounted(true);
-      setCurrentDayIndex(getInitialDayIndex());
+      const initialIndex = getInitialDayIndex();
+      setCurrentDayIndex(initialIndex);
+      
+      // If day is not present in URL, set it once quietly
+      if (!searchParams.has("day") && sortedDays[initialIndex]) {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("day", sortedDays[initialIndex]);
+        router.replace(`/schedule?${params.toString()}`, { scroll: false });
+      }
     }
-  }, [getInitialDayIndex, mounted]);
+  }, [getInitialDayIndex, mounted, searchParams, sortedDays, router]);
+
+  // Sync selected day and match highlighting from search parameters dynamically (handles subsequent navigations)
+  useEffect(() => {
+    if (mounted) {
+      const requestedDay = searchParams.get("day");
+      if (requestedDay) {
+        const dayIndex = sortedDays.indexOf(requestedDay);
+        if (dayIndex !== -1 && dayIndex !== currentDayIndex) {
+          setDirection(dayIndex > currentDayIndex ? "right" : "left");
+          setCurrentDayIndex(dayIndex);
+        }
+      }
+
+      const matchId = searchParams.get("match");
+      if (matchId) {
+        setActiveHighlightId(matchId);
+        const timer = setTimeout(() => {
+          setActiveHighlightId(null);
+        }, 3000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [searchParams, sortedDays, mounted, currentDayIndex]);
 
   const goToPrevDay = useCallback(() => {
     setCurrentDayIndex((i) => {
       if (i > 0) {
         setDirection("left");
-        return i - 1;
+        const nextIndex = i - 1;
+        const newDay = sortedDays[nextIndex];
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("day", newDay);
+        params.delete("match");
+        params.delete("t");
+        router.replace(`/schedule?${params.toString()}`, { scroll: false });
+        return nextIndex;
       }
       return i;
     });
-  }, []);
+  }, [sortedDays, router, searchParams]);
 
   const goToNextDay = useCallback(() => {
     setCurrentDayIndex((i) => {
       if (i < sortedDays.length - 1) {
         setDirection("right");
-        return i + 1;
+        const nextIndex = i + 1;
+        const newDay = sortedDays[nextIndex];
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("day", newDay);
+        params.delete("match");
+        params.delete("t");
+        router.replace(`/schedule?${params.toString()}`, { scroll: false });
+        return nextIndex;
       }
       return i;
     });
-  }, [sortedDays.length]);
+  }, [sortedDays, router, searchParams]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -233,11 +281,17 @@ export function DailySchedule({
 
   const goToToday = useCallback(() => {
     const todayIndex = getInitialDayIndex();
+    const todayDay = sortedDays[todayIndex];
     if (todayIndex !== currentDayIndex) {
       setDirection(todayIndex > currentDayIndex ? "right" : "left");
       setCurrentDayIndex(todayIndex);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("day", todayDay);
+      params.delete("match");
+      params.delete("t");
+      router.replace(`/schedule?${params.toString()}`, { scroll: false });
     }
-  }, [getInitialDayIndex, currentDayIndex]);
+  }, [getInitialDayIndex, currentDayIndex, sortedDays, router, searchParams]);
 
   if (!mounted) {
     return (
@@ -399,7 +453,7 @@ export function DailySchedule({
                     {/* Match Cards */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {hourMatches.map((match) => (
-                        <ScheduleMatchCard key={match.id} match={match} highlightMatchId={searchParams.get("match")} />
+                        <ScheduleMatchCard key={match.id} match={match} highlightMatchId={activeHighlightId} />
                       ))}
                     </div>
                   </div>

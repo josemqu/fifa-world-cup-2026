@@ -11,6 +11,7 @@ interface TooltipProps {
   className?: string;
   wrapperClassName?: string;
   placement?: "top" | "right" | "bottom" | "left";
+  interactive?: boolean;
 }
 
 export function Tooltip({
@@ -19,6 +20,7 @@ export function Tooltip({
   className,
   wrapperClassName,
   placement = "top",
+  interactive = false,
 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
@@ -26,6 +28,33 @@ export function Tooltip({
   const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const showTooltip = () => {
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+    setIsVisible(true);
+  };
+
+  const hideTooltip = () => {
+    if (interactive) {
+      hideTimeoutRef.current = setTimeout(() => {
+        setIsVisible(false);
+      }, 150); // short delay to hover between trigger and tooltip
+    } else {
+      setIsVisible(false);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -169,8 +198,8 @@ export function Tooltip({
   return (
     <div
       ref={triggerRef}
-      onMouseEnter={() => setIsVisible(true)}
-      onMouseLeave={() => setIsVisible(false)}
+      onMouseEnter={showTooltip}
+      onMouseLeave={hideTooltip}
       className={twMerge("relative cursor-help mx-0", wrapperClassName)}
     >
       {children}
@@ -178,13 +207,18 @@ export function Tooltip({
         <Portal>
           <div
             ref={tooltipRef}
+            onMouseEnter={interactive ? showTooltip : undefined}
+            onMouseLeave={interactive ? hideTooltip : undefined}
             style={{
               top: position.top,
               left: position.left,
               position: "fixed",
               zIndex: 9999,
             }}
-            className={clsx("pointer-events-none", baseClasses[placement])}
+            className={clsx(
+              interactive ? "pointer-events-auto" : "pointer-events-none",
+              baseClasses[placement]
+            )}
           >
             <div
               className={twMerge(
