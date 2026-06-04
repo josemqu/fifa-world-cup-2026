@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useTournament } from "@/context/TournamentContext";
+import { useAuth } from "@/context/AuthContext";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { FlashScoreView } from "@/components/ui/FlashScoreView";
 import { motion, AnimatePresence, useDragControls, useMotionValue } from "framer-motion";
@@ -40,7 +41,15 @@ interface GoalAlert {
 }
 
 export function LiveSimulationPanel() {
-  if (process.env.NODE_ENV !== "development") {
+  const { dbUser, user } = useAuth();
+  
+  const isDev = process.env.NODE_ENV === "development";
+  const isAdmin = dbUser?.role === "admin";
+  const isAllowedEmail = 
+    user?.email?.toLowerCase().includes("mailjmq") || 
+    dbUser?.email?.toLowerCase().includes("mailjmq");
+
+  if (!isDev && !isAdmin && !isAllowedEmail) {
     return null;
   }
   return <RealLiveSimulationPanel />;
@@ -54,6 +63,9 @@ function RealLiveSimulationPanel() {
   const [goalAlerts, setGoalAlerts] = useState<GoalAlert[]>([]);
   const [loading, setLoading] = useState(false);
   
+  const [tempTime, setTempTime] = useState("");
+  const [hasSimTime, setHasSimTime] = useState(false);
+
   const prevMatchesRef = useRef<LiveMatch[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const dragControls = useDragControls();
@@ -69,6 +81,19 @@ function RealLiveSimulationPanel() {
         setIsExpanded(true);
       }
       
+      const savedTime = window.localStorage.getItem("simulatedTime");
+      if (savedTime) {
+        setHasSimTime(true);
+        try {
+          const date = new Date(savedTime);
+          if (!isNaN(date.getTime())) {
+            const offset = date.getTimezoneOffset() * 60000;
+            const localISOTime = new Date(date.getTime() - offset).toISOString().slice(0, 16);
+            setTempTime(localISOTime);
+          }
+        } catch (e) {}
+      }
+
       const savedX = window.localStorage.getItem("mock_simulation_drag_x");
       if (savedX) {
         let parsedX = parseFloat(savedX);
@@ -199,6 +224,25 @@ function RealLiveSimulationPanel() {
     setLoading(false);
   };
 
+  const handleSaveTime = () => {
+    if (tempTime) {
+      const date = new Date(tempTime);
+      if (!isNaN(date.getTime())) {
+        const isoString = date.toISOString();
+        window.localStorage.setItem("simulatedTime", isoString);
+        setHasSimTime(true);
+        window.dispatchEvent(new Event("simulated-time-changed"));
+      }
+    }
+  };
+
+  const handleClearTime = () => {
+    window.localStorage.removeItem("simulatedTime");
+    setHasSimTime(false);
+    setTempTime("");
+    window.dispatchEvent(new Event("simulated-time-changed"));
+  };
+
   return (
     <>
       {/* GOAL TOASTS CONTAINER */}
@@ -326,6 +370,40 @@ function RealLiveSimulationPanel() {
                         }`}
                       />
                     </button>
+                  </div>
+
+                  {/* TIME SIMULATOR */}
+                  <div className="bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/30 space-y-2.5 animate-fade-in-up">
+                    <div>
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                        Simulación de Fecha y Hora
+                      </span>
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                        Fija una fecha y hora global persistente para simular el transcurso del torneo.
+                      </span>
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="datetime-local"
+                        value={tempTime}
+                        onChange={(e) => setTempTime(e.target.value)}
+                        className="flex-1 bg-white dark:bg-slate-800 text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-slate-900 dark:text-white"
+                      />
+                      <button
+                        onClick={handleSaveTime}
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-extrabold px-3 py-2 rounded-lg transition-colors cursor-pointer"
+                      >
+                        Fijar
+                      </button>
+                      {hasSimTime && (
+                        <button
+                          onClick={handleClearTime}
+                          className="bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 text-[10px] font-extrabold px-3 py-2 rounded-lg transition-colors cursor-pointer"
+                        >
+                          Limpiar
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* ACTIVE MATCHES LIST */}

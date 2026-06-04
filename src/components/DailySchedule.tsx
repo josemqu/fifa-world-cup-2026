@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useCurrentTime } from "@/hooks/useCurrentTime";
 import { Group, Match, KnockoutMatch, Team } from "@/data/types";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { MatchDateTime } from "@/components/ui/MatchDateTime";
@@ -136,22 +137,22 @@ export function DailySchedule({
   // Find the "best" initial day - today if there are matches, otherwise the first day
   const searchParams = useSearchParams();
   const router = useRouter();
+  const now = useCurrentTime(false);
+
   const { todayKey, yesterdayKey, tomorrowKey } = useMemo(() => {
-    const simulatedTime = searchParams.get("simulatedTime");
-    const now = simulatedTime ? new Date(simulatedTime) : new Date();
+    const currentDate = now || new Date();
+    const today = currentDate.toLocaleDateString("sv-SE");
     
-    const today = now.toLocaleDateString("sv-SE");
-    
-    const yest = new Date(now);
-    yest.setDate(now.getDate() - 1);
+    const yest = new Date(currentDate);
+    yest.setDate(currentDate.getDate() - 1);
     const yesterday = yest.toLocaleDateString("sv-SE");
     
-    const tom = new Date(now);
-    tom.setDate(now.getDate() + 1);
+    const tom = new Date(currentDate);
+    tom.setDate(currentDate.getDate() + 1);
     const tomorrow = tom.toLocaleDateString("sv-SE");
     
     return { todayKey: today, yesterdayKey: yesterday, tomorrowKey: tomorrow };
-  }, [searchParams]);
+  }, [now]);
 
   const getInitialDayIndex = useCallback(() => {
     if (sortedDays.length === 0) return 0;

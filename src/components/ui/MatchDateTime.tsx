@@ -2,8 +2,8 @@
 
 import { useMatchTime } from "@/hooks/useMatchTime";
 import { Tooltip } from "@/components/ui/Tooltip";
-import { useState, useEffect } from "react";
 import { clsx } from "clsx";
+import { useCurrentTime } from "@/hooks/useCurrentTime";
 
 interface MatchDateTimeProps {
   utcDate: string;
@@ -48,24 +48,7 @@ export function MatchDateTime({
   dateClassName = "font-medium text-slate-500 dark:text-slate-400",
 }: MatchDateTimeProps) {
   const { date: localDate, time: localTime } = useMatchTime(utcDate);
-  const [now, setNow] = useState<Date | null>(null);
-
-  useEffect(() => {
-    const getNow = () => {
-      if (typeof window !== "undefined") {
-        const params = new URLSearchParams(window.location.search);
-        const simulatedTime = params.get("simulatedTime");
-        if (simulatedTime) {
-          return new Date(simulatedTime);
-        }
-      }
-      return new Date();
-    };
-
-    setNow(getNow());
-    const interval = setInterval(() => setNow(getNow()), 60000);
-    return () => clearInterval(interval);
-  }, []);
+  const now = useCurrentTime(true);
 
   const matchDate = new Date(utcDate);
   // Asumimos 120 minutos de duración de partido (90m + 15m entretiempo + descuentos)
