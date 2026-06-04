@@ -220,38 +220,34 @@ export function DailySchedule({
   }, [searchParams, sortedDays, mounted, currentDayIndex]);
 
   const goToPrevDay = useCallback(() => {
-    setCurrentDayIndex((i) => {
-      if (i > 0) {
-        setDirection("left");
-        const nextIndex = i - 1;
-        const newDay = sortedDays[nextIndex];
-        const params = new URLSearchParams(searchParams.toString());
-        params.set("day", newDay);
-        params.delete("match");
-        params.delete("t");
-        router.replace(`/schedule?${params.toString()}`, { scroll: false });
-        return nextIndex;
-      }
-      return i;
-    });
-  }, [sortedDays, router, searchParams]);
+    if (currentDayIndex > 0) {
+      setDirection("left");
+      const nextIndex = currentDayIndex - 1;
+      setCurrentDayIndex(nextIndex);
+      
+      const newDay = sortedDays[nextIndex];
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("day", newDay);
+      params.delete("match");
+      params.delete("t");
+      router.replace(`/schedule?${params.toString()}`, { scroll: false });
+    }
+  }, [currentDayIndex, sortedDays, router, searchParams]);
 
   const goToNextDay = useCallback(() => {
-    setCurrentDayIndex((i) => {
-      if (i < sortedDays.length - 1) {
-        setDirection("right");
-        const nextIndex = i + 1;
-        const newDay = sortedDays[nextIndex];
-        const params = new URLSearchParams(searchParams.toString());
-        params.set("day", newDay);
-        params.delete("match");
-        params.delete("t");
-        router.replace(`/schedule?${params.toString()}`, { scroll: false });
-        return nextIndex;
-      }
-      return i;
-    });
-  }, [sortedDays, router, searchParams]);
+    if (currentDayIndex < sortedDays.length - 1) {
+      setDirection("right");
+      const nextIndex = currentDayIndex + 1;
+      setCurrentDayIndex(nextIndex);
+      
+      const newDay = sortedDays[nextIndex];
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("day", newDay);
+      params.delete("match");
+      params.delete("t");
+      router.replace(`/schedule?${params.toString()}`, { scroll: false });
+    }
+  }, [currentDayIndex, sortedDays, router, searchParams]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -280,7 +276,16 @@ export function DailySchedule({
   }, [goToPrevDay, goToNextDay]);
 
   const goToToday = useCallback(() => {
-    const todayIndex = getInitialDayIndex();
+    let todayIndex = sortedDays.indexOf(todayKey);
+    if (todayIndex === -1) {
+      // Find the closest future day
+      todayIndex = sortedDays.findIndex((d) => d >= todayKey);
+    }
+    if (todayIndex === -1) {
+      // All days are past, show the last day
+      todayIndex = sortedDays.length - 1;
+    }
+
     const todayDay = sortedDays[todayIndex];
     if (todayIndex !== currentDayIndex) {
       setDirection(todayIndex > currentDayIndex ? "right" : "left");
@@ -291,7 +296,7 @@ export function DailySchedule({
       params.delete("t");
       router.replace(`/schedule?${params.toString()}`, { scroll: false });
     }
-  }, [getInitialDayIndex, currentDayIndex, sortedDays, router, searchParams]);
+  }, [currentDayIndex, sortedDays, todayKey, router, searchParams]);
 
   if (!mounted) {
     return (
