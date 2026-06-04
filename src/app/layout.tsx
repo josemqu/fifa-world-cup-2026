@@ -102,7 +102,7 @@ export default function RootLayout({
           <TournamentProvider>
             <LanguageProvider>
               <Header />
-              <main id="main" className="flex-1 pb-12">
+              <main id="main" className="flex-1 pb-20 md:pb-12">
                 {children}
               </main>
               <Footer />
