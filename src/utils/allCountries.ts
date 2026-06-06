@@ -21,7 +21,6 @@ export const ALL_COUNTRIES = [
   { name: "Benín", code: "BEN" },
   { name: "Bielorrusia", code: "BLR" },
   { name: "Birmania", code: "MMR" },
-  { name: "Irak", code: "IRQ" },
   { name: "Bosnia y Herzegovina", code: "BIH" },
   { name: "Botsuana", code: "BWA" },
   { name: "Brasil", code: "BRA" },
