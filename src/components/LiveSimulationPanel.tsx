@@ -48,7 +48,6 @@ export function LiveSimulationPanel() {
 
   const { dbUser, user } = useAuth();
   
-  const isDev = process.env.NODE_ENV === "development";
   const isAdmin = dbUser?.role === "admin";
   const isAllowedEmail = 
     user?.email?.toLowerCase().includes("mailjmq") || 
@@ -58,7 +57,7 @@ export function LiveSimulationPanel() {
     return null;
   }
 
-  if (!isDev && !isAdmin && !isAllowedEmail) {
+  if (!isAdmin && !isAllowedEmail) {
     return null;
   }
   return <RealLiveSimulationPanel />;
