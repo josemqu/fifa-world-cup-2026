@@ -2,6 +2,13 @@ import { simulateTournament } from "../utils/simulationUtils";
 import { Group, KnockoutMatch, Team, MatchupData, MatchupEntry } from "../data/types";
 import { PredictionResult } from "../utils/monteCarlo";
 
+interface MatchStats {
+  homeTeamCounts: Map<string, number>;
+  awayTeamCounts: Map<string, number>;
+  matchupCounts: Map<string, number>;
+  teamData: Map<string, Team>;
+}
+
 self.onmessage = async (e: MessageEvent) => {
   const { groups, knockoutMatches, iterations } = e.data;
 
@@ -63,6 +70,20 @@ self.onmessage = async (e: MessageEvent) => {
         mapB.set(keyBA, iterations);
       }
     });
+
+    // 3. Initialize Knockout Bracket structures
+    const matchStats = new Map<string, MatchStats>();
+    const getStats = (matchId: string) => {
+      if (!matchStats.has(matchId)) {
+        matchStats.set(matchId, {
+          homeTeamCounts: new Map(),
+          awayTeamCounts: new Map(),
+          matchupCounts: new Map(),
+          teamData: new Map(),
+        });
+      }
+      return matchStats.get(matchId)!;
+    };
 
     // Run simulations in chunks
     const numChunks = 20;
@@ -137,6 +158,38 @@ self.onmessage = async (e: MessageEvent) => {
             }
           }
         });
+
+        // C. Accumulate Knockout Bracket Stats
+        result.knockoutMatches.forEach((match) => {
+          const stats = getStats(match.id);
+
+          const hTeam = match.homeTeam as Team;
+          const aTeam = match.awayTeam as Team;
+
+          const hasHome = hTeam && !("placeholder" in hTeam);
+          const hasAway = aTeam && !("placeholder" in aTeam);
+
+          if (hasHome) {
+            stats.homeTeamCounts.set(
+              hTeam.id,
+              (stats.homeTeamCounts.get(hTeam.id) || 0) + 1,
+            );
+            stats.teamData.set(hTeam.id, hTeam);
+          }
+
+          if (hasAway) {
+            stats.awayTeamCounts.set(
+              aTeam.id,
+              (stats.awayTeamCounts.get(aTeam.id) || 0) + 1,
+            );
+            stats.teamData.set(aTeam.id, aTeam);
+          }
+
+          if (hasHome && hasAway) {
+            const key = `${hTeam.id}-${aTeam.id}`;
+            stats.matchupCounts.set(key, (stats.matchupCounts.get(key) || 0) + 1);
+          }
+        });
       }
 
       const currentCompleted = Math.min(iterations, chunkStart + currentChunk);
@@ -188,10 +241,134 @@ self.onmessage = async (e: MessageEvent) => {
       });
     });
 
+    // Format Knockout Probabilities
+    const finalKnockoutProbs: Record<string, any> = {};
+    matchStats.forEach((stats, matchId) => {
+      let bestHomeId = "";
+      let maxHomeCount = 0;
+      stats.homeTeamCounts.forEach((count, id) => {
+        if (count > maxHomeCount) {
+          maxHomeCount = count;
+          bestHomeId = id;
+        }
+      });
+
+      let bestAwayId = "";
+      let maxAwayCount = 0;
+      stats.awayTeamCounts.forEach((count, id) => {
+        if (count > maxAwayCount) {
+          maxAwayCount = count;
+          bestAwayId = id;
+        }
+      });
+
+      const projectedMatchupKey = `${bestHomeId}-${bestAwayId}`;
+      const matchupCount = stats.matchupCounts.get(projectedMatchupKey) || 0;
+
+      const homeCandidates: { team: Team; probability: number }[] = [];
+      stats.homeTeamCounts.forEach((count, id) => {
+        const team = stats.teamData.get(id);
+        if (team) {
+          homeCandidates.push({
+            team,
+            probability: count / iterations,
+          });
+        }
+      });
+      homeCandidates.sort((a, b) => b.probability - a.probability);
+
+      const awayCandidates: { team: Team; probability: number }[] = [];
+      stats.awayTeamCounts.forEach((count, id) => {
+        const team = stats.teamData.get(id);
+        if (team) {
+          awayCandidates.push({
+            team,
+            probability: count / iterations,
+          });
+        }
+      });
+      awayCandidates.sort((a, b) => b.probability - a.probability);
+
+      const maxTeamCount = Math.max(maxHomeCount, maxAwayCount);
+      const conditionalMatchupProb = maxTeamCount > 0 ? matchupCount / maxTeamCount : 0;
+
+      finalKnockoutProbs[matchId] = {
+        homeTeamProb: maxHomeCount / iterations,
+        awayTeamProb: maxAwayCount / iterations,
+        matchupProb: conditionalMatchupProb,
+        projectedHomeTeam: bestHomeId ? stats.teamData.get(bestHomeId) : undefined,
+        projectedAwayTeam: bestAwayId ? stats.teamData.get(bestAwayId) : undefined,
+        homeCandidates,
+        awayCandidates,
+      };
+    });
+
+    const getDeterministicWinner = (match: KnockoutMatch): Team | null => {
+      if (
+        !match.homeTeam ||
+        !match.awayTeam ||
+        "placeholder" in match.homeTeam ||
+        "placeholder" in match.awayTeam
+      ) {
+        return null;
+      }
+
+      const home = match.homeScore;
+      const away = match.awayScore;
+
+      if (home == null || away == null) return null;
+
+      if (home > away) return match.homeTeam as Team;
+      if (away > home) return match.awayTeam as Team;
+
+      const homePens = match.homePenalties;
+      const awayPens = match.awayPenalties;
+      if (homePens != null && awayPens != null && homePens !== awayPens) {
+        return homePens > awayPens
+          ? (match.homeTeam as Team)
+          : (match.awayTeam as Team);
+      }
+
+      if (match.winner && !("placeholder" in match.winner)) {
+        return match.winner as Team;
+      }
+
+      return null;
+    };
+
+    // Override probabilities for matches that are already decided by the user
+    knockoutMatches.forEach((m: KnockoutMatch) => {
+      const winner = getDeterministicWinner(m);
+      if (!winner) return;
+
+      if (
+        !m.homeTeam ||
+        !m.awayTeam ||
+        "placeholder" in m.homeTeam ||
+        "placeholder" in m.awayTeam
+      ) {
+        return;
+      }
+
+      const homeTeam = m.homeTeam as Team;
+      const awayTeam = m.awayTeam as Team;
+
+      finalKnockoutProbs[m.id] = {
+        homeTeamProb: winner.id === homeTeam.id ? 1 : 0,
+        awayTeamProb: winner.id === awayTeam.id ? 1 : 0,
+        matchupProb: 1,
+        projectedHomeTeam: homeTeam,
+        projectedAwayTeam: awayTeam,
+        homeCandidates: [{ team: homeTeam, probability: 1 }],
+        awayCandidates: [{ team: awayTeam, probability: 1 }],
+      };
+    });
+
     self.postMessage({
       status: "success",
       predictions: finalPredictions,
       matchups: finalMatchups,
+      knockoutProbabilities: finalKnockoutProbs,
       elapsedMs: end - start,
     });
   } catch (error: any) {

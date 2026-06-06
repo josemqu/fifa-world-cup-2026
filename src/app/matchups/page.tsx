@@ -168,7 +168,7 @@ export default function MatchupsPage() {
           setProgress(progress);
           setCurrentIteration(currentIteration);
         } else if (status === "success") {
-          setSimulationResults(e.data.predictions, e.data.matchups, numIterations, e.data.elapsedMs);
+          setSimulationResults(e.data.predictions, e.data.matchups, e.data.knockoutProbabilities, numIterations, e.data.elapsedMs);
           setIsRunning(false);
           worker.terminate();
         } else if (status === "error") {

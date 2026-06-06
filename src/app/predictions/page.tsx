@@ -96,7 +96,7 @@ export default function PredictionsPage() {
         setProgress(progress);
         setCurrentIteration(currentIteration);
       } else if (status === "success") {
-        setSimulationResults(e.data.predictions, e.data.matchups, numIterations, elapsedMs);
+        setSimulationResults(e.data.predictions, e.data.matchups, e.data.knockoutProbabilities, numIterations, elapsedMs);
         setIsRunning(false);
         worker.terminate();
       } else if (status === "error") {

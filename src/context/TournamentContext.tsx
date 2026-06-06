@@ -40,6 +40,7 @@ interface TournamentContextType {
   setSimulationResults: (
     predictions: PredictionResult[],
     matchupResults: MatchupData[],
+    knockoutProbabilities: Record<string, any>,
     iterations: number,
     time: number
   ) => void;
@@ -113,6 +114,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       try {
         const savedPredictions = localStorage.getItem("tournament_predictions");
         const savedMatchups = localStorage.getItem("tournament_matchups");
+        const savedProbabilities = localStorage.getItem("tournament_knockout_probabilities");
         const savedIterations = localStorage.getItem("tournament_simulation_iterations");
         const savedTime = localStorage.getItem("tournament_simulation_time");
         const savedHash = localStorage.getItem("tournament_simulation_scores_hash");
@@ -122,6 +124,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         }
         if (savedMatchups) {
           setMatchupResults(JSON.parse(savedMatchups));
+        }
+        if (savedProbabilities) {
+          setProbabilities(new Map(Object.entries(JSON.parse(savedProbabilities))));
         }
         if (savedIterations) {
           setSimulationIterations(Number(savedIterations));
@@ -141,6 +146,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   const setSimulationResults = (
     preds: PredictionResult[],
     matchups: MatchupData[],
+    knockoutProbabilities: Record<string, any>,
     iterations: number,
     time: number
   ) => {
@@ -149,6 +155,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     setSimulationIterations(iterations);
     setSimulationTime(time);
 
+    // Also save knockoutProbabilities as a Map in the context state
+    setProbabilities(new Map(Object.entries(knockoutProbabilities)));
+
     const hash = getTournamentScoresHash(groups, knockoutMatches);
     setSimulationScoresHash(hash);
 
@@ -156,6 +165,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       try {
         localStorage.setItem("tournament_predictions", JSON.stringify(preds));
         localStorage.setItem("tournament_matchups", JSON.stringify(matchups));
+        localStorage.setItem("tournament_knockout_probabilities", JSON.stringify(knockoutProbabilities));
         localStorage.setItem("tournament_simulation_iterations", String(iterations));
         localStorage.setItem("tournament_simulation_time", String(time));
         localStorage.setItem("tournament_simulation_scores_hash", hash);
@@ -168,6 +178,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   const clearSimulationResults = () => {
     setPredictionsState([]);
     setMatchupResults([]);
+    setProbabilities(new Map());
     setSimulationTime(0);
     setSimulationScoresHash("");
 
@@ -175,6 +186,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       try {
         localStorage.removeItem("tournament_predictions");
         localStorage.removeItem("tournament_matchups");
+        localStorage.removeItem("tournament_knockout_probabilities");
         localStorage.removeItem("tournament_simulation_iterations");
         localStorage.removeItem("tournament_simulation_time");
         localStorage.removeItem("tournament_simulation_scores_hash");
@@ -192,7 +204,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
 
   // Compatibility aliases implementation
   const setPredictions = (results: PredictionResult[], iterations: number, time: number) => {
-    setSimulationResults(results, matchupResults, iterations, time);
+    setSimulationResults(results, matchupResults, {}, iterations, time);
   };
 
   const clearPredictions = () => {
@@ -297,6 +309,21 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   // Probability Calculation Effect
   useEffect(() => {
     const runProbabilityCalc = async () => {
+      // If we already have a valid, non-stale simulation, do not overwrite with quick calc
+      const currentHash = getTournamentScoresHash(groups, knockoutMatches);
+      const savedHash = localStorage.getItem("tournament_simulation_scores_hash");
+      if (currentHash === savedHash && localStorage.getItem("tournament_knockout_probabilities")) {
+        try {
+          const savedProbs = localStorage.getItem("tournament_knockout_probabilities");
+          if (savedProbs) {
+            setProbabilities(new Map(Object.entries(JSON.parse(savedProbs))));
+            return;
+          }
+        } catch (e) {
+          console.error("Failed to parse saved knockout probabilities:", e);
+        }
+      }
+
       // Import dynamically to avoid circular dependencies if any, though imports are top-level
       const { calculateKnockoutProbabilities } =
         await import("@/utils/probabilityUtils");
@@ -314,7 +341,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
 
     const timer = setTimeout(runProbabilityCalc, 500);
     return () => clearTimeout(timer);
-  }, [groups, knockoutMatches]);
+  }, [groups, knockoutMatches, simulationScoresHash]);
 
   const updateMatch = useCallback((
     groupId: string,
