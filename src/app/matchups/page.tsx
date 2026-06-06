@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { runMatchupMonteCarlo } from "@/utils/matchupMonteCarlo";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { PageTransition } from "@/components/PageTransition";
+import { SimulationOverlay } from "@/components/ui/SimulationOverlay";
 import { MatchupData } from "@/data/types";
 import { clsx } from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
@@ -61,6 +62,8 @@ export default function MatchupsPage() {
   const [matchupResults, setMatchupResults] = useState<MatchupData[]>([]);
   const [iterations, setIterations] = useState(5000);
   const [isRunning, setIsRunning] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentIteration, setCurrentIteration] = useState(0);
   const [elapsedMs, setElapsedMs] = useState(0);
 
   // UI state
@@ -95,19 +98,57 @@ export default function MatchupsPage() {
     return allTeams.filter((t) => t.name.toLowerCase().includes(q));
   }, [allTeams, searchQuery]);
 
+  // Extract team names for the random cycling spinner
+  const teamNames = useMemo(() => {
+    return groups.flatMap((g) => g.teams).map((t) => t.name);
+  }, [groups]);
+
   // ── Run simulation ──────────────────────────────────────────
   const handleRun = useCallback(
     async (numIterations: number = iterations) => {
       setIsRunning(true);
+      setProgress(0);
+      setCurrentIteration(0);
       setMatchupResults([]);
-      setTimeout(async () => {
-        const start = performance.now();
-        const data = await runMatchupMonteCarlo(groups, knockoutMatches, numIterations);
-        const end = performance.now();
-        setElapsedMs(end - start);
-        setMatchupResults(data);
+
+      // Small delay to allow the overlay spinner to render and animate in
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      // Instantiate background Web Worker
+      const worker = new Worker(
+        new URL("../../workers/simulation.worker.ts", import.meta.url)
+      );
+
+      worker.postMessage({
+        type: "matchups",
+        groups,
+        knockoutMatches,
+        iterations: numIterations,
+      });
+
+      worker.onmessage = (e) => {
+        const { status, progress, currentIteration, data, elapsedMs, error } = e.data;
+
+        if (status === "progress") {
+          setProgress(progress);
+          setCurrentIteration(currentIteration);
+        } else if (status === "success") {
+          setElapsedMs(elapsedMs);
+          setMatchupResults(data);
+          setIsRunning(false);
+          worker.terminate();
+        } else if (status === "error") {
+          console.error("Simulation worker error:", error);
+          setIsRunning(false);
+          worker.terminate();
+        }
+      };
+
+      worker.onerror = (err) => {
+        console.error("Worker error event:", err);
         setIsRunning(false);
-      }, 50);
+        worker.terminate();
+      };
     },
     [groups, knockoutMatches, iterations]
   );
@@ -665,6 +706,15 @@ export default function MatchupsPage() {
           )}
         </AnimatePresence>
       </div>
+
+      <SimulationOverlay
+        isOpen={isRunning}
+        progress={progress}
+        currentIteration={currentIteration}
+        totalIterations={iterations}
+        teamNames={teamNames}
+        type="matchups"
+      />
     </PageTransition>
   );
 }
