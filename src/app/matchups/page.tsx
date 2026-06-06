@@ -55,7 +55,7 @@ function getHeatmapClasses(pct: number): string {
 // ── Main Page ─────────────────────────────────────────────────
 export default function MatchupsPage() {
   const { groups, knockoutMatches } = useTournament();
-  const { user, loading: authLoading } = useAuth();
+  const { user, dbUser, loading: authLoading } = useAuth();
   const canRun = !!user && !authLoading;
 
   // Simulation state
@@ -84,12 +84,35 @@ export default function MatchupsPage() {
     return teams.sort((a, b) => a.name.localeCompare(b.name));
   }, [groups]);
 
-  // Auto-select first team if none selected
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Auto-select team based on favorite or first team when loaded
   useEffect(() => {
-    if (!selectedTeamId && allTeams.length > 0) {
-      setSelectedTeamId(allTeams[0].id);
+    if (allTeams.length === 0) return;
+
+    // Check if auth/profile is still loading
+    const isProfileLoading = authLoading || (!!user && !dbUser);
+    if (isProfileLoading) return;
+
+    if (!hasInitialized) {
+      if (dbUser?.favoriteTeam) {
+        const favTeam = allTeams.find(
+          (t) => t.name.toLowerCase() === dbUser.favoriteTeam?.toLowerCase()
+        );
+        if (favTeam) {
+          setSelectedTeamId(favTeam.id);
+          setHasInitialized(true);
+          return;
+        }
+      }
+      
+      // Fallback: Default to first team if not already selected
+      if (!selectedTeamId) {
+        setSelectedTeamId(allTeams[0].id);
+      }
+      setHasInitialized(true);
     }
-  }, [allTeams, selectedTeamId]);
+  }, [allTeams, dbUser, user, authLoading, hasInitialized, selectedTeamId]);
 
   // ── Filtered teams for the selector ──────────────────────────
   const filteredSelectorTeams = useMemo(() => {
@@ -253,14 +276,26 @@ export default function MatchupsPage() {
     });
 
     let topRival = { name: "-", prob: 0, stage: "-" };
+    let fallbackRival = { name: "-", prob: 0, stage: "-" };
+
     knockoutRows.forEach((r) => {
       KNOCKOUT_STAGES.forEach((st) => {
         const p = r.stageProbs[st] || 0;
-        if (p > topRival.prob) {
+        // Primary choice: highest probability that is strictly less than 100%
+        if (p < 100 && p > topRival.prob) {
           topRival = { name: r.opponentName, prob: p, stage: STAGE_LABELS[st] || st };
+        }
+        // Fallback choice: highest probability overall (including 100%)
+        if (p > fallbackRival.prob) {
+          fallbackRival = { name: r.opponentName, prob: p, stage: STAGE_LABELS[st] || st };
         }
       });
     });
+
+    // If no undecided matchup (< 100%) was found, fall back to the decided ones
+    if (topRival.name === "-") {
+      topRival = fallbackRival;
+    }
 
     // Most probable stage to reach
     const stageTotals: Record<string, number> = {};

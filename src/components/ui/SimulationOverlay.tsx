@@ -66,8 +66,17 @@ export function SimulationOverlay({
     ]);
 
     const interval = setInterval(() => {
-      const randomTeam = teamNames[Math.floor(Math.random() * teamNames.length)];
       setStackedFlags((prev) => {
+        const lastTeam = prev.length > 0 ? prev[prev.length - 1].teamName : null;
+        let randomTeam = teamNames[Math.floor(Math.random() * teamNames.length)];
+
+        // Prevent picking the same team twice in a row
+        if (lastTeam && teamNames.length > 1) {
+          while (randomTeam === lastTeam) {
+            randomTeam = teamNames[Math.floor(Math.random() * teamNames.length)];
+          }
+        }
+
         const next = [
           ...prev,
           {
