@@ -96,10 +96,10 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body
-        className={`${inter.className} bg-slate-50 dark:bg-slate-900 min-h-screen flex flex-col text-slate-900 dark:text-slate-100`}
+        className={`${inter.className} bg-slate-50 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-50 via-slate-50 to-slate-100 dark:bg-slate-900 dark:bg-none min-h-screen flex flex-col text-slate-900 dark:text-slate-100`}
         suppressHydrationWarning
       >
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <AuthProvider>
             <TournamentProvider>
               <LanguageProvider>
