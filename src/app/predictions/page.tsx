@@ -7,7 +7,8 @@ import { runMonteCarloSimulation, PredictionResult } from "@/utils/monteCarlo";
 import { simulateTournament } from "@/utils/simulationUtils";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { TeamFlag } from "@/components/ui/TeamFlag";
-import { Info, Timer, CheckCircle2, X } from "lucide-react";
+import { Info, Timer, CheckCircle2, X, AlertTriangle, Swords } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { clsx } from "clsx";
 import { Team, KnockoutMatch } from "@/data/types";
@@ -35,6 +36,7 @@ export default function PredictionsPage() {
     predictionTime,
     setSimulationResults,
     clearSimulationResults,
+    isSimulationStale,
   } = useTournament();
   const canRunSimulation = !!user && !loading;
 
@@ -391,6 +393,39 @@ export default function PredictionsPage() {
               </div>
             </div>
           </div>
+
+        {/* ─── Stale Simulation Warning Banner ─── */}
+        <AnimatePresence>
+          {isSimulationStale && predictions.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, y: -10 }}
+              animate={{ opacity: 1, height: "auto", y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-hidden mb-6"
+            >
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border border-amber-200 dark:border-amber-900/60 rounded-2xl p-4 flex items-start sm:items-center gap-3 text-amber-800 dark:text-amber-300 shadow-xs">
+                <AlertTriangle className="w-5 h-5 shrink-0 text-amber-500" />
+                <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-sm font-bold">Simulación desactualizada</h4>
+                    <p className="text-xs text-amber-700/90 dark:text-amber-400/90 mt-0.5">
+                      Los resultados de los partidos cambiaron. Te recomendamos volver a ejecutar la simulación para obtener probabilidades actualizadas.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleRun()}
+                    disabled={isRunning || !canRunSimulation}
+                    className="shrink-0 text-xs font-bold px-3 py-1.5 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white rounded-lg transition-colors shadow-xs flex items-center gap-1.5 self-start sm:self-center"
+                  >
+                    <Swords className="w-3.5 h-3.5" />
+                    Simular ahora
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
           {predictions.length > 0 && (
             <div className="overflow-x-auto">

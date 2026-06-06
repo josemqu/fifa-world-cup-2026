@@ -44,6 +44,7 @@ interface TournamentContextType {
     time: number
   ) => void;
   clearSimulationResults: () => void;
+  isSimulationStale: boolean;
   
   // Compatibility aliases
   predictionIterations: number;
@@ -73,6 +74,21 @@ const TournamentContext = createContext<TournamentContextType | undefined>(
   undefined,
 );
 
+function getTournamentScoresHash(groups: Group[], knockoutMatches: KnockoutMatch[]): string {
+  // Serialize group matches scores
+  const groupScores = groups
+    .flatMap((g) => g.matches)
+    .map((m) => `${m.id}:${m.homeScore ?? ""}-${m.awayScore ?? ""}`)
+    .join(",");
+
+  // Serialize knockout matches scores
+  const knockoutScores = knockoutMatches
+    .map((m) => `${m.id}:${m.homeScore ?? ""}-${m.awayScore ?? ""}`)
+    .join(",");
+
+  return `${groupScores}|${knockoutScores}`;
+}
+
 export function TournamentProvider({ children }: { children: ReactNode }) {
   const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
   const [knockoutMatches, setKnockoutMatches] = useState<KnockoutMatch[]>([]);
@@ -85,6 +101,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   const [matchupResults, setMatchupResults] = useState<MatchupData[]>([]);
   const [simulationIterations, setSimulationIterations] = useState(10000);
   const [simulationTime, setSimulationTime] = useState(0);
+  const [simulationScoresHash, setSimulationScoresHash] = useState<string>("");
 
   // Compatibility aliases
   const predictionIterations = simulationIterations;
@@ -98,6 +115,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         const savedMatchups = localStorage.getItem("tournament_matchups");
         const savedIterations = localStorage.getItem("tournament_simulation_iterations");
         const savedTime = localStorage.getItem("tournament_simulation_time");
+        const savedHash = localStorage.getItem("tournament_simulation_scores_hash");
 
         if (savedPredictions) {
           setPredictionsState(JSON.parse(savedPredictions));
@@ -110,6 +128,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         }
         if (savedTime) {
           setSimulationTime(Number(savedTime));
+        }
+        if (savedHash) {
+          setSimulationScoresHash(savedHash);
         }
       } catch (err) {
         console.error("Failed to load simulation from localStorage:", err);
@@ -128,12 +149,16 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     setSimulationIterations(iterations);
     setSimulationTime(time);
 
+    const hash = getTournamentScoresHash(groups, knockoutMatches);
+    setSimulationScoresHash(hash);
+
     if (typeof window !== "undefined") {
       try {
         localStorage.setItem("tournament_predictions", JSON.stringify(preds));
         localStorage.setItem("tournament_matchups", JSON.stringify(matchups));
         localStorage.setItem("tournament_simulation_iterations", String(iterations));
         localStorage.setItem("tournament_simulation_time", String(time));
+        localStorage.setItem("tournament_simulation_scores_hash", hash);
       } catch (err) {
         console.error("Failed to save simulation to localStorage:", err);
       }
@@ -144,6 +169,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     setPredictionsState([]);
     setMatchupResults([]);
     setSimulationTime(0);
+    setSimulationScoresHash("");
 
     if (typeof window !== "undefined") {
       try {
@@ -151,11 +177,18 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("tournament_matchups");
         localStorage.removeItem("tournament_simulation_iterations");
         localStorage.removeItem("tournament_simulation_time");
+        localStorage.removeItem("tournament_simulation_scores_hash");
       } catch (err) {
         console.error("Failed to clear simulation from localStorage:", err);
       }
     }
   };
+
+  const isSimulationStale = useMemo(() => {
+    if (predictions.length === 0) return false;
+    const currentHash = getTournamentScoresHash(groups, knockoutMatches);
+    return currentHash !== simulationScoresHash;
+  }, [groups, knockoutMatches, predictions, simulationScoresHash]);
 
   // Compatibility aliases implementation
   const setPredictions = (results: PredictionResult[], iterations: number, time: number) => {
@@ -590,6 +623,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         simulationTime,
         setSimulationResults,
         clearSimulationResults,
+        isSimulationStale,
         
         // Compatibility aliases
         predictionIterations,
