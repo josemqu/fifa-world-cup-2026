@@ -54,17 +54,24 @@ function getHeatmapClasses(pct: number): string {
 
 // ── Main Page ─────────────────────────────────────────────────
 export default function MatchupsPage() {
-  const { groups, knockoutMatches } = useTournament();
+  const {
+    groups,
+    knockoutMatches,
+    matchupResults,
+    simulationIterations,
+    simulationTime,
+    setSimulationResults,
+    clearSimulationResults,
+  } = useTournament();
   const { user, dbUser, loading: authLoading } = useAuth();
   const canRun = !!user && !authLoading;
 
   // Simulation state
-  const [matchupResults, setMatchupResults] = useState<MatchupData[]>([]);
-  const [iterations, setIterations] = useState(5000);
+  const [iterations, setIterations] = useState(simulationIterations);
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentIteration, setCurrentIteration] = useState(0);
-  const [elapsedMs, setElapsedMs] = useState(0);
+  const elapsedMs = simulationTime;
 
   // UI state
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
@@ -77,6 +84,10 @@ export default function MatchupsPage() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  useEffect(() => {
+    setIterations(simulationIterations);
+  }, [simulationIterations]);
 
   // ── All teams flat list ──────────────────────────────────────
   const allTeams = useMemo(() => {
@@ -132,7 +143,7 @@ export default function MatchupsPage() {
       setIsRunning(true);
       setProgress(0);
       setCurrentIteration(0);
-      setMatchupResults([]);
+      clearSimulationResults();
 
       // Small delay to allow the overlay spinner to render and animate in
       await new Promise((resolve) => setTimeout(resolve, 150));
@@ -143,21 +154,19 @@ export default function MatchupsPage() {
       );
 
       worker.postMessage({
-        type: "matchups",
         groups,
         knockoutMatches,
         iterations: numIterations,
       });
 
       worker.onmessage = (e) => {
-        const { status, progress, currentIteration, data, elapsedMs, error } = e.data;
+        const { status, progress, currentIteration, error } = e.data;
 
         if (status === "progress") {
           setProgress(progress);
           setCurrentIteration(currentIteration);
         } else if (status === "success") {
-          setElapsedMs(elapsedMs);
-          setMatchupResults(data);
+          setSimulationResults(e.data.predictions, e.data.matchups, numIterations, e.data.elapsedMs);
           setIsRunning(false);
           worker.terminate();
         } else if (status === "error") {
@@ -173,7 +182,7 @@ export default function MatchupsPage() {
         worker.terminate();
       };
     },
-    [groups, knockoutMatches, iterations]
+    [groups, knockoutMatches, iterations, setSimulationResults, clearSimulationResults]
   );
 
   // ── Selected team's matchup data ────────────────────────────

@@ -9,7 +9,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import { Group, Team, KnockoutMatch } from "@/data/types";
+import { Group, Team, KnockoutMatch, MatchupData } from "@/data/types";
 import { INITIAL_GROUPS } from "@/data/initialData";
 import { generateR32Matches } from "@/utils/knockoutUtils";
 import { fetchFifaRankings, getRankingDataForTeam } from "@/utils/rankingUtils";
@@ -31,7 +31,21 @@ import { PredictionResult } from "@/utils/monteCarlo";
 interface TournamentContextType {
   groups: Group[];
   knockoutMatches: KnockoutMatch[];
+  
+  // Unified simulation data
   predictions: PredictionResult[];
+  matchupResults: MatchupData[];
+  simulationIterations: number;
+  simulationTime: number;
+  setSimulationResults: (
+    predictions: PredictionResult[],
+    matchupResults: MatchupData[],
+    iterations: number,
+    time: number
+  ) => void;
+  clearSimulationResults: () => void;
+  
+  // Compatibility aliases
   predictionIterations: number;
   predictionTime: number;
   setPredictions: (results: PredictionResult[], iterations: number, time: number) => void;
@@ -66,20 +80,90 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     new Map(),
   );
 
-  // Predictions persistence
+  // Unified simulation data
   const [predictions, setPredictionsState] = useState<PredictionResult[]>([]);
-  const [predictionIterations, setPredictionIterations] = useState(10000);
-  const [predictionTime, setPredictionTime] = useState(0);
+  const [matchupResults, setMatchupResults] = useState<MatchupData[]>([]);
+  const [simulationIterations, setSimulationIterations] = useState(10000);
+  const [simulationTime, setSimulationTime] = useState(0);
 
+  // Compatibility aliases
+  const predictionIterations = simulationIterations;
+  const predictionTime = simulationTime;
+
+  // Load simulation data from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const savedPredictions = localStorage.getItem("tournament_predictions");
+        const savedMatchups = localStorage.getItem("tournament_matchups");
+        const savedIterations = localStorage.getItem("tournament_simulation_iterations");
+        const savedTime = localStorage.getItem("tournament_simulation_time");
+
+        if (savedPredictions) {
+          setPredictionsState(JSON.parse(savedPredictions));
+        }
+        if (savedMatchups) {
+          setMatchupResults(JSON.parse(savedMatchups));
+        }
+        if (savedIterations) {
+          setSimulationIterations(Number(savedIterations));
+        }
+        if (savedTime) {
+          setSimulationTime(Number(savedTime));
+        }
+      } catch (err) {
+        console.error("Failed to load simulation from localStorage:", err);
+      }
+    }
+  }, []);
+
+  const setSimulationResults = (
+    preds: PredictionResult[],
+    matchups: MatchupData[],
+    iterations: number,
+    time: number
+  ) => {
+    setPredictionsState(preds);
+    setMatchupResults(matchups);
+    setSimulationIterations(iterations);
+    setSimulationTime(time);
+
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("tournament_predictions", JSON.stringify(preds));
+        localStorage.setItem("tournament_matchups", JSON.stringify(matchups));
+        localStorage.setItem("tournament_simulation_iterations", String(iterations));
+        localStorage.setItem("tournament_simulation_time", String(time));
+      } catch (err) {
+        console.error("Failed to save simulation to localStorage:", err);
+      }
+    }
+  };
+
+  const clearSimulationResults = () => {
+    setPredictionsState([]);
+    setMatchupResults([]);
+    setSimulationTime(0);
+
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("tournament_predictions");
+        localStorage.removeItem("tournament_matchups");
+        localStorage.removeItem("tournament_simulation_iterations");
+        localStorage.removeItem("tournament_simulation_time");
+      } catch (err) {
+        console.error("Failed to clear simulation from localStorage:", err);
+      }
+    }
+  };
+
+  // Compatibility aliases implementation
   const setPredictions = (results: PredictionResult[], iterations: number, time: number) => {
-    setPredictionsState(results);
-    setPredictionIterations(iterations);
-    setPredictionTime(time);
+    setSimulationResults(results, matchupResults, iterations, time);
   };
 
   const clearPredictions = () => {
-    setPredictionsState([]);
-    setPredictionTime(0);
+    clearSimulationResults();
   };
 
   // Fetch live rankings
@@ -501,6 +585,13 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         simulateAll,
         resetTournament,
         predictions,
+        matchupResults,
+        simulationIterations,
+        simulationTime,
+        setSimulationResults,
+        clearSimulationResults,
+        
+        // Compatibility aliases
         predictionIterations,
         predictionTime,
         setPredictions,

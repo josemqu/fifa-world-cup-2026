@@ -33,8 +33,8 @@ export default function PredictionsPage() {
     predictions,
     predictionIterations,
     predictionTime,
-    setPredictions,
-    clearPredictions,
+    setSimulationResults,
+    clearSimulationResults,
   } = useTournament();
   const canRunSimulation = !!user && !loading;
 
@@ -47,6 +47,10 @@ export default function PredictionsPage() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  useEffect(() => {
+    setIterations(predictionIterations);
+  }, [predictionIterations]);
   const [sortColumn, setSortColumn] = useState<SortColumn>("championCount");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
@@ -66,7 +70,7 @@ export default function PredictionsPage() {
     setIsRunning(true);
     setProgress(0);
     setCurrentIteration(0);
-    clearPredictions();
+    clearSimulationResults();
 
     // Small delay to allow the overlay spinner to render and animate in
     await new Promise((resolve) => setTimeout(resolve, 150));
@@ -90,7 +94,7 @@ export default function PredictionsPage() {
         setProgress(progress);
         setCurrentIteration(currentIteration);
       } else if (status === "success") {
-        setPredictions(data, numIterations, elapsedMs);
+        setSimulationResults(e.data.predictions, e.data.matchups, numIterations, elapsedMs);
         setIsRunning(false);
         worker.terminate();
       } else if (status === "error") {
@@ -308,7 +312,7 @@ export default function PredictionsPage() {
                   <div className="flex items-center gap-2 w-full sm:w-auto">
                     {predictions.length > 0 && !isRunning && (
                       <button
-                        onClick={clearPredictions}
+                        onClick={clearSimulationResults}
                         className="px-4 py-2 rounded-lg font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center justify-center gap-2 w-full sm:w-auto shrink-0"
                       >
                         <X className="w-4 h-4" />
