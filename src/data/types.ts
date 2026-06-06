@@ -63,3 +63,18 @@ export type KnockoutMatch = {
     awayCandidates?: { team: Team; probability: number }[];
   };
 };
+
+// Matchup Explorer Types
+export type MatchupEntry = {
+  opponentId: string;
+  opponentName: string;
+  stage: string; // "Grupos" | "R32" | "R16" | "QF" | "SF" | "Final" | "3rdPlace"
+  count: number; // times they faced each other in this stage
+};
+
+export type MatchupData = {
+  teamId: string;
+  teamName: string;
+  teamRanking?: number;
+  matchups: MatchupEntry[];
+};

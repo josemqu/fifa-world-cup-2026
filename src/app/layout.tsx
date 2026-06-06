@@ -12,6 +12,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { GoogleOneTap } from "@/components/auth/GoogleOneTap";
 import { LiveScoreSync } from "@/components/LiveScoreSync";
 import { LiveSimulationPanel } from "@/components/LiveSimulationPanel";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -98,23 +99,25 @@ export default function RootLayout({
         className={`${inter.className} bg-slate-50 dark:bg-slate-900 min-h-screen flex flex-col text-slate-900 dark:text-slate-100`}
         suppressHydrationWarning
       >
-        <AuthProvider>
-          <TournamentProvider>
-            <LanguageProvider>
-              <Header />
-              <main id="main" className="flex-1 pb-20 md:pb-12">
-                {children}
-              </main>
-              <Footer />
-              <UserProfileModal />
-              <GoogleOneTap />
-              <LiveScoreSync />
-              <LiveSimulationPanel />
-            </LanguageProvider>
-          </TournamentProvider>
-        </AuthProvider>
-        <Analytics />
-        <JsonLd />
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <AuthProvider>
+            <TournamentProvider>
+              <LanguageProvider>
+                <Header />
+                <main id="main" className="flex-1 pb-20 md:pb-12">
+                  {children}
+                </main>
+                <Footer />
+                <UserProfileModal />
+                <GoogleOneTap />
+                <LiveScoreSync />
+                <LiveSimulationPanel />
+              </LanguageProvider>
+            </TournamentProvider>
+          </AuthProvider>
+          <Analytics />
+          <JsonLd />
+        </ThemeProvider>
       </body>
     </html>
   );

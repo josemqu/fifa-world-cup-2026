@@ -59,7 +59,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <section className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/60 backdrop-blur-md p-6 shadow-sm">
           <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
             Tabla clara
@@ -83,6 +83,22 @@ export default function Home() {
             className="mt-4 inline-flex text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline"
           >
             Ir a Predicciones
+          </Link>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/60 backdrop-blur-md p-6 shadow-sm">
+          <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
+            Explorador de Cruces
+          </h3>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            ¿Contra quién jugará tu selección? Descubrí las probabilidades de
+            cada cruce en cada instancia.
+          </p>
+          <Link
+            href="/matchups"
+            className="mt-4 inline-flex text-sm font-bold text-violet-600 dark:text-violet-400 hover:underline"
+          >
+            Ir a Cruces
           </Link>
         </div>
 

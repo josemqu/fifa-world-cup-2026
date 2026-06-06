@@ -4,11 +4,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
-import { LogOut, User as UserIcon, Settings, ChevronDown, Home, Calendar, Trophy, GitFork, Sparkles } from "lucide-react";
+import { LogOut, User as UserIcon, Settings, ChevronDown, Home, Calendar, Trophy, GitFork, Swords, Sparkles } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useRef, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
 import { NextMatchCountdown } from "@/components/NextMatchCountdown";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Header() {
   const pathname = usePathname();
@@ -22,6 +23,7 @@ export function Header() {
   const isGroups = pathname === "/groups";
   const isKnockout = pathname === "/knockout";
   const isPredictions = pathname === "/predictions";
+  const isMatchups = pathname === "/matchups";
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -160,6 +162,24 @@ export function Header() {
                 <span className="relative z-10">Eliminatoria</span>
               </Link>
               <Link
+                href="/matchups"
+                className={clsx(
+                  "relative px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center focus:outline-none transition-all duration-200 whitespace-nowrap",
+                  isMatchups
+                    ? "text-blue-600 dark:text-blue-100"
+                    : "text-slate-500 dark:text-slate-400 hover:bg-white/20 hover:text-slate-700 dark:hover:text-slate-200"
+                )}
+              >
+                {isMatchups && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute inset-0 bg-white dark:bg-slate-700 rounded-lg shadow-sm"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <span className="relative z-10">Cruces</span>
+              </Link>
+              <Link
                 href="/predictions"
                 className={clsx(
                   "relative px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center focus:outline-none transition-all duration-200 whitespace-nowrap",
@@ -185,6 +205,7 @@ export function Header() {
 
           {/* User Section */}
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             {loading && !user ? (
               <div className="flex items-center gap-3 bg-white dark:bg-slate-800 p-1.5 pr-3 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm animate-pulse">
                 <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700" />
@@ -275,7 +296,7 @@ export function Header() {
         <Link
           href="/"
           className={clsx(
-            "flex flex-col items-center gap-1 py-1 px-3 text-center transition-colors rounded-lg",
+            "flex flex-col items-center gap-1 py-1 px-2 text-center transition-colors rounded-lg",
             isHome
               ? "text-blue-600 dark:text-blue-400 font-bold"
               : "text-slate-500 dark:text-slate-400"
@@ -287,7 +308,7 @@ export function Header() {
         <Link
           href="/schedule"
           className={clsx(
-            "flex flex-col items-center gap-1 py-1 px-3 text-center transition-colors rounded-lg",
+            "flex flex-col items-center gap-1 py-1 px-2 text-center transition-colors rounded-lg",
             isSchedule
               ? "text-blue-600 dark:text-blue-400 font-bold"
               : "text-slate-500 dark:text-slate-400"
@@ -299,7 +320,7 @@ export function Header() {
         <Link
           href="/groups"
           className={clsx(
-            "flex flex-col items-center gap-1 py-1 px-3 text-center transition-colors rounded-lg",
+            "flex flex-col items-center gap-1 py-1 px-2 text-center transition-colors rounded-lg",
             isGroups
               ? "text-blue-600 dark:text-blue-400 font-bold"
               : "text-slate-500 dark:text-slate-400"
@@ -311,7 +332,7 @@ export function Header() {
         <Link
           href="/knockout"
           className={clsx(
-            "flex flex-col items-center gap-1 py-1 px-3 text-center transition-colors rounded-lg",
+            "flex flex-col items-center gap-1 py-1 px-2 text-center transition-colors rounded-lg",
             isKnockout
               ? "text-blue-600 dark:text-blue-400 font-bold"
               : "text-slate-500 dark:text-slate-400"
@@ -321,9 +342,21 @@ export function Header() {
           <span className="text-[10px] font-semibold">Llaves</span>
         </Link>
         <Link
+          href="/matchups"
+          className={clsx(
+            "flex flex-col items-center gap-1 py-1 px-2 text-center transition-colors rounded-lg",
+            isMatchups
+              ? "text-blue-600 dark:text-blue-400 font-bold"
+              : "text-slate-500 dark:text-slate-400"
+          )}
+        >
+          <Swords className="w-5 h-5" />
+          <span className="text-[10px] font-semibold">Cruces</span>
+        </Link>
+        <Link
           href="/predictions"
           className={clsx(
-            "flex flex-col items-center gap-1 py-1 px-3 text-center transition-colors rounded-lg",
+            "flex flex-col items-center gap-1 py-1 px-2 text-center transition-colors rounded-lg",
             isPredictions
               ? "text-blue-600 dark:text-blue-400 font-bold"
               : "text-slate-500 dark:text-slate-400"
