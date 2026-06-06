@@ -35,32 +35,70 @@ export function SimulationOverlay({
   teamNames,
   type = "predictions",
 }: SimulationOverlayProps) {
-  const [currentFlagIndex, setCurrentFlagIndex] = useState(0);
+  interface StackedFlag {
+    id: string;
+    teamName: string;
+    rotate: number;
+    x: number;
+    y: number;
+  }
+
+  const [stackedFlags, setStackedFlags] = useState<StackedFlag[]>([]);
   const [phraseIndex, setPhraseIndex] = useState(0);
 
-  // Cycle flags rapidly while running
+  // Cycle flags at a slower, visible pace and stack them while running
   useEffect(() => {
-    if (!isOpen || teamNames.length === 0) return;
+    if (!isOpen || teamNames.length === 0) {
+      setStackedFlags([]);
+      return;
+    }
+
+    // Set first flag
+    const firstTeam = teamNames[Math.floor(Math.random() * teamNames.length)];
+    setStackedFlags([
+      {
+        id: Math.random().toString(),
+        teamName: firstTeam,
+        rotate: (Math.random() - 0.5) * 20, // -10deg to 10deg
+        x: (Math.random() - 0.5) * 12, // -6px to 6px
+        y: (Math.random() - 0.5) * 12, // -6px to 6px
+      },
+    ]);
 
     const interval = setInterval(() => {
-      setCurrentFlagIndex((prev) => (prev + 1) % teamNames.length);
-    }, 100);
+      const randomTeam = teamNames[Math.floor(Math.random() * teamNames.length)];
+      setStackedFlags((prev) => {
+        const next = [
+          ...prev,
+          {
+            id: Math.random().toString(),
+            teamName: randomTeam,
+            rotate: (Math.random() - 0.5) * 30, // -15deg to 15deg
+            x: (Math.random() - 0.5) * 16, // -8px to 8px
+            y: (Math.random() - 0.5) * 16, // -8px to 8px
+          },
+        ];
+        // Keep the last 5 stacked flags to show the pile but prevent performance issues
+        if (next.length > 5) {
+          return next.slice(next.length - 5);
+        }
+        return next;
+      });
+    }, 400); // 400ms per flag (2.5 flags per second)
 
     return () => clearInterval(interval);
   }, [isOpen, teamNames]);
 
-  // Cycle phrases every 800ms
+  // Cycle phrases every 2000ms (2 seconds) to make them comfortable to read
   useEffect(() => {
     if (!isOpen) return;
 
     const interval = setInterval(() => {
       setPhraseIndex((prev) => (prev + 1) % RUNNING_PHRASES.length);
-    }, 900);
+    }, 2000);
 
     return () => clearInterval(interval);
   }, [isOpen]);
-
-  const activeTeamName = teamNames[currentFlagIndex] || "";
 
   // Dynamic colors based on page theme
   const isMatchups = type === "matchups";
@@ -114,25 +152,49 @@ export function SimulationOverlay({
                   <div className="w-full h-full bg-white dark:bg-slate-900 rounded-full" />
                 </motion.div>
 
-                {/* Inner Pulsing Circle with Flags */}
+                {/* Inner Circle with Stacked Flags in Pile */}
                 <div className="absolute inset-2 bg-slate-50 dark:bg-slate-950 rounded-full flex items-center justify-center shadow-inner overflow-hidden border border-slate-100 dark:border-slate-800/80">
-                  <AnimatePresence mode="wait">
-                    {activeTeamName && (
-                      <motion.div
-                        key={activeTeamName}
-                        initial={{ scale: 0.6, opacity: 0, rotate: -15 }}
-                        animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                        exit={{ scale: 0.6, opacity: 0, rotate: 15 }}
-                        transition={{ duration: 0.08 }}
-                        className="w-14 h-10 flex items-center justify-center"
-                      >
-                        <TeamFlag
-                          teamName={activeTeamName}
-                          className="w-full h-full rounded shadow-md object-cover border border-slate-200 dark:border-slate-700"
-                        />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  <div className="relative w-20 h-14 flex items-center justify-center">
+                    <AnimatePresence>
+                      {stackedFlags.map((flag, index) => (
+                        <motion.div
+                          key={flag.id}
+                          initial={{ 
+                            scale: 1.6, 
+                            opacity: 0, 
+                            rotate: flag.rotate - 35,
+                            x: flag.x,
+                            y: flag.y - 35 
+                          }}
+                          animate={{ 
+                            scale: 1, 
+                            opacity: 1, 
+                            rotate: flag.rotate,
+                            x: flag.x,
+                            y: flag.y 
+                          }}
+                          exit={{ 
+                            scale: 0.75, 
+                            opacity: 0, 
+                            y: 20,
+                            rotate: flag.rotate + 15
+                          }}
+                          transition={{ 
+                            type: "spring", 
+                            stiffness: 140, 
+                            damping: 14 
+                          }}
+                          className="absolute w-14 h-10 shadow-lg"
+                          style={{ zIndex: index }}
+                        >
+                          <TeamFlag
+                            teamName={flag.teamName}
+                            className="w-full h-full rounded shadow-md object-cover border border-slate-200 dark:border-slate-700"
+                          />
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
                 </div>
               </div>
             </div>
