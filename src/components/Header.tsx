@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
-import { LogOut, User as UserIcon, Settings, ChevronDown, Home, Calendar, Trophy, GitFork, Swords, Sparkles } from "lucide-react";
+import { LogOut, User as UserIcon, Settings, ChevronDown, Home, Calendar, Trophy, GitFork, Swords, Sparkles, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useRef, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
@@ -15,7 +15,7 @@ import { Sun, Moon, Monitor } from "lucide-react";
 
 export function Header() {
   const pathname = usePathname();
-  const { user, loginWithGoogle, logout, loading, setProfileModalOpen } =
+  const { user, dbUser, loginWithGoogle, logout, loading, setProfileModalOpen } =
     useAuth();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -263,6 +263,19 @@ export function Header() {
                     {isDropdownOpen && (
                       <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50">
                         <div className="p-1">
+                          {dbUser?.role === "admin" && (
+                            <>
+                              <Link
+                                href="/admin"
+                                onClick={() => setIsDropdownOpen(false)}
+                                className="w-full text-left px-3 py-2 text-sm text-indigo-600 dark:text-indigo-400 font-bold hover:bg-slate-100/80 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2 transition-colors"
+                              >
+                                <ShieldAlert className="w-4 h-4 text-indigo-500" />
+                                Panel de Admin
+                              </Link>
+                              <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
+                            </>
+                          )}
                           <button
                             onClick={handleEditProfile}
                             className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2 transition-colors"

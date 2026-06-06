@@ -14,6 +14,9 @@ export interface IUser extends Document {
   preferences: {
     language: string;
   };
+  lastLoginAt?: Date;
+  loginCount: number;
+  lastActiveAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -33,6 +36,9 @@ const UserSchema: Schema = new Schema(
     preferences: {
       language: { type: String, default: "es" },
     },
+    lastLoginAt: { type: Date },
+    loginCount: { type: Number, default: 0 },
+    lastActiveAt: { type: Date },
   },
   {
     timestamps: true,

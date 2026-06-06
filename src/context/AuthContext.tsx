@@ -15,6 +15,7 @@ import {
   onAuthStateChanged,
 } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
+import { useActivityTracker, trackEvent } from "@/hooks/useActivityTracker";
 
 interface DbUser {
   _id: string;
@@ -66,6 +67,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
   }, [dbUser]);
 
+  // Track page views for authenticated users
+  useActivityTracker(dbUser?.firebaseUid);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -84,6 +88,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               const data = await getResponse.json();
               if (data.success) {
                 setDbUser(data.data);
+                // Track login event and update login stats
+                await fetch("/api/user", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    firebaseUid: currentUser.uid,
+                    lastLoginAt: new Date().toISOString(),
+                    $inc: { loginCount: 1 },
+                  }),
+                });
+                trackEvent(currentUser.uid, "LOGIN", {
+                  email: currentUser.email,
+                });
                 return;
               }
             }

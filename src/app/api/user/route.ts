@@ -18,6 +18,7 @@ export async function POST(request: Request) {
       birthDate,
       role,
       preferences,
+      lastLoginAt,
     } = body;
 
     if (!firebaseUid) {
@@ -42,6 +43,11 @@ export async function POST(request: Request) {
       updatedAt: new Date(),
     };
 
+    // Add lastLoginAt if provided
+    if (lastLoginAt) {
+      updateData.lastLoginAt = new Date(lastLoginAt);
+    }
+
     // Remove undefined fields
     Object.keys(updateData).forEach(
       (key) => updateData[key] === undefined && delete updateData[key]
@@ -52,15 +58,19 @@ export async function POST(request: Request) {
       updateData.role = "admin";
     }
 
+    // Build update operation — increment loginCount if this is a login call
+    const updateOp: any = {
+      $set: updateData,
+      $setOnInsert: { createdAt: new Date() },
+    };
+    if (lastLoginAt) {
+      updateOp.$inc = { loginCount: 1 };
+    }
+
     // Find user by firebaseUid and update, or create if doesn't exist (upsert)
     const user = await User.findOneAndUpdate(
       { firebaseUid },
-      {
-        $set: updateData,
-        $setOnInsert: {
-          createdAt: new Date(),
-        },
-      },
+      updateOp,
       { upsert: true, new: true, setDefaultsOnInsert: true, strict: false }
     ).lean();
 
