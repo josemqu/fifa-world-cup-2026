@@ -42,12 +42,10 @@ export function GoogleOneTap() {
             callback: handleCredentialResponse,
             auto_select: false,
             cancel_on_tap_outside: true,
+            use_fedcm_for_prompt: true,
           });
 
-          window.google.accounts.id.prompt((notification: any) => {
-            // Los logs de estado se manejan silenciosamente
-
-          });
+          window.google.accounts.id.prompt();
           
           initialized.current = true;
         } catch (error) {

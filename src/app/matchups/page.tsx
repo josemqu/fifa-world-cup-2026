@@ -20,7 +20,9 @@ import {
   ArrowUpDown,
   Filter,
   ChevronRight,
+  Info,
 } from "lucide-react";
+import { Tooltip } from "@/components/ui/Tooltip";
 
 // ── Stage helpers ──────────────────────────────────────────────
 const STAGE_ORDER = ["Grupos", "R32", "R16", "QF", "SF", "Final", "3rdPlace"] as const;
@@ -442,6 +444,9 @@ export default function MatchupsPage() {
                       <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         Rival más probable
                       </span>
+                      <Tooltip content="El rival con el que este equipo tiene la mayor probabilidad de cruzarse en alguna ronda de eliminación directa." placement="top">
+                        <Info className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 cursor-help" />
+                      </Tooltip>
                     </div>
                     <div className="flex items-center gap-2">
                       <TeamFlag teamName={summaryStats.topRival.name} className="w-6 h-4 shadow-sm" />
@@ -465,6 +470,9 @@ export default function MatchupsPage() {
                       <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         Avance por ronda
                       </span>
+                      <Tooltip content="La probabilidad estimada de que este equipo clasifique y dispute cada ronda de la fase eliminatoria." placement="top">
+                        <Info className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 cursor-help" />
+                      </Tooltip>
                     </div>
                     <div className="space-y-1.5">
                       {KNOCKOUT_STAGES.filter((s) => s !== "3rdPlace").map((stage) => {
@@ -499,6 +507,9 @@ export default function MatchupsPage() {
                       <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         Rivales en la Final
                       </span>
+                      <Tooltip content="Los tres oponentes más probables a enfrentar en la final y la probabilidad de cruzarse en dicho partido." placement="top">
+                        <Info className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 cursor-help" />
+                      </Tooltip>
                     </div>
                     {summaryStats.finalRivals.length > 0 ? (
                       <div className="space-y-2">
