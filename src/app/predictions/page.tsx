@@ -12,6 +12,7 @@ import Link from "next/link";
 import { clsx } from "clsx";
 import { Team, KnockoutMatch } from "@/data/types";
 import { PageTransition } from "@/components/PageTransition";
+import { SimulationOverlay } from "@/components/ui/SimulationOverlay";
 
 type SortColumn =
   | "teamName"
@@ -38,6 +39,8 @@ export default function PredictionsPage() {
   const canRunSimulation = !!user && !loading;
 
   const [isRunning, setIsRunning] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentIteration, setCurrentIteration] = useState(0);
   const [iterations, setIterations] = useState(predictionIterations);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -55,21 +58,68 @@ export default function PredictionsPage() {
     matches: KnockoutMatch[];
   } | null>(null);
 
+  const teamNames = useMemo(() => {
+    return groups.flatMap((g) => g.teams).map((t) => t.name);
+  }, [groups]);
+
   const handleRun = async (numIterations: number = iterations) => {
     setIsRunning(true);
+    setProgress(0);
+    setCurrentIteration(0);
     clearPredictions();
-    // Add a small delay for UI feedback
-    setTimeout(async () => {
-      const start = performance.now();
-      const data = await runMonteCarloSimulation(
+
+    // Small delay to allow the overlay spinner to render and animate in
+    await new Promise((resolve) => setTimeout(resolve, 150));
+
+    const numChunks = 10;
+    const chunkSize = Math.max(10, Math.ceil(numIterations / numChunks));
+    const accumulatedStats = new Map<string, PredictionResult>();
+    const start = performance.now();
+
+    for (let i = 0; i < numIterations; i += chunkSize) {
+      const currentChunk = Math.min(chunkSize, numIterations - i);
+      const chunkData = await runMonteCarloSimulation(
         groups,
         knockoutMatches,
-        numIterations,
+        currentChunk,
       );
-      const end = performance.now();
-      setPredictions(data, numIterations, end - start);
-      setIsRunning(false);
-    }, 100);
+
+      // Merge chunk statistics
+      chunkData.forEach((teamRes) => {
+        const existing = accumulatedStats.get(teamRes.teamId);
+        if (!existing) {
+          accumulatedStats.set(teamRes.teamId, { ...teamRes, simulations: currentChunk });
+        } else {
+          existing.simulations += currentChunk;
+          existing.championCount += teamRes.championCount;
+          existing.finalistCount += teamRes.finalistCount;
+          existing.semiFinalistCount += teamRes.semiFinalistCount;
+          existing.quarterFinalistCount += teamRes.quarterFinalistCount;
+          existing.r16Count += teamRes.r16Count;
+          existing.r32Count += teamRes.r32Count;
+        }
+      });
+
+      const currentCompleted = Math.min(numIterations, i + currentChunk);
+      setCurrentIteration(currentCompleted);
+      setProgress(Math.round((currentCompleted / numIterations) * 100));
+
+      // Yield back to the browser thread to run layout/animations/cycling flags
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+
+    const end = performance.now();
+    const finalData = Array.from(accumulatedStats.values()).sort((a, b) => {
+      if (b.championCount !== a.championCount) return b.championCount - a.championCount;
+      if (b.finalistCount !== a.finalistCount) return b.finalistCount - a.finalistCount;
+      if (b.semiFinalistCount !== a.semiFinalistCount) return b.semiFinalistCount - a.semiFinalistCount;
+      if (b.quarterFinalistCount !== a.quarterFinalistCount) return b.quarterFinalistCount - a.quarterFinalistCount;
+      if (b.r16Count !== a.r16Count) return b.r16Count - a.r16Count;
+      return b.r32Count - a.r32Count;
+    });
+
+    setPredictions(finalData, numIterations, end - start);
+    setIsRunning(false);
   };
 
   const handleVerify = () => {
@@ -581,18 +631,17 @@ export default function PredictionsPage() {
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 rounded-b-2xl flex justify-end">
-              <button
-                onClick={() => handleVerify()}
-                className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-slate-700 dark:text-slate-200"
-              >
-                Generar otra prueba
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SimulationOverlay
+        isOpen={isRunning}
+        progress={progress}
+        currentIteration={currentIteration}
+        totalIterations={iterations}
+        teamNames={teamNames}
+        type="predictions"
+      />
+
+      {/* Verification Modal */}
+      {showVerification && sampleResult && (
     </PageTransition>
   );
 }
