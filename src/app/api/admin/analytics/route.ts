@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
 import UserActivity from "@/models/UserActivity";
-import Prediction from "@/models/Prediction";
+import ProdePrediction from "@/models/ProdePrediction";
 
 function isAdminEmail(email: string | null) {
   const adminEmails = ["mailjmq@gmail.com"];
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
       User.countDocuments({ createdAt: { $gte: todayStart } }),
       User.countDocuments({ lastActiveAt: { $gte: todayStart } }),
       User.countDocuments({ lastActiveAt: { $gte: last7Days } }),
-      Prediction.countDocuments(),
+      ProdePrediction.countDocuments(),
     ]);
 
     // ── Daily registrations (last 30 days) ───────────────────────────────────
