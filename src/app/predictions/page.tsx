@@ -21,6 +21,7 @@ import {
   Loader2,
   Target,
   Trophy,
+  Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -509,11 +510,12 @@ function PredictionsPageContent() {
         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 md:p-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800/60 pb-5 mb-5">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                Simulación de Montecarlo
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-500 animate-pulse" />
+                El Oráculo del Mundial 2026
               </h2>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                Simulá el resto del torneo {iterations.toLocaleString("es-ES")} veces para calcular las probabilidades de avance y cruces.
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 max-w-xl">
+                Proyectá miles de escenarios del torneo en tiempo real. Utilizando rankings FIFA, el rendimiento actual de cada selección y los resultados actuales, estimamos las probabilidades matemáticas de salir campeón y los cruces más probables en cada etapa.
               </p>
             </div>
 
