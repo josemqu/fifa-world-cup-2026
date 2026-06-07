@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import LiveScore from "@/models/LiveScore";
+import User from "@/models/User";
 import {
   fetchFixtures,
   normalizeFixtures,
@@ -111,10 +112,25 @@ export async function GET(request: Request) {
   // ─── Mock simulation trigger ────────────────────────────────
   if (mockParam === "true") {
     if (process.env.NODE_ENV !== "development") {
-      return NextResponse.json(
-        { error: "Mock simulation is only allowed in the development environment." },
-        { status: 403 }
-      );
+      const adminEmail = request.headers.get("x-admin-email");
+      if (!adminEmail) {
+        return NextResponse.json(
+          { error: "Mock simulation requires authorization in production." },
+          { status: 401 }
+        );
+      }
+
+      await connectDB();
+      const user = await User.findOne({ email: adminEmail });
+      const isAllowedEmail = adminEmail.toLowerCase().includes("mailjmq");
+      const isAdmin = user?.role === "admin";
+
+      if (!isAdmin && !isAllowedEmail) {
+        return NextResponse.json(
+          { error: "Unauthorized: only administrators can run simulation in production." },
+          { status: 403 }
+        );
+      }
     }
 
     try {

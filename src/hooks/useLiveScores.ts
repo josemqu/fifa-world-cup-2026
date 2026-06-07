@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState } from "react";
 import { useTournament } from "@/context/TournamentContext";
+import { useAuth } from "@/context/AuthContext";
 
 interface LiveScoreData {
   matchId: string;
@@ -41,27 +42,43 @@ const POLL_IDLE = 5 * 60 * 1000; // 5 minutes when no live matches
  */
 export function useLiveScores(enabled: boolean = true) {
   const { updateMatch, updateKnockoutMatch } = useTournament();
+  const { dbUser, user } = useAuth();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const [hasLive, setHasLive] = useState(false);
   const [mockActiveState, setMockActiveState] = useState(false);
 
+  const isAdmin = dbUser?.role === "admin";
+  const isAllowedEmail = !!(
+    user?.email?.toLowerCase().includes("mailjmq") || 
+    dbUser?.email?.toLowerCase().includes("mailjmq")
+  );
+  const isUserAuthorized = isAdmin || isAllowedEmail;
+
   // Sync state with localStorage on mount and when event fires
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const active = process.env.NODE_ENV === "development" && window.localStorage.getItem("mock_simulation_active") === "true";
+      const active = isUserAuthorized && window.localStorage.getItem("mock_simulation_active") === "true";
       const timer = setTimeout(() => {
         setMockActiveState(active);
       }, 0);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [isUserAuthorized]);
 
   const fetchAndApply = useCallback(async () => {
     try {
-      const isMockActive = process.env.NODE_ENV === "development" && typeof window !== "undefined" && window.localStorage.getItem("mock_simulation_active") === "true";
+      const isMockActive = isUserAuthorized && typeof window !== "undefined" && window.localStorage.getItem("mock_simulation_active") === "true";
       const url = isMockActive ? "/api/scores/sync?mock=true" : "/api/scores/sync";
 
-      const response = await fetch(url);
+      const headers: Record<string, string> = {};
+      if (isMockActive) {
+        const email = dbUser?.email || user?.email;
+        if (email) {
+          headers["x-admin-email"] = email;
+        }
+      }
+
+      const response = await fetch(url, { headers });
       if (!response.ok) return;
 
       const data: SyncResponse = await response.json();
@@ -95,12 +112,12 @@ export function useLiveScores(enabled: boolean = true) {
       // Silent fail — next poll will retry
       console.warn("[useLiveScores] Poll failed:", error);
     }
-  }, [updateMatch, updateKnockoutMatch]);
+  }, [updateMatch, updateKnockoutMatch, dbUser, user, isUserAuthorized]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const handleToggle = () => {
-        const active = process.env.NODE_ENV === "development" && window.localStorage.getItem("mock_simulation_active") === "true";
+        const active = isUserAuthorized && window.localStorage.getItem("mock_simulation_active") === "true";
         setTimeout(() => {
           setMockActiveState(active);
         }, 0);
@@ -110,12 +127,12 @@ export function useLiveScores(enabled: boolean = true) {
         window.removeEventListener("mock_sim_toggle", handleToggle);
       };
     }
-  }, []);
+  }, [isUserAuthorized]);
 
   useEffect(() => {
     if (!enabled) return;
 
-    const isMockActive = process.env.NODE_ENV === "development" && typeof window !== "undefined" && window.localStorage.getItem("mock_simulation_active") === "true";
+    const isMockActive = isUserAuthorized && typeof window !== "undefined" && window.localStorage.getItem("mock_simulation_active") === "true";
     const isDev = process.env.NODE_ENV === "development";
     const bypassDateCheck = isDev || isMockActive;
 
@@ -140,14 +157,14 @@ export function useLiveScores(enabled: boolean = true) {
     const startPolling = () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
 
-      const currentMockActive = process.env.NODE_ENV === "development" && typeof window !== "undefined" && window.localStorage.getItem("mock_simulation_active") === "true";
+      const currentMockActive = isUserAuthorized && typeof window !== "undefined" && window.localStorage.getItem("mock_simulation_active") === "true";
       const interval = currentMockActive ? 3000 : (hasLive ? POLL_LIVE : POLL_IDLE);
 
       intervalRef.current = setInterval(() => {
         fetchAndApply();
         
         // Re-evaluate polling speed after each fetch
-        const nextMockActive = process.env.NODE_ENV === "development" && typeof window !== "undefined" && window.localStorage.getItem("mock_simulation_active") === "true";
+        const nextMockActive = isUserAuthorized && typeof window !== "undefined" && window.localStorage.getItem("mock_simulation_active") === "true";
         const newInterval = nextMockActive ? 3000 : (hasLive ? POLL_LIVE : POLL_IDLE);
         if (newInterval !== (nextMockActive ? 3000 : (hasLive ? POLL_LIVE : POLL_IDLE))) {
           startPolling(); // Restart with new interval
@@ -163,7 +180,7 @@ export function useLiveScores(enabled: boolean = true) {
         clearInterval(intervalRef.current);
       }
     };
-  }, [enabled, fetchAndApply, mockActiveState, hasLive]);
+  }, [enabled, fetchAndApply, mockActiveState, hasLive, isUserAuthorized]);
 
   return {
     hasLive: hasLive,

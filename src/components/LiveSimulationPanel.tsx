@@ -60,10 +60,15 @@ export function LiveSimulationPanel() {
   if (!isAdmin && !isAllowedEmail) {
     return null;
   }
-  return <RealLiveSimulationPanel />;
+  return <RealLiveSimulationPanel dbUser={dbUser} user={user} />;
 }
 
-function RealLiveSimulationPanel() {
+interface RealLiveSimulationPanelProps {
+  dbUser: any;
+  user: any;
+}
+
+function RealLiveSimulationPanel({ dbUser, user }: RealLiveSimulationPanelProps) {
   const { resetTournament } = useTournament();
   const [isActive, setIsActive] = useState(false);
   const [isOpen, setIsOpen] = useState(false); // Sidebar drawer open state
@@ -122,7 +127,13 @@ function RealLiveSimulationPanel() {
         url += `&action=${actionParam}`;
       }
       
-      const response = await fetch(url);
+      const headers: Record<string, string> = {};
+      const email = dbUser?.email || user?.email;
+      if (email) {
+        headers["x-admin-email"] = email;
+      }
+      
+      const response = await fetch(url, { headers });
       if (!response.ok) return;
 
       const data = await response.json();
