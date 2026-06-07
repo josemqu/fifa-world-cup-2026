@@ -49,6 +49,15 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: "/matchups",
+        destination: "/predictions?tab=matchups",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

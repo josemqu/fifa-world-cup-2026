@@ -1,20 +1,36 @@
 "use client";
 
-import { useState, useMemo, useEffect, type ReactNode } from "react";
+import { useState, useMemo, useEffect, useCallback, Suspense, type ReactNode } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTournament } from "@/context/TournamentContext";
-import { runMonteCarloSimulation, PredictionResult } from "@/utils/monteCarlo";
 import { simulateTournament } from "@/utils/simulationUtils";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { TeamFlag } from "@/components/ui/TeamFlag";
-import { Info, Timer, CheckCircle2, X, AlertTriangle, Swords } from "lucide-react";
+import {
+  Info,
+  Timer,
+  CheckCircle2,
+  X,
+  AlertTriangle,
+  Swords,
+  TrendingUp,
+  Search,
+  ArrowUpDown,
+  Filter,
+  ChevronRight,
+  Loader2,
+  Target,
+  Trophy,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import { clsx } from "clsx";
-import { Team, KnockoutMatch } from "@/data/types";
+import { Team, KnockoutMatch, MatchupData } from "@/data/types";
 import { PageTransition } from "@/components/PageTransition";
 import { SimulationOverlay } from "@/components/ui/SimulationOverlay";
 
+// ── Predictions Tab Types & Helper ────────────────────────────────
 type SortColumn =
   | "teamName"
   | "teamRanking"
@@ -26,24 +42,64 @@ type SortColumn =
   | "r16Count"
   | "r32Count";
 
-export default function PredictionsPage() {
-  const { user, loading } = useAuth();
+// ── Matchups Tab Helpers ──────────────────────────────────────────
+const STAGE_ORDER = ["Grupos", "R32", "R16", "QF", "SF", "Final", "3rdPlace"] as const;
+const STAGE_LABELS: Record<string, string> = {
+  Grupos: "Grupos",
+  R32: "16avos",
+  R16: "Octavos",
+  QF: "Cuartos",
+  SF: "Semis",
+  Final: "Final",
+  "3rdPlace": "3er Puesto",
+};
+const KNOCKOUT_STAGES = ["R32", "R16", "QF", "SF", "Final", "3rdPlace"] as const;
+
+type StageFilter = "all" | (typeof STAGE_ORDER)[number];
+type MatchupSortColumn = "opponentName" | "totalProb" | "Grupos" | "R32" | "R16" | "QF" | "SF" | "Final" | "3rdPlace";
+
+function getHeatmapClasses(pct: number): string {
+  if (pct >= 100) return "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 font-bold";
+  if (pct >= 60) return "bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 font-bold";
+  if (pct >= 30) return "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-semibold";
+  if (pct >= 10) return "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium";
+  if (pct >= 1) return "bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400";
+  if (pct > 0) return "bg-slate-50 dark:bg-slate-800/40 text-slate-500 dark:text-slate-500";
+  return "text-slate-300 dark:text-slate-700";
+}
+
+function PredictionsPageContent() {
+  const { user, dbUser, loading: authLoading } = useAuth();
   const {
     groups,
     knockoutMatches,
     predictions,
-    predictionIterations,
-    predictionTime,
+    matchupResults,
+    simulationIterations,
+    simulationTime,
     setSimulationResults,
     clearSimulationResults,
     isSimulationStale,
   } = useTournament();
-  const canRunSimulation = !!user && !loading;
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Tab State syncing with search params
+  const activeTab = (searchParams.get("tab") as "predictions" | "matchups") || "predictions";
+
+  const setActiveTab = (tab: "predictions" | "matchups") => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tab);
+    router.replace(`/predictions?${params.toString()}`, { scroll: false });
+  };
+
+  const canRunSimulation = !!user && !authLoading;
 
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentIteration, setCurrentIteration] = useState(0);
-  const [iterations, setIterations] = useState(predictionIterations);
+  const [iterations, setIterations] = useState(simulationIterations);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -51,10 +107,20 @@ export default function PredictionsPage() {
   }, []);
 
   useEffect(() => {
-    setIterations(predictionIterations);
-  }, [predictionIterations]);
+    setIterations(simulationIterations);
+  }, [simulationIterations]);
+
+  // Sort State for Predictions
   const [sortColumn, setSortColumn] = useState<SortColumn>("championCount");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  // Sort and filter state for Matchups
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [stageFilter, setStageFilter] = useState<StageFilter>("all");
+  const [matchupSortColumn, setMatchupSortColumn] = useState<MatchupSortColumn>("totalProb");
+  const [matchupSortDir, setMatchupSortDir] = useState<"asc" | "desc">("desc");
+  const [hasInitializedMatchups, setHasInitializedMatchups] = useState(false);
 
   // Verification State
   const [showVerification, setShowVerification] = useState(false);
@@ -68,16 +134,174 @@ export default function PredictionsPage() {
     return groups.flatMap((g) => g.teams).map((t) => t.name);
   }, [groups]);
 
+  // Flat teams list for Matchups tab
+  const allTeams = useMemo(() => {
+    const teams = groups.flatMap((g) => g.teams);
+    return teams.sort((a, b) => a.name.localeCompare(b.name));
+  }, [groups]);
+
+  // Matchups Tab Initialization
+  useEffect(() => {
+    if (allTeams.length === 0) return;
+    const isProfileLoading = authLoading || (!!user && !dbUser);
+    if (isProfileLoading) return;
+
+    if (!hasInitializedMatchups) {
+      if (dbUser?.favoriteTeam) {
+        const favTeam = allTeams.find(
+          (t) => t.name.toLowerCase() === dbUser.favoriteTeam?.toLowerCase()
+        );
+        if (favTeam) {
+          setSelectedTeamId(favTeam.id);
+          setHasInitializedMatchups(true);
+          return;
+        }
+      }
+      if (!selectedTeamId) {
+        setSelectedTeamId(allTeams[0].id);
+      }
+      setHasInitializedMatchups(true);
+    }
+  }, [allTeams, dbUser, user, authLoading, hasInitializedMatchups, selectedTeamId]);
+
+  const filteredSelectorTeams = useMemo(() => {
+    if (!searchQuery) return allTeams;
+    const q = searchQuery.toLowerCase();
+    return allTeams.filter((t) => t.name.toLowerCase().includes(q));
+  }, [allTeams, searchQuery]);
+
+  const selectedData = useMemo(() => {
+    if (!selectedTeamId) return null;
+    return matchupResults.find((d) => d.teamId === selectedTeamId) || null;
+  }, [matchupResults, selectedTeamId]);
+
+  type OpponentRow = {
+    opponentId: string;
+    opponentName: string;
+    totalCount: number;
+    totalProb: number;
+    stageCounts: Record<string, number>;
+    stageProbs: Record<string, number>;
+  };
+
+  const opponentRows: OpponentRow[] = useMemo(() => {
+    if (!selectedData) return [];
+
+    const byOpponent = new Map<string, { name: string; stages: Record<string, number> }>();
+
+    selectedData.matchups.forEach((m) => {
+      if (!byOpponent.has(m.opponentId)) {
+        byOpponent.set(m.opponentId, { name: m.opponentName, stages: {} });
+      }
+      const entry = byOpponent.get(m.opponentId)!;
+      entry.stages[m.stage] = (entry.stages[m.stage] || 0) + m.count;
+    });
+
+    const rows: OpponentRow[] = [];
+    byOpponent.forEach((val, oppId) => {
+      const stageCounts: Record<string, number> = {};
+      const stageProbs: Record<string, number> = {};
+      let knockoutTotal = 0;
+
+      STAGE_ORDER.forEach((s) => {
+        const c = val.stages[s] || 0;
+        stageCounts[s] = c;
+        stageProbs[s] = (c / iterations) * 100;
+        if (s !== "Grupos") {
+          knockoutTotal += c;
+        }
+      });
+
+      const isGroupRival = (stageCounts["Grupos"] || 0) > 0;
+      const totalKnockoutProb = (knockoutTotal / iterations) * 100;
+
+      rows.push({
+        opponentId: oppId,
+        opponentName: val.name,
+        totalCount: knockoutTotal + (stageCounts["Grupos"] || 0),
+        totalProb: isGroupRival ? 100 + totalKnockoutProb : totalKnockoutProb,
+        stageCounts,
+        stageProbs,
+      });
+    });
+
+    return rows;
+  }, [selectedData, iterations]);
+
+  const filteredAndSortedRows = useMemo(() => {
+    let rows = [...opponentRows];
+
+    if (stageFilter !== "all") {
+      rows = rows.filter((r) => (r.stageCounts[stageFilter] || 0) > 0);
+    }
+
+    rows.sort((a, b) => {
+      let cmp = 0;
+      if (matchupSortColumn === "opponentName") {
+        cmp = a.opponentName.localeCompare(b.opponentName);
+      } else if (matchupSortColumn === "totalProb") {
+        cmp = a.totalProb - b.totalProb;
+      } else {
+        cmp = (a.stageProbs[matchupSortColumn] || 0) - (b.stageProbs[matchupSortColumn] || 0);
+      }
+      return matchupSortDir === "desc" ? -cmp : cmp;
+    });
+
+    return rows;
+  }, [opponentRows, stageFilter, matchupSortColumn, matchupSortDir]);
+
+  const summaryStats = useMemo(() => {
+    if (opponentRows.length === 0) return null;
+
+    const knockoutRows = opponentRows.filter((r) => {
+      const knockoutProb = KNOCKOUT_STAGES.reduce((s, st) => s + (r.stageProbs[st] || 0), 0);
+      return knockoutProb > 0;
+    });
+
+    let topRival = { name: "-", prob: 0, stage: "-" };
+    let fallbackRival = { name: "-", prob: 0, stage: "-" };
+
+    knockoutRows.forEach((r) => {
+      KNOCKOUT_STAGES.forEach((st) => {
+        const p = r.stageProbs[st] || 0;
+        if (p < 100 && p > topRival.prob) {
+          topRival = { name: r.opponentName, prob: p, stage: STAGE_LABELS[st] || st };
+        }
+        if (p > fallbackRival.prob) {
+          fallbackRival = { name: r.opponentName, prob: p, stage: STAGE_LABELS[st] || st };
+        }
+      });
+    });
+
+    if (topRival.name === "-") {
+      topRival = fallbackRival;
+    }
+
+    const stageTotals: Record<string, number> = {};
+    KNOCKOUT_STAGES.forEach((st) => {
+      let maxProb = 0;
+      opponentRows.forEach((r) => {
+        maxProb += r.stageProbs[st] || 0;
+      });
+      stageTotals[st] = Math.min(100, maxProb);
+    });
+
+    const finalRivals = opponentRows
+      .filter((r) => (r.stageProbs["Final"] || 0) > 0)
+      .sort((a, b) => (b.stageProbs["Final"] || 0) - (a.stageProbs["Final"] || 0))
+      .slice(0, 3);
+
+    return { topRival, stageTotals, finalRivals };
+  }, [opponentRows]);
+
   const handleRun = async (numIterations: number = iterations) => {
     setIsRunning(true);
     setProgress(0);
     setCurrentIteration(0);
     clearSimulationResults();
 
-    // Small delay to allow the overlay spinner to render and animate in
     await new Promise((resolve) => setTimeout(resolve, 150));
 
-    // Instantiate background Web Worker
     const worker = new Worker(
       new URL("../../workers/simulation.worker.ts", import.meta.url)
     );
@@ -90,7 +314,7 @@ export default function PredictionsPage() {
     });
 
     worker.onmessage = (e) => {
-      const { status, progress, currentIteration, data, elapsedMs, error } = e.data;
+      const { status, progress, currentIteration, error, elapsedMs } = e.data;
 
       if (status === "progress") {
         setProgress(progress);
@@ -134,8 +358,16 @@ export default function PredictionsPage() {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortColumn(column);
-      // Default to ascending for ranking (lower is better), descending for others
       setSortDirection(column === "teamRanking" ? "asc" : "desc");
+    }
+  };
+
+  const handleMatchupSort = (col: MatchupSortColumn) => {
+    if (matchupSortColumn === col) {
+      setMatchupSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setMatchupSortColumn(col);
+      setMatchupSortDir(col === "opponentName" ? "asc" : "desc");
     }
   };
 
@@ -145,11 +377,9 @@ export default function PredictionsPage() {
       .sort((a, b) => {
         let comparison = 0;
 
-        // Primary sort
         if (sortColumn === "teamName") {
           comparison = a.teamName.localeCompare(b.teamName);
         } else if (sortColumn === "teamRanking") {
-          // Handle undefined rankings (put them last)
           const rankA = a.teamRanking ?? 999;
           const rankB = b.teamRanking ?? 999;
           comparison = rankA - rankB;
@@ -161,35 +391,23 @@ export default function PredictionsPage() {
           comparison = (a[sortColumn] as number) - (b[sortColumn] as number);
         }
 
-        // Reverse if descending (default for numbers)
-        // For text (teamName), asc means A-Z, so we keep comparison.
-        // For numbers (like ranking), asc means 1-100 (smaller is better/first).
-        // For stats (counts), asc means 0-100, desc means 100-0.
-
-        // Handling Sort Direction Inversion
         if (sortColumn === "teamName") {
           if (sortDirection === "desc") {
             comparison = b.teamName.localeCompare(a.teamName);
           }
         } else if (sortColumn === "teamRanking") {
-          // For Ranking: Asc (1 -> 100), Desc (100 -> 1).
-          // Default comparison is Asc (a - b).
           if (sortDirection === "desc") {
             const rankA = a.teamRanking ?? 999;
             const rankB = b.teamRanking ?? 999;
             comparison = rankB - rankA;
           }
         } else if (sortColumn === "teamFifaPoints") {
-          // For Points: Asc (0 -> 2000), Desc (2000 -> 0).
-          // Default comparison is Asc (a - b).
           if (sortDirection === "desc") {
             const pointsA = a.teamFifaPoints ?? 0;
             const pointsB = b.teamFifaPoints ?? 0;
             comparison = pointsB - pointsA;
           }
         } else {
-          // For Stats: Asc (0 -> 100), Desc (100 -> 0).
-          // Default comparison is Asc (a - b).
           if (sortDirection === "desc") {
             comparison = (b[sortColumn] as number) - (a[sortColumn] as number);
           }
@@ -197,8 +415,6 @@ export default function PredictionsPage() {
 
         if (comparison !== 0) return comparison;
 
-        // Tie-breakers (always cascading descending for stats)
-        // Champion -> Final -> SF -> QF -> R16 -> R32
         if (b.championCount !== a.championCount)
           return b.championCount - a.championCount;
         if (b.finalistCount !== a.finalistCount)
@@ -213,7 +429,7 @@ export default function PredictionsPage() {
   }, [predictions, sortColumn, sortDirection]);
 
   const getPercentage = (count: number) => {
-    return ((count / predictionIterations) * 100).toFixed(1) + "%";
+    return ((count / iterations) * 100).toFixed(1) + "%";
   };
 
   const getProbabilityColor = (percentage: number) => {
@@ -224,6 +440,9 @@ export default function PredictionsPage() {
     return "text-slate-500 dark:text-slate-500";
   };
 
+  const selectedTeam = allTeams.find((t) => t.id === selectedTeamId);
+
+  // ── Render Helpers ──────────────────────────────────────────────
   const SortHeader = ({
     column,
     label,
@@ -258,141 +477,155 @@ export default function PredictionsPage() {
     </th>
   );
 
+  const MatchupSortHeader = ({
+    column,
+    label,
+    align = "right",
+  }: {
+    column: MatchupSortColumn;
+    label: ReactNode;
+    align?: "left" | "right";
+  }) => (
+    <th
+      className={clsx(
+        "px-2 md:px-3 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors select-none text-[11px] md:text-xs whitespace-nowrap",
+        align === "right" ? "text-right" : "text-left",
+        matchupSortColumn === column && "text-blue-600 dark:text-blue-400 bg-slate-50 dark:bg-slate-800/50"
+      )}
+      onClick={() => handleMatchupSort(column)}
+    >
+      <div className={clsx("flex items-center gap-1", align === "right" ? "justify-end" : "justify-start")}>
+        {label}
+        {matchupSortColumn === column && <span className="text-[10px]">{matchupSortDir === "asc" ? "▲" : "▼"}</span>}
+      </div>
+    </th>
+  );
+
   return (
     <PageTransition className="max-w-[1600px] mx-auto p-4 md:p-4">
       <div className="max-w-7xl mx-auto space-y-6">
+        
+        {/* ─── Unified Control & Info Header ─── */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 md:p-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800/60 pb-5 mb-5">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
                 Simulación de Montecarlo
               </h2>
-              <p className="text-slate-500 dark:text-slate-400">
-                Simula el resto del torneo {iterations.toLocaleString("es-ES")}{" "}
-                veces para calcular las probabilidades de cada equipo.
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+                Simulá el resto del torneo {iterations.toLocaleString("es-ES")} veces para calcular las probabilidades de avance y cruces.
               </p>
             </div>
 
-            <div className="flex flex-col items-stretch md:items-end gap-3 w-full md:w-auto">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 md:gap-4 w-full">
-                <Link
-                  href="/predictions/metodologia"
-                  className="px-4 py-2 rounded-lg font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
-                >
-                  <Info className="w-4 h-4" />
-                  Cómo funciona
-                </Link>
-                <button
-                  onClick={handleVerify}
-                  className="px-4 py-2 rounded-lg font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  Verificar
-                </button>
-
-                <select
-                  value={iterations}
-                  onChange={(e) => {
-                    const val = Number(e.target.value);
-                    setIterations(val);
-                    if (canRunSimulation) {
-                      handleRun(val);
-                    }
-                  }}
-                  disabled={isRunning || !canRunSimulation}
-                  className="bg-slate-100 dark:bg-slate-800 border-none rounded-lg px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-auto"
-                >
-                  <option value={100}>100 simulaciones</option>
-                  <option value={1000}>1.000 simulaciones</option>
-                  <option value={5000}>5.000 simulaciones</option>
-                  <option value={10000}>10.000 simulaciones</option>
-                  <option value={50000}>50.000 simulaciones</option>
-                  <option value={100000}>100.000 simulaciones</option>
-                </select>
-
-                {isMounted ? (
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    {predictions.length > 0 && !isRunning && (
-                      <button
-                        onClick={clearSimulationResults}
-                        className="px-4 py-2 rounded-lg font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center justify-center gap-2 w-full sm:w-auto shrink-0"
-                      >
-                        <X className="w-4 h-4" />
-                        Limpiar
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleRun()}
-                      disabled={isRunning || !canRunSimulation}
-                      className={clsx(
-                        "w-full sm:w-auto min-w-[220px] px-6 py-2 rounded-lg font-bold text-white transition-all shadow-md active:scale-95 flex justify-center items-center gap-2",
-                        isRunning || !canRunSimulation
-                          ? "bg-slate-400 cursor-not-allowed"
-                          : "bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25",
-                      )}
-                    >
-                      {isRunning ? (
-                        <>
-                          <svg
-                            className="animate-spin h-4 w-4 text-white"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                            ></circle>
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            ></path>
-                          </svg>
-                          Simulando...
-                        </>
-                      ) : (
-                        "Ejecutar Simulación"
-                      )}
-                    </button>
-                  </div>
-                ) : (
-                  // Placeholder for SSR to maintain layout if possible
-                  <div className="w-full sm:w-auto min-w-[220px] h-10" />
-                )}
-              </div>
-              {!loading && !user && (
-                <div className="text-xs text-slate-500 dark:text-slate-400">
-                  Para correr la simulación debés registrarte e iniciar sesión.
-                </div>
-              )}
-              <div
-                className={clsx(
-                  "flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-mono transition-opacity duration-300",
-                  predictionTime > 0 ? "opacity-100" : "opacity-0 select-none",
-                )}
+            <div className="flex items-center gap-3">
+              <Link
+                href="/predictions/metodologia"
+                className="px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/40 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-slate-700/80"
               >
-                <Timer className="w-3 h-3" />
-                <span>
-                  {predictionTime > 0 ? (
-                    <>
-                      {predictionTime.toFixed(0)}ms (
-                      {Math.round(
-                        (predictionIterations / predictionTime) * 1000,
-                      ).toLocaleString("es-ES")}{" "}
-                      sim/s)
-                    </>
-                  ) : (
-                    "0ms (0 sim/s)"
-                  )}
-                </span>
-              </div>
+                <Info className="w-3.5 h-3.5" />
+                Cómo funciona
+              </Link>
+              <button
+                onClick={handleVerify}
+                className="px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/40 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-slate-700/80 cursor-pointer"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Verificar
+              </button>
             </div>
           </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <label className="text-xs text-slate-500 dark:text-slate-400 font-bold shrink-0">Configuración:</label>
+              <select
+                value={iterations}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setIterations(val);
+                  if (canRunSimulation) {
+                    handleRun(val);
+                  }
+                }}
+                disabled={isRunning || !canRunSimulation}
+                className="bg-slate-100 dark:bg-slate-800 border-none rounded-lg px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-auto"
+              >
+                <option value={100}>100 simulaciones</option>
+                <option value={1000}>1.000 simulaciones</option>
+                <option value={5000}>5.000 simulaciones</option>
+                <option value={10000}>10.000 simulaciones</option>
+                <option value={50000}>50.000 simulaciones</option>
+                <option value={100000}>100.000 simulaciones</option>
+              </select>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
+              {predictions.length > 0 && !isRunning && (
+                <button
+                  onClick={clearSimulationResults}
+                  className="px-3.5 py-2 rounded-lg text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-1.5 shrink-0"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Limpiar
+                </button>
+              )}
+              {isMounted ? (
+                <button
+                  onClick={() => handleRun()}
+                  disabled={isRunning || !canRunSimulation}
+                  className={clsx(
+                    "w-full sm:w-auto min-w-[170px] px-5 py-2 rounded-lg text-xs font-bold text-white transition-all shadow-md active:scale-95 flex justify-center items-center gap-1.5",
+                    isRunning || !canRunSimulation
+                      ? "bg-slate-400 cursor-not-allowed"
+                      : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25",
+                  )}
+                >
+                  {isRunning ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Simulando...
+                    </>
+                  ) : (
+                    <>
+                      <Swords className="w-3.5 h-3.5" />
+                      Ejecutar Simulación
+                    </>
+                  )}
+                </button>
+              ) : (
+                <div className="w-full sm:w-auto min-w-[170px] h-9" />
+              )}
+            </div>
+          </div>
+
+          {!authLoading && !user && (
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-3 text-right">
+              Para correr la simulación debés registrarte e iniciar sesión.
+            </div>
+          )}
+
+          <div
+            className={clsx(
+              "flex items-center justify-end gap-2 text-[10px] text-slate-400 dark:text-slate-500 font-mono transition-opacity duration-300 mt-2",
+              simulationTime > 0 ? "opacity-100" : "opacity-0 select-none",
+            )}
+          >
+            <Timer className="w-3 h-3" />
+            <span>
+              {simulationTime > 0 ? (
+                <>
+                  {simulationTime.toFixed(0)}ms (
+                  {Math.round(
+                    (simulationIterations / simulationTime) * 1000,
+                  ).toLocaleString("es-ES")}{" "}
+                  sim/s)
+                </>
+              ) : (
+                "0ms"
+              )}
+            </span>
+          </div>
+        </div>
 
         {/* ─── Stale Simulation Warning Banner ─── */}
         <AnimatePresence>
@@ -402,7 +635,7 @@ export default function PredictionsPage() {
               animate={{ opacity: 1, height: "auto", y: 0 }}
               exit={{ opacity: 0, height: 0, y: -10 }}
               transition={{ duration: 0.3 }}
-              className="overflow-hidden mb-6"
+              className="overflow-hidden"
             >
               <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border border-amber-200 dark:border-amber-900/60 rounded-2xl p-4 flex items-start sm:items-center gap-3 text-amber-800 dark:text-amber-300 shadow-xs">
                 <AlertTriangle className="w-5 h-5 shrink-0 text-amber-500" />
@@ -427,123 +660,478 @@ export default function PredictionsPage() {
           )}
         </AnimatePresence>
 
-          {predictions.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    <th className="px-4 py-3">#</th>
-                    <SortHeader column="teamName" label="Equipo" align="left" />
-                    <SortHeader
-                      column="teamRanking"
-                      label={
-                        <div className="flex items-center gap-1">
-                          Ranking
-                          <Tooltip content="Ranking FIFA" className="mx-0">
-                            <Info className="w-3 h-3 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300" />
-                          </Tooltip>
-                        </div>
-                      }
-                      align="right"
-                    />
-                    <SortHeader
-                      column="teamFifaPoints"
-                      label={
-                        <div className="flex items-center gap-1">
-                          Puntos
-                          <Tooltip content="Puntuación FIFA" className="mx-0">
-                            <Info className="w-3 h-3 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300" />
-                          </Tooltip>
-                        </div>
-                      }
-                      align="right"
-                    />
-                    <SortHeader column="championCount" label="Campeón" />
-                    <SortHeader column="finalistCount" label="Final" />
-                    <SortHeader column="semiFinalistCount" label="Semis" />
-                    <SortHeader column="quarterFinalistCount" label="Cuartos" />
-                    <SortHeader column="r16Count" label="Octavos" />
-                    <SortHeader column="r32Count" label="16avos" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {sortedResults.map((team, index) => {
-                    const winRate = (team.championCount / iterations) * 100;
-
-                    return (
-                      <tr
-                        key={team.teamId}
-                        className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-sm"
-                      >
-                        <td className="px-4 py-3 text-slate-400 dark:text-slate-600 font-mono">
-                          {index + 1}
-                        </td>
-                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
-                          <div className="flex items-center gap-2">
-                            <TeamFlag
-                              teamName={team.teamName}
-                              className="w-5 h-3.5 shadow-sm"
-                            />
-                            {team.teamName}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-right text-slate-500 dark:text-slate-400 font-mono">
-                          {team.teamRanking ?? "-"}
-                        </td>
-                        <td className="px-4 py-3 text-right text-slate-500 dark:text-slate-400 font-mono">
-                          {team.teamFifaPoints
-                            ? team.teamFifaPoints.toFixed(0)
-                            : "-"}
-                        </td>
-                        <td
-                          className={clsx(
-                            "px-4 py-3 text-right",
-                            getProbabilityColor(winRate),
-                          )}
-                        >
-                          {getPercentage(team.championCount)}
-                        </td>
-                        <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
-                          {getPercentage(team.finalistCount)}
-                        </td>
-                        <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
-                          {getPercentage(team.semiFinalistCount)}
-                        </td>
-                        <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
-                          {getPercentage(team.quarterFinalistCount)}
-                        </td>
-                        <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
-                          {getPercentage(team.r16Count)}
-                        </td>
-                        <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
-                          {getPercentage(team.r32Count)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {predictions.length === 0 && !isRunning && (
-            <div className="text-center py-20 text-slate-400 dark:text-slate-600">
-              <p>Presiona "Ejecutar Simulación" para ver las probabilidades.</p>
-            </div>
-          )}
+        {/* ─── Sub-tab Selector ─── */}
+        <div className="flex p-1 gap-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl backdrop-blur-sm shadow-inner border border-slate-200/50 dark:border-slate-700/50 w-full sm:w-max">
+          <button
+            onClick={() => setActiveTab("predictions")}
+            className={clsx(
+              "relative flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer",
+              activeTab === "predictions"
+                ? "text-blue-600 dark:text-blue-100"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+            )}
+          >
+            {activeTab === "predictions" && (
+              <motion.div
+                layoutId="predictionsSubTab"
+                className="absolute inset-0 bg-white dark:bg-slate-700 rounded-lg shadow-sm"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-2">
+              <TrendingUp className="w-3.5 h-3.5" />
+              Probabilidades de Avance
+            </span>
+          </button>
+          
+          <button
+            onClick={() => setActiveTab("matchups")}
+            className={clsx(
+              "relative flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer",
+              activeTab === "matchups"
+                ? "text-blue-600 dark:text-blue-100"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+            )}
+          >
+            {activeTab === "matchups" && (
+              <motion.div
+                layoutId="predictionsSubTab"
+                className="absolute inset-0 bg-white dark:bg-slate-700 rounded-lg shadow-sm"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-2">
+              <Swords className="w-3.5 h-3.5" />
+              Explorador de Cruces
+            </span>
+          </button>
         </div>
+
+        {/* ─── Sub-tab Content ─── */}
+        <AnimatePresence mode="wait">
+          {activeTab === "predictions" ? (
+            <motion.div
+              key="predictions-tab"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              {predictions.length > 0 ? (
+                <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 md:p-8">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                          <th className="px-4 py-3">#</th>
+                          <SortHeader column="teamName" label="Equipo" align="left" />
+                          <SortHeader
+                            column="teamRanking"
+                            label={
+                              <div className="flex items-center gap-1">
+                                Ranking
+                                <Tooltip content="Ranking FIFA" className="mx-0">
+                                  <Info className="w-3 h-3 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300" />
+                                </Tooltip>
+                              </div>
+                            }
+                            align="right"
+                          />
+                          <SortHeader
+                            column="teamFifaPoints"
+                            label={
+                              <div className="flex items-center gap-1">
+                                Puntos
+                                <Tooltip content="Puntuación FIFA" className="mx-0">
+                                  <Info className="w-3 h-3 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300" />
+                                </Tooltip>
+                              </div>
+                            }
+                            align="right"
+                          />
+                          <SortHeader column="championCount" label="Campeón" />
+                          <SortHeader column="finalistCount" label="Final" />
+                          <SortHeader column="semiFinalistCount" label="Semis" />
+                          <SortHeader column="quarterFinalistCount" label="Cuartos" />
+                          <SortHeader column="r16Count" label="Octavos" />
+                          <SortHeader column="r32Count" label="16avos" />
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {sortedResults.map((team, index) => {
+                          const winRate = (team.championCount / iterations) * 100;
+
+                          return (
+                            <tr
+                              key={team.teamId}
+                              className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-sm"
+                            >
+                              <td className="px-4 py-3 text-slate-400 dark:text-slate-600 font-mono">
+                                {index + 1}
+                              </td>
+                              <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
+                                <div className="flex items-center gap-2">
+                                  <TeamFlag
+                                    teamName={team.teamName}
+                                    className="w-5 h-3.5 shadow-sm"
+                                  />
+                                  {team.teamName}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-right text-slate-500 dark:text-slate-400 font-mono">
+                                {team.teamRanking ?? "-"}
+                              </td>
+                              <td className="px-4 py-3 text-right text-slate-500 dark:text-slate-400 font-mono">
+                                {team.teamFifaPoints
+                                  ? team.teamFifaPoints.toFixed(0)
+                                  : "-"}
+                              </td>
+                              <td
+                                className={clsx(
+                                  "px-4 py-3 text-right",
+                                  getProbabilityColor(winRate),
+                                )}
+                              >
+                                {getPercentage(team.championCount)}
+                              </td>
+                              <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
+                                {getPercentage(team.finalistCount)}
+                              </td>
+                              <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
+                                {getPercentage(team.semiFinalistCount)}
+                              </td>
+                              <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
+                                {getPercentage(team.quarterFinalistCount)}
+                              </td>
+                              <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
+                                {getPercentage(team.r16Count)}
+                              </td>
+                              <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
+                                {getPercentage(team.r32Count)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                !isRunning && (
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-12 text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 flex items-center justify-center mx-auto mb-4">
+                      <Target className="w-8 h-8 text-blue-400" />
+                    </div>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm max-w-md mx-auto">
+                      Presioná <strong>&quot;Ejecutar Simulación&quot;</strong> arriba para ver las probabilidades de avance.
+                    </p>
+                  </div>
+                )
+              )}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="matchups-tab"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6"
+            >
+              {/* ─── Team Selector & Search Card ─── */}
+              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 md:p-8">
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="relative flex-1 max-w-xs">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Buscar equipo..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-9 pr-8 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 outline-none border-none"
+                      />
+                      {searchQuery && (
+                        <button
+                          onClick={() => setSearchQuery("")}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full"
+                        >
+                          <X className="w-3 h-3 text-slate-400" />
+                        </button>
+                      )}
+                    </div>
+                    {selectedTeam && (
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <TeamFlag teamName={selectedTeam.name} className="w-5 h-3.5 shadow-sm" />
+                        <span className="text-sm font-bold text-blue-700 dark:text-blue-300">{selectedTeam.name}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
+                    {filteredSelectorTeams.map((team) => (
+                      <button
+                        key={team.id}
+                        onClick={() => setSelectedTeamId(team.id)}
+                        className={clsx(
+                          "shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 border cursor-pointer",
+                          selectedTeamId === team.id
+                            ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/25 scale-105"
+                            : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50/50 dark:hover:bg-blue-900/10"
+                        )}
+                      >
+                        <TeamFlag teamName={team.name} className="w-4 h-3 shadow-sm" />
+                        <span className="whitespace-nowrap">{team.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* ─── Matchup Results ─── */}
+              {matchupResults.length > 0 && selectedTeamId ? (
+                <div className="space-y-6">
+                  {/* Summary Cards */}
+                  {summaryStats && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {/* Top Knockout Rival */}
+                      <div className="relative overflow-hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-5">
+                        <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-blue-500/5 blur-xl" />
+                        <div className="flex items-center gap-2 mb-3">
+                          <Target className="w-4 h-4 text-blue-500" />
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            Rival más probable
+                          </span>
+                          <Tooltip content="El rival con el que este equipo tiene la mayor probabilidad de cruzarse en alguna ronda de eliminación directa." placement="top">
+                            <Info className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 cursor-help" />
+                          </Tooltip>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <TeamFlag teamName={summaryStats.topRival.name} className="w-6 h-4 shadow-sm" />
+                          <span className="text-lg font-bold text-slate-900 dark:text-white">{summaryStats.topRival.name}</span>
+                        </div>
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className="text-2xl font-black text-blue-600 dark:text-blue-400">
+                            {summaryStats.topRival.prob.toFixed(1)}%
+                          </span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                            en {summaryStats.topRival.stage}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Stage Probabilities */}
+                      <div className="relative overflow-hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-5">
+                        <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-indigo-500/5 blur-xl" />
+                        <div className="flex items-center gap-2 mb-3">
+                          <TrendingUp className="w-4 h-4 text-indigo-500" />
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            Avance por ronda
+                          </span>
+                          <Tooltip content="La probabilidad estimada de que este equipo clasifique y dispute cada ronda de la fase eliminatoria." placement="top">
+                            <Info className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 cursor-help" />
+                          </Tooltip>
+                        </div>
+                        <div className="space-y-1.5">
+                          {KNOCKOUT_STAGES.filter((s) => s !== "3rdPlace").map((stage) => {
+                            const pct = summaryStats.stageTotals[stage] || 0;
+                            return (
+                              <div key={stage} className="flex items-center gap-2">
+                                <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 w-14 text-right">
+                                  {STAGE_LABELS[stage]}
+                                </span>
+                                <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                  <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${Math.min(100, pct)}%` }}
+                                    transition={{ duration: 0.5, delay: 0.1 }}
+                                    className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500"
+                                  />
+                                </div>
+                                <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 w-10 text-right">
+                                  {pct.toFixed(0)}%
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Potential Final Rivals */}
+                      <div className="relative overflow-hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-5">
+                        <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-amber-500/5 blur-xl" />
+                        <div className="flex items-center gap-2 mb-3">
+                          <Trophy className="w-4 h-4 text-amber-500" />
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            Rivales en la Final
+                          </span>
+                          <Tooltip content="Los tres oponentes más probables a enfrentar en la final y la probabilidad de cruzarse en dicho partido." placement="top">
+                            <Info className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 cursor-help" />
+                          </Tooltip>
+                        </div>
+                        {summaryStats.finalRivals.length > 0 ? (
+                          <div className="space-y-2">
+                            {summaryStats.finalRivals.map((r, i) => (
+                              <div key={r.opponentId} className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-slate-400 w-4">{i + 1}.</span>
+                                <TeamFlag teamName={r.opponentName} className="w-5 h-3.5 shadow-sm" />
+                                <span className="text-sm font-medium text-slate-700 dark:text-slate-300 flex-1 truncate">
+                                  {r.opponentName}
+                                </span>
+                                <span className="text-sm font-bold text-amber-600 dark:text-amber-400">
+                                  {(r.stageProbs["Final"] || 0).toFixed(1)}%
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-slate-400 dark:text-slate-600">Sin datos de final.</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Stage Filtering & Table */}
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                    <div className="px-4 md:px-6 pt-4 md:pt-5 pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <Filter className="w-4 h-4 text-slate-400" />
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Filtrar por instancia</span>
+                      </div>
+                      <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-1">
+                        {(["all", ...STAGE_ORDER] as StageFilter[]).map((stage) => (
+                          <button
+                            key={stage}
+                            onClick={() => setStageFilter(stage)}
+                            className={clsx(
+                              "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer",
+                              stageFilter === stage
+                                ? "bg-blue-600 text-white shadow-sm"
+                                : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            )}
+                          >
+                            {stage === "all" ? "Todas" : STAGE_LABELS[stage] || stage}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto p-4 md:p-6">
+                      <table className="w-full text-left border-collapse min-w-[700px]">
+                        <thead>
+                          <tr className="border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                            <th className="px-2 md:px-3 py-3 w-8">#</th>
+                            <MatchupSortHeader column="opponentName" label="Oponente" align="left" />
+                            <MatchupSortHeader
+                              column="totalProb"
+                              label={
+                                <div className="flex items-center gap-1">
+                                  <ArrowUpDown className="w-3 h-3" />
+                                  Total
+                                </div>
+                              }
+                            />
+                            {STAGE_ORDER.map((stage) => (
+                              <MatchupSortHeader key={stage} column={stage as MatchupSortColumn} label={STAGE_LABELS[stage]} />
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                          {filteredAndSortedRows.map((row, index) => {
+                            const isGroupRival = (row.stageCounts["Grupos"] || 0) > 0;
+                            return (
+                              <tr
+                                key={row.opponentId}
+                                className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-sm group cursor-pointer"
+                                onClick={() => setSelectedTeamId(row.opponentId)}
+                              >
+                                <td className="px-2 md:px-3 py-3 text-slate-400 dark:text-slate-600 font-mono text-xs">
+                                  {index + 1}
+                                </td>
+                                <td className="px-2 md:px-3 py-3">
+                                  <div className="flex items-center gap-2">
+                                    <TeamFlag teamName={row.opponentName} className="w-5 h-3.5 shadow-sm" />
+                                    <span className="font-medium text-slate-900 dark:text-white">{row.opponentName}</span>
+                                    <ChevronRight className="w-3 h-3 text-slate-300 dark:text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                  </div>
+                                </td>
+                                <td className="px-2 md:px-3 py-3 text-right">
+                                  <span
+                                    className={clsx(
+                                      "text-xs font-bold px-2 py-0.5 rounded-full",
+                                      isGroupRival
+                                        ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300"
+                                        : row.totalProb >= 30
+                                          ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                                          : row.totalProb >= 10
+                                            ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
+                                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                                    )}
+                                  >
+                                    {isGroupRival ? "Grupo" : `${row.totalProb.toFixed(1)}%`}
+                                  </span>
+                                </td>
+                                {STAGE_ORDER.map((stage) => {
+                                  const pct = row.stageProbs[stage] || 0;
+                                  return (
+                                    <td key={stage} className="px-2 md:px-3 py-3 text-right">
+                                      {pct > 0 ? (
+                                        <span
+                                          className={clsx(
+                                            "inline-block min-w-[48px] text-center text-xs px-1.5 py-0.5 rounded",
+                                            getHeatmapClasses(pct)
+                                          )}
+                                        >
+                                          {pct >= 100 ? "100%" : `${pct.toFixed(1)}%`}
+                                        </span>
+                                      ) : (
+                                        <span className="text-xs text-slate-300 dark:text-slate-750">—</span>
+                                      )}
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+
+                      {filteredAndSortedRows.length === 0 && (
+                        <div className="text-center py-12 text-slate-400 dark:text-slate-600">
+                          <p className="text-sm">No hay enfrentamientos para el filtro seleccionado.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                !isRunning && (
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-12 text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 flex items-center justify-center mx-auto mb-4">
+                      <Swords className="w-8 h-8 text-blue-400" />
+                    </div>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm max-w-md mx-auto">
+                      Presioná <strong>&quot;Ejecutar Simulación&quot;</strong> arriba para ver las probabilidades de cruces de tu selección favorita.
+                    </p>
+                  </div>
+                )
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
+      {/* ─── Simulation Overlay ─── */}
       <SimulationOverlay
         isOpen={isRunning}
         progress={progress}
         currentIteration={currentIteration}
         totalIterations={iterations}
         teamNames={teamNames}
-        type="predictions"
+        type={activeTab}
       />
 
-      {/* Verification Modal */}
+      {/* ─── Verification Modal ─── */}
       {showVerification && sampleResult && (
         <div className="fixed inset-0 z-80 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="verification-modal-scroll bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800">
@@ -557,7 +1145,7 @@ export default function PredictionsPage() {
               </div>
               <button
                 onClick={() => setShowVerification(false)}
-                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5 text-slate-500" />
               </button>
@@ -668,7 +1256,7 @@ export default function PredictionsPage() {
             <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 rounded-b-2xl flex justify-end">
               <button
                 onClick={() => handleVerify()}
-                className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-slate-700 dark:text-slate-200"
+                className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-slate-700 dark:text-slate-200 cursor-pointer"
               >
                 Generar otra prueba
               </button>
@@ -677,5 +1265,17 @@ export default function PredictionsPage() {
         </div>
       )}
     </PageTransition>
+  );
+}
+
+export default function PredictionsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+      </div>
+    }>
+      <PredictionsPageContent />
+    </Suspense>
   );
 }

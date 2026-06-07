@@ -95,7 +95,7 @@ export default function Home() {
             cada cruce en cada instancia.
           </p>
           <Link
-            href="/matchups"
+            href="/predictions?tab=matchups"
             className="mt-4 inline-flex text-sm font-bold text-violet-600 dark:text-violet-400 hover:underline"
           >
             Ir a Cruces
