@@ -154,7 +154,7 @@ export function DailySchedule({
     return { todayKey: today, yesterdayKey: yesterday, tomorrowKey: tomorrow };
   }, [now]);
 
-  const currentDayIndex = useMemo(() => {
+  const getInitialDayIndex = useCallback(() => {
     if (sortedDays.length === 0) return 0;
     
     // Check if a specific day is requested via query param
@@ -176,37 +176,48 @@ export function DailySchedule({
   }, [sortedDays, todayKey, searchParams]);
 
   const [mounted, setMounted] = useState(false);
+  const [currentDayIndex, setCurrentDayIndex] = useState(0);
   const [direction, setDirection] = useState<'left' | 'right' | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
-  const prevDayIndexRef = useRef<number | null>(null);
+  
+  const currentDayIndexRef = useRef(currentDayIndex);
+  useEffect(() => {
+    currentDayIndexRef.current = currentDayIndex;
+  }, [currentDayIndex]);
 
   // Initial load sync
   useEffect(() => {
     if (!mounted) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setMounted(true);
+      const initialIndex = getInitialDayIndex();
+      setCurrentDayIndex(initialIndex);
       
       // If day is not present in URL, set it once quietly
-      if (!searchParams.has("day") && sortedDays[currentDayIndex]) {
+      if (!searchParams.has("day") && sortedDays[initialIndex]) {
         const params = new URLSearchParams(searchParams.toString());
-        params.set("day", sortedDays[currentDayIndex]);
+        params.set("day", sortedDays[initialIndex]);
         router.replace(`/schedule?${params.toString()}`, { scroll: false });
       }
     }
-  }, [mounted, searchParams, sortedDays, router, currentDayIndex]);
+  }, [getInitialDayIndex, mounted, searchParams, sortedDays, router]);
 
-  // Track animation direction based on derived currentDayIndex change
+  // Sync selected day from search parameters dynamically (handles subsequent external/popstate navigations)
   useEffect(() => {
     if (mounted) {
-      const prev = prevDayIndexRef.current;
-      if (prev !== null && currentDayIndex !== prev) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setDirection(currentDayIndex > prev ? "right" : "left");
+      const requestedDay = searchParams.get("day");
+      if (requestedDay) {
+        const dayIndex = sortedDays.indexOf(requestedDay);
+        const currIndex = currentDayIndexRef.current;
+        if (dayIndex !== -1 && dayIndex !== currIndex) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+          setDirection(dayIndex > currIndex ? "right" : "left");
+          setCurrentDayIndex(dayIndex);
+        }
       }
-      prevDayIndexRef.current = currentDayIndex;
     }
-  }, [currentDayIndex, mounted]);
+  }, [searchParams, sortedDays, mounted]);
 
   // Sync match highlighting from search parameters dynamically
   useEffect(() => {
@@ -225,7 +236,10 @@ export function DailySchedule({
 
   const goToPrevDay = useCallback(() => {
     if (currentDayIndex > 0) {
+      setDirection("left");
       const nextIndex = currentDayIndex - 1;
+      setCurrentDayIndex(nextIndex);
+      
       const newDay = sortedDays[nextIndex];
       const params = new URLSearchParams(searchParams.toString());
       params.set("day", newDay);
@@ -237,7 +251,10 @@ export function DailySchedule({
 
   const goToNextDay = useCallback(() => {
     if (currentDayIndex < sortedDays.length - 1) {
+      setDirection("right");
       const nextIndex = currentDayIndex + 1;
+      setCurrentDayIndex(nextIndex);
+      
       const newDay = sortedDays[nextIndex];
       const params = new URLSearchParams(searchParams.toString());
       params.set("day", newDay);
@@ -284,6 +301,8 @@ export function DailySchedule({
 
     const todayDay = sortedDays[todayIndex];
     if (todayIndex !== currentDayIndex) {
+      setDirection(todayIndex > currentDayIndex ? "right" : "left");
+      setCurrentDayIndex(todayIndex);
       const params = new URLSearchParams(searchParams.toString());
       params.set("day", todayDay);
       params.delete("match");
