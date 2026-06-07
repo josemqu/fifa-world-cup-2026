@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
-import { LogOut, User as UserIcon, Settings, ChevronDown, Home, Calendar, Trophy, GitFork, Swords, Sparkles, ShieldAlert } from "lucide-react";
+import { LogOut, User as UserIcon, Settings, ChevronDown, Home, Calendar, Trophy, GitFork, Swords, Sparkles, ShieldAlert, Target } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useRef, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
@@ -30,6 +30,7 @@ export function Header() {
   const isKnockout = pathname === "/knockout";
   const isPredictions = pathname === "/predictions";
   const isMatchups = pathname === "/matchups";
+  const isProde = pathname === "/prode";
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -202,6 +203,24 @@ export function Header() {
                   />
                 )}
                 <span className="relative z-10">Predicciones</span>
+              </Link>
+              <Link
+                href="/prode"
+                className={clsx(
+                  "relative px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center focus:outline-none transition-all duration-200 whitespace-nowrap",
+                  isProde
+                    ? "text-blue-600 dark:text-blue-100"
+                    : "text-slate-500 dark:text-slate-400 hover:bg-white/20 hover:text-slate-700 dark:hover:text-slate-200"
+                )}
+              >
+                {isProde && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute inset-0 bg-white dark:bg-slate-700 rounded-lg shadow-sm"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <span className="relative z-10">Prode</span>
               </Link>
             </nav>
             <Suspense fallback={<div className="w-32 h-8 bg-blue-50/40 dark:bg-blue-950/20 rounded-lg animate-pulse" />}>
@@ -402,6 +421,18 @@ export function Header() {
         >
           <Sparkles className="w-5 h-5" />
           <span className="text-[10px] font-semibold">Predicción</span>
+        </Link>
+        <Link
+          href="/prode"
+          className={clsx(
+            "flex flex-col items-center gap-1 py-1 px-2 text-center transition-colors rounded-lg",
+            isProde
+              ? "text-blue-600 dark:text-blue-400 font-bold"
+              : "text-slate-500 dark:text-slate-400"
+          )}
+        >
+          <Target className="w-5 h-5" />
+          <span className="text-[10px] font-semibold">Prode</span>
         </Link>
       </nav>
     </>

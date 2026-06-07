@@ -1,0 +1,1022 @@
+"use client";
+
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { useTournament } from "@/context/TournamentContext";
+import { INITIAL_GROUPS } from "@/data/initialData";
+import {
+  R32_MATCHES,
+  R16_MATCHES,
+  QF_MATCHES,
+  SF_MATCHES,
+  FINAL_MATCHES,
+} from "@/data/knockoutData";
+import { KNOCKOUT_DETAILS } from "@/data/knockoutDetails";
+import { TeamFlag } from "@/components/ui/TeamFlag";
+import { PageTransition } from "@/components/PageTransition";
+import { clsx } from "clsx";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Trophy,
+  Users,
+  Globe,
+  Check,
+  Copy,
+  Plus,
+  LogIn,
+  Lock,
+  Save,
+  Loader2,
+  Crown,
+  Medal,
+  ChevronRight,
+  ArrowLeft,
+  Trash2,
+  User as UserIcon,
+  Hash,
+  Target,
+  Zap,
+  ShieldCheck,
+} from "lucide-react";
+
+type Tab = "predictions" | "groups" | "leaderboard";
+
+type PredictionEntry = {
+  matchId: string;
+  homeScore: number | "";
+  awayScore: number | "";
+};
+
+type GroupData = {
+  _id: string;
+  name: string;
+  code: string;
+  ownerUid: string;
+  members: string[];
+  createdAt: string;
+};
+
+type LeaderboardEntry = {
+  firebaseUid: string;
+  displayName: string;
+  nickname?: string;
+  totalPoints: number;
+  exactCount: number;
+  correctCount: number;
+  totalPredictions: number;
+};
+
+type GroupDetailData = {
+  group: GroupData;
+  leaderboard: LeaderboardEntry[];
+};
+
+// ── Stage config ──
+const GROUP_LABELS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
+const KNOCKOUT_STAGES = [
+  { key: "R32", label: "16avos" },
+  { key: "R16", label: "Octavos" },
+  { key: "QF", label: "Cuartos" },
+  { key: "SF", label: "Semis" },
+  { key: "Final", label: "Final" },
+];
+
+function getKnockoutMatchIds(stageKey: string) {
+  switch (stageKey) {
+    case "R32": return R32_MATCHES.map((m) => m.id);
+    case "R16": return R16_MATCHES.map((m) => m.id);
+    case "QF": return QF_MATCHES.map((m) => m.id);
+    case "SF": return SF_MATCHES.map((m) => m.id);
+    case "Final": return FINAL_MATCHES.map((m) => m.id);
+    default: return [];
+  }
+}
+
+// Build full match lookup map
+function buildMatchLookup() {
+  const map = new Map<string, { homeTeamName: string; awayTeamName: string; utcDate: string; stage: string; groupId?: string }>();
+
+  for (const group of INITIAL_GROUPS) {
+    for (const match of group.matches) {
+      const homeTeam = group.teams.find((t) => t.id === match.homeTeamId);
+      const awayTeam = group.teams.find((t) => t.id === match.awayTeamId);
+      map.set(match.id, {
+        homeTeamName: homeTeam?.name || match.homeTeamId,
+        awayTeamName: awayTeam?.name || match.awayTeamId,
+        utcDate: match.utcDate,
+        stage: `Grupo ${group.name}`,
+        groupId: group.name,
+      });
+    }
+  }
+
+  const allKnockout = [...R32_MATCHES, ...R16_MATCHES, ...QF_MATCHES, ...SF_MATCHES, ...FINAL_MATCHES];
+  const stageLabels: Record<string, string> = {
+    R32: "16avos de Final",
+    R16: "Octavos de Final",
+    QF: "Cuartos de Final",
+    SF: "Semifinales",
+  };
+
+  for (const m of allKnockout) {
+    const details = KNOCKOUT_DETAILS[m.id];
+    let stageName = "Final";
+    if (R32_MATCHES.includes(m as any)) stageName = "R32";
+    else if (R16_MATCHES.includes(m as any)) stageName = "R16";
+    else if (QF_MATCHES.includes(m as any)) stageName = "QF";
+    else if (SF_MATCHES.includes(m as any)) stageName = "SF";
+    else if (m.id === "103") stageName = "3er Puesto";
+
+    map.set(m.id, {
+      homeTeamName: (m as any).home || "Por definir",
+      awayTeamName: (m as any).away || "Por definir",
+      utcDate: details?.utcDate || "",
+      stage: stageLabels[stageName] || stageName,
+    });
+  }
+
+  return map;
+}
+
+const MATCH_LOOKUP = buildMatchLookup();
+
+export default function ProdePage() {
+  const { user, dbUser, loading, loginWithGoogle } = useAuth();
+  const { groups: tournamentGroups, knockoutMatches } = useTournament();
+  const [activeTab, setActiveTab] = useState<Tab>("predictions");
+
+  if (loading) {
+    return (
+      <PageTransition className="max-w-5xl mx-auto p-4 md:p-6">
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+        </div>
+      </PageTransition>
+    );
+  }
+
+  if (!user) {
+    return (
+      <PageTransition className="max-w-5xl mx-auto p-4 md:p-6">
+        <div className="flex flex-col items-center justify-center py-20 gap-6">
+          <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+            <Trophy className="w-10 h-10 text-white" />
+          </div>
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+              Prode Mundial 2026
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 max-w-md">
+              Predecí los resultados de todos los partidos, competí con tus amigos
+              y subí en el ranking global.
+            </p>
+          </div>
+          <button
+            onClick={loginWithGoogle}
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 transition-all active:scale-95 flex items-center gap-2"
+          >
+            <LogIn className="w-5 h-5" />
+            Ingresá para participar
+          </button>
+        </div>
+      </PageTransition>
+    );
+  }
+
+  const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
+    { key: "predictions", label: "Mis Pronósticos", icon: <Target className="w-4 h-4" /> },
+    { key: "groups", label: "Mis Grupos", icon: <Users className="w-4 h-4" /> },
+    { key: "leaderboard", label: "Tabla General", icon: <Globe className="w-4 h-4" /> },
+  ];
+
+  return (
+    <PageTransition className="max-w-5xl mx-auto p-4 md:p-6">
+      <div className="space-y-6">
+        {/* Page Header */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-md shadow-emerald-500/20">
+            <Trophy className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Prode</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Predecí, competí, ganá</p>
+          </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="flex p-1 gap-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl backdrop-blur-sm shadow-inner border border-slate-200/50 dark:border-slate-700/50">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={clsx(
+                "relative flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200",
+                activeTab === tab.key
+                  ? "text-blue-600 dark:text-blue-100"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              )}
+            >
+              {activeTab === tab.key && (
+                <motion.div
+                  layoutId="prodeActiveTab"
+                  className="absolute inset-0 bg-white dark:bg-slate-700 rounded-lg shadow-sm"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <span className="relative z-10 flex items-center gap-2">
+                {tab.icon}
+                <span className="hidden sm:inline">{tab.label}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        <AnimatePresence mode="wait">
+          {activeTab === "predictions" && (
+            <motion.div key="predictions" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+              <PredictionsTab firebaseUid={user.uid} tournamentGroups={tournamentGroups} knockoutMatches={knockoutMatches} />
+            </motion.div>
+          )}
+          {activeTab === "groups" && (
+            <motion.div key="groups" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+              <GroupsTab firebaseUid={user.uid} />
+            </motion.div>
+          )}
+          {activeTab === "leaderboard" && (
+            <motion.div key="leaderboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+              <LeaderboardTab />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </PageTransition>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ─── PREDICTIONS TAB ──────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+
+function PredictionsTab({ firebaseUid, tournamentGroups, knockoutMatches }: { firebaseUid: string; tournamentGroups: any[]; knockoutMatches: any[] }) {
+  const [predictions, setPredictions] = useState<Map<string, PredictionEntry>>(new Map());
+  const [loadingPredictions, setLoadingPredictions] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [savedCount, setSavedCount] = useState(0);
+  const [activeStage, setActiveStage] = useState("A");
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingRef = useRef<Map<string, PredictionEntry>>(new Map());
+
+  // Load existing predictions
+  useEffect(() => {
+    const loadPredictions = async () => {
+      try {
+        const res = await fetch(`/api/prode/predictions?uid=${firebaseUid}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data) {
+            const map = new Map<string, PredictionEntry>();
+            for (const p of data.data) {
+              map.set(p.matchId, { matchId: p.matchId, homeScore: p.homeScore, awayScore: p.awayScore });
+            }
+            setPredictions(map);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading predictions:", err);
+      } finally {
+        setLoadingPredictions(false);
+      }
+    };
+    loadPredictions();
+  }, [firebaseUid]);
+
+  const savePredictions = useCallback(async (toSave: Map<string, PredictionEntry>) => {
+    if (toSave.size === 0) return;
+    setSaving(true);
+    try {
+      const predsArray = Array.from(toSave.values()).filter(
+        (p) => p.homeScore !== "" && p.awayScore !== ""
+      );
+      if (predsArray.length === 0) { setSaving(false); return; }
+
+      const res = await fetch("/api/prode/predictions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firebaseUid,
+          predictions: predsArray.map((p) => ({
+            matchId: p.matchId,
+            homeScore: Number(p.homeScore),
+            awayScore: Number(p.awayScore),
+          })),
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSavedCount((c) => c + (data.saved || 0));
+      }
+    } catch (err) {
+      console.error("Error saving predictions:", err);
+    } finally {
+      setSaving(false);
+      pendingRef.current.clear();
+    }
+  }, [firebaseUid]);
+
+  const handleScoreChange = useCallback((matchId: string, side: "home" | "away", val: string) => {
+    const score = val === "" ? "" : Math.max(0, parseInt(val) || 0);
+    setPredictions((prev) => {
+      const newMap = new Map(prev);
+      const existing = newMap.get(matchId) || { matchId, homeScore: "", awayScore: "" };
+      const updated = { ...existing, [side === "home" ? "homeScore" : "awayScore"]: score };
+      newMap.set(matchId, updated);
+      return newMap;
+    });
+
+    // Debounce save
+    const entry = predictions.get(matchId) || { matchId, homeScore: "", awayScore: "" };
+    const updated = { ...entry, [side === "home" ? "homeScore" : "awayScore"]: score };
+    pendingRef.current.set(matchId, updated);
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      savePredictions(new Map(pendingRef.current));
+    }, 1500);
+  }, [predictions, savePredictions]);
+
+  // Determine which match IDs to show for the active stage
+  const stageMatchIds = useMemo(() => {
+    if (GROUP_LABELS.includes(activeStage)) {
+      const group = INITIAL_GROUPS.find((g) => g.name === activeStage);
+      return group ? group.matches.map((m) => m.id) : [];
+    }
+    return getKnockoutMatchIds(activeStage);
+  }, [activeStage]);
+
+  // Resolve team names from tournament context for knockout matches
+  const resolvedTeamNames = useMemo(() => {
+    const map = new Map<string, { home: string; away: string }>();
+    for (const km of knockoutMatches) {
+      const homeName = km.homeTeam
+        ? ("placeholder" in km.homeTeam ? km.homeTeam.placeholder : km.homeTeam.name)
+        : "Por definir";
+      const awayName = km.awayTeam
+        ? ("placeholder" in km.awayTeam ? km.awayTeam.placeholder : km.awayTeam.name)
+        : "Por definir";
+      map.set(km.id, { home: homeName, away: awayName });
+    }
+    return map;
+  }, [knockoutMatches]);
+
+  if (loadingPredictions) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Save Status Indicator */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Ingresá tu pronóstico para cada partido. Se guardan automáticamente.
+        </p>
+        <div className="flex items-center gap-2 text-xs">
+          {saving ? (
+            <span className="flex items-center gap-1.5 text-blue-500">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              Guardando...
+            </span>
+          ) : savedCount > 0 ? (
+            <span className="flex items-center gap-1.5 text-emerald-500">
+              <Check className="w-3.5 h-3.5" />
+              Guardado
+            </span>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Stage Selector */}
+      <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
+        <div className="flex gap-1.5 pb-2 min-w-max">
+          {/* Group Stage pills */}
+          <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg p-1">
+            {GROUP_LABELS.map((g) => (
+              <button
+                key={g}
+                onClick={() => setActiveStage(g)}
+                className={clsx(
+                  "px-3 py-1.5 rounded-md text-xs font-bold transition-all",
+                  activeStage === g
+                    ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                )}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
+          {/* Knockout stage pills */}
+          <div className="w-px bg-slate-200 dark:bg-slate-700 mx-1" />
+          <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg p-1">
+            {KNOCKOUT_STAGES.map((s) => (
+              <button
+                key={s.key}
+                onClick={() => setActiveStage(s.key)}
+                className={clsx(
+                  "px-3 py-1.5 rounded-md text-xs font-bold transition-all whitespace-nowrap",
+                  activeStage === s.key
+                    ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                )}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Match Cards */}
+      <div className="space-y-3">
+        {stageMatchIds.map((matchId) => {
+          const info = MATCH_LOOKUP.get(matchId);
+          const resolved = resolvedTeamNames.get(matchId);
+          const homeName = resolved?.home || info?.homeTeamName || "?";
+          const awayName = resolved?.away || info?.awayTeamName || "?";
+          const utcDate = info?.utcDate || "";
+          const isLocked = utcDate ? new Date() >= new Date(utcDate) : false;
+          const pred = predictions.get(matchId);
+
+          return (
+            <ProdeMatchCard
+              key={matchId}
+              matchId={matchId}
+              homeTeamName={homeName}
+              awayTeamName={awayName}
+              utcDate={utcDate}
+              isLocked={isLocked}
+              homeScore={pred?.homeScore ?? ""}
+              awayScore={pred?.awayScore ?? ""}
+              onScoreChange={handleScoreChange}
+            />
+          );
+        })}
+        {stageMatchIds.length === 0 && (
+          <div className="text-center py-12 text-slate-400 dark:text-slate-600">
+            No hay partidos en esta etapa.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProdeMatchCard({
+  matchId,
+  homeTeamName,
+  awayTeamName,
+  utcDate,
+  isLocked,
+  homeScore,
+  awayScore,
+  onScoreChange,
+}: {
+  matchId: string;
+  homeTeamName: string;
+  awayTeamName: string;
+  utcDate: string;
+  isLocked: boolean;
+  homeScore: number | "";
+  awayScore: number | "";
+  onScoreChange: (matchId: string, side: "home" | "away", val: string) => void;
+}) {
+  const matchDate = utcDate ? new Date(utcDate) : null;
+  const formattedDate = matchDate
+    ? matchDate.toLocaleDateString("es-AR", { day: "numeric", month: "short" })
+    : "";
+  const formattedTime = matchDate
+    ? matchDate.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false })
+    : "";
+
+  return (
+    <div
+      className={clsx(
+        "bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden transition-all",
+        isLocked && "opacity-70"
+      )}
+    >
+      <div className="p-3 sm:p-4">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          {/* Home Team */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <TeamFlag teamName={homeTeamName} className="w-7 h-5 shrink-0 rounded-sm shadow-sm" />
+            <span className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+              {homeTeamName}
+            </span>
+          </div>
+
+          {/* Score Inputs */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <input
+              type="number"
+              min="0"
+              max="20"
+              placeholder="-"
+              disabled={isLocked}
+              value={homeScore}
+              onChange={(e) => onScoreChange(matchId, "home", e.target.value)}
+              className="w-10 h-10 text-center text-sm font-bold bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
+            <span className="text-slate-300 dark:text-slate-600 font-bold text-xs">:</span>
+            <input
+              type="number"
+              min="0"
+              max="20"
+              placeholder="-"
+              disabled={isLocked}
+              value={awayScore}
+              onChange={(e) => onScoreChange(matchId, "away", e.target.value)}
+              className="w-10 h-10 text-center text-sm font-bold bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
+            {isLocked && <Lock className="w-3.5 h-3.5 text-slate-400 ml-1" />}
+          </div>
+
+          {/* Away Team */}
+          <div className="flex items-center gap-2.5 min-w-0 justify-end">
+            <span className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate text-right">
+              {awayTeamName}
+            </span>
+            <TeamFlag teamName={awayTeamName} className="w-7 h-5 shrink-0 rounded-sm shadow-sm" />
+          </div>
+        </div>
+
+        {/* Match Date & Time */}
+        {matchDate && (
+          <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-center gap-2 text-[10px] text-slate-400 dark:text-slate-500">
+            <span>{formattedDate}</span>
+            <span className="font-bold text-slate-500 dark:text-slate-400">{formattedTime}</span>
+            <span className="font-mono text-[9px] text-slate-300 dark:text-slate-600">#{matchId}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ─── GROUPS TAB ───────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+
+function GroupsTab({ firebaseUid }: { firebaseUid: string }) {
+  const [groups, setGroups] = useState<GroupData[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [showJoin, setShowJoin] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [groupDetail, setGroupDetail] = useState<GroupDetailData | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
+  // Create group state
+  const [newGroupName, setNewGroupName] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  // Join group state
+  const [joinCode, setJoinCode] = useState("");
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState("");
+
+  // Clipboard copy state
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  const loadGroups = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/prode/groups?uid=${firebaseUid}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) setGroups(data.data || []);
+      }
+    } catch (err) {
+      console.error("Error loading groups:", err);
+    } finally {
+      setLoadingGroups(false);
+    }
+  }, [firebaseUid]);
+
+  useEffect(() => { loadGroups(); }, [loadGroups]);
+
+  const handleCreateGroup = async () => {
+    if (!newGroupName.trim()) return;
+    setCreating(true);
+    try {
+      const res = await fetch("/api/prode/groups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ firebaseUid, name: newGroupName.trim() }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setGroups((prev) => [...prev, data.data]);
+          setNewGroupName("");
+          setShowCreate(false);
+        }
+      }
+    } catch (err) {
+      console.error("Error creating group:", err);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleJoinGroup = async () => {
+    if (!joinCode.trim()) return;
+    setJoining(true);
+    setJoinError("");
+    try {
+      const res = await fetch("/api/prode/groups/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ firebaseUid, code: joinCode.trim().toUpperCase() }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setGroups((prev) => {
+          const exists = prev.find((g) => g._id === data.data._id);
+          if (exists) return prev;
+          return [...prev, data.data];
+        });
+        setJoinCode("");
+        setShowJoin(false);
+      } else {
+        setJoinError(data.error || "No se pudo unir al grupo.");
+      }
+    } catch (err) {
+      setJoinError("Error de conexión.");
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
+
+  const openGroupDetail = async (groupId: string) => {
+    setSelectedGroupId(groupId);
+    setLoadingDetail(true);
+    try {
+      const res = await fetch(`/api/prode/groups/${groupId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) setGroupDetail(data.data);
+      }
+    } catch (err) {
+      console.error("Error loading group detail:", err);
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
+  // Group detail view
+  if (selectedGroupId) {
+    return (
+      <div className="space-y-4">
+        <button
+          onClick={() => { setSelectedGroupId(null); setGroupDetail(null); }}
+          className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors font-medium"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Volver a mis grupos
+        </button>
+
+        {loadingDetail ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+          </div>
+        ) : groupDetail ? (
+          <div className="space-y-4">
+            {/* Group Header */}
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">{groupDetail.group.name}</h3>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                    {groupDetail.group.members.length} miembros
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-sm bg-slate-100 dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-300">
+                    {groupDetail.group.code}
+                  </span>
+                  <button
+                    onClick={() => handleCopyCode(groupDetail.group.code)}
+                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                    title="Copiar código"
+                  >
+                    {copiedCode === groupDetail.group.code ? (
+                      <Check className="w-4 h-4 text-emerald-500" />
+                    ) : (
+                      <Copy className="w-4 h-4 text-slate-400" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Leaderboard */}
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+              <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/50">
+                <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Tabla de Posiciones</h4>
+              </div>
+              {groupDetail.leaderboard.length > 0 ? (
+                <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                  {groupDetail.leaderboard.map((entry, i) => (
+                    <div key={entry.firebaseUid} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                      <div className="w-8 flex justify-center">
+                        {i === 0 ? <Crown className="w-5 h-5 text-yellow-500" /> :
+                         i === 1 ? <Medal className="w-5 h-5 text-slate-400" /> :
+                         i === 2 ? <Medal className="w-5 h-5 text-amber-700" /> :
+                         <span className="text-sm font-mono text-slate-400">{i + 1}</span>}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                          {entry.nickname || entry.displayName}
+                        </p>
+                        <div className="flex gap-3 text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                          <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{entry.exactCount} exactos</span>
+                          <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" />{entry.correctCount} aciertos</span>
+                          <span>{entry.totalPredictions} pronósticos</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-lg font-bold text-slate-900 dark:text-white">{entry.totalPoints}</span>
+                        <span className="text-[10px] text-slate-400 ml-1">pts</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-slate-400 dark:text-slate-600">
+                  <p>Aún no hay resultados. Los puntos aparecerán cuando los partidos terminen.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  // Groups list view
+  return (
+    <div className="space-y-4">
+      {/* Action Buttons */}
+      <div className="flex gap-3">
+        <button
+          onClick={() => { setShowCreate(true); setShowJoin(false); }}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold rounded-xl shadow-md shadow-emerald-500/20 transition-all active:scale-95 text-sm"
+        >
+          <Plus className="w-4 h-4" />
+          Crear Grupo
+        </button>
+        <button
+          onClick={() => { setShowJoin(true); setShowCreate(false); }}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 text-sm"
+        >
+          <LogIn className="w-4 h-4" />
+          Unirse con Código
+        </button>
+      </div>
+
+      {/* Create Group Form */}
+      <AnimatePresence>
+        {showCreate && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 space-y-3 shadow-sm">
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">Nuevo Grupo</h4>
+              <input
+                type="text"
+                placeholder="Nombre del grupo (ej: Amigos del fútbol)"
+                value={newGroupName}
+                onChange={(e) => setNewGroupName(e.target.value)}
+                maxLength={50}
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                onKeyDown={(e) => e.key === "Enter" && handleCreateGroup()}
+              />
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleCreateGroup}
+                  disabled={creating || !newGroupName.trim()}
+                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 disabled:dark:bg-slate-700 text-white font-bold rounded-lg text-sm transition-all flex items-center gap-2"
+                >
+                  {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  Crear
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Join Group Form */}
+      <AnimatePresence>
+        {showJoin && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 space-y-3 shadow-sm">
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">Unirse a un Grupo</h4>
+              <input
+                type="text"
+                placeholder="Código de 6 dígitos (ej: DF5R3E)"
+                value={joinCode}
+                onChange={(e) => { setJoinCode(e.target.value.toUpperCase().slice(0, 6)); setJoinError(""); }}
+                maxLength={6}
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-mono text-center text-lg tracking-[0.3em] uppercase focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                onKeyDown={(e) => e.key === "Enter" && handleJoinGroup()}
+              />
+              {joinError && <p className="text-xs text-red-500">{joinError}</p>}
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setShowJoin(false)} className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleJoinGroup}
+                  disabled={joining || joinCode.length < 6}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:dark:bg-slate-700 text-white font-bold rounded-lg text-sm transition-all flex items-center gap-2"
+                >
+                  {joining ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
+                  Unirse
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Groups List */}
+      {loadingGroups ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+        </div>
+      ) : groups.length > 0 ? (
+        <div className="space-y-2">
+          {groups.map((group) => (
+            <button
+              key={group._id}
+              onClick={() => openGroupDetail(group._id)}
+              className="w-full bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 flex items-center gap-4 hover:bg-slate-50 dark:hover:bg-slate-750 transition-all text-left group"
+            >
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shrink-0 shadow-sm">
+                <Users className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{group.name}</p>
+                <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
+                  <span className="flex items-center gap-1">
+                    <Hash className="w-3 h-3" />
+                    {group.code}
+                  </span>
+                  <span>·</span>
+                  <span>{group.members.length} miembros</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleCopyCode(group.code); }}
+                  className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors"
+                  title="Copiar código"
+                >
+                  {copiedCode === group.code ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-500" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5 text-slate-400" />
+                  )}
+                </button>
+                <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-slate-500 dark:group-hover:text-slate-400 transition-colors" />
+              </div>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
+          <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center border border-slate-200 dark:border-slate-700">
+            <Users className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No tenés grupos todavía</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Creá uno o unite con un código de invitación.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ─── GLOBAL LEADERBOARD TAB ──────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+
+function LeaderboardTab() {
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const loadLeaderboard = async () => {
+      try {
+        const res = await fetch("/api/prode/leaderboard");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) setLeaderboard(data.data || []);
+        }
+      } catch (err) {
+        console.error("Error loading leaderboard:", err);
+      } finally {
+        setLoadingLeaderboard(false);
+      }
+    };
+    loadLeaderboard();
+  }, []);
+
+  if (loadingLeaderboard) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+      </div>
+    );
+  }
+
+  if (leaderboard.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
+        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center border border-slate-200 dark:border-slate-700">
+          <Globe className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No hay datos en la tabla general</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Los puntos aparecerán cuando los partidos terminen.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+      <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-700/50 bg-gradient-to-r from-slate-50 to-blue-50/50 dark:from-slate-900/50 dark:to-blue-950/20">
+        <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+          <Globe className="w-4 h-4" />
+          Ranking Global — Top {leaderboard.length}
+        </h4>
+      </div>
+      <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
+        {leaderboard.map((entry, i) => {
+          const isCurrentUser = user?.uid === entry.firebaseUid;
+          return (
+            <div
+              key={entry.firebaseUid}
+              className={clsx(
+                "flex items-center gap-3 px-5 py-3 transition-colors",
+                isCurrentUser
+                  ? "bg-blue-50/50 dark:bg-blue-950/20 border-l-2 border-blue-500"
+                  : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
+              )}
+            >
+              <div className="w-8 flex justify-center">
+                {i === 0 ? <Crown className="w-5 h-5 text-yellow-500" /> :
+                 i === 1 ? <Medal className="w-5 h-5 text-slate-400" /> :
+                 i === 2 ? <Medal className="w-5 h-5 text-amber-700" /> :
+                 <span className="text-sm font-mono text-slate-400">{i + 1}</span>}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className={clsx(
+                  "text-sm font-medium truncate",
+                  isCurrentUser ? "text-blue-700 dark:text-blue-300 font-bold" : "text-slate-900 dark:text-slate-100"
+                )}>
+                  {entry.nickname || entry.displayName}
+                  {isCurrentUser && <span className="ml-2 text-[10px] text-blue-500 font-normal">(Vos)</span>}
+                </p>
+                <div className="flex gap-3 text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                  <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{entry.exactCount} exactos</span>
+                  <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" />{entry.correctCount} aciertos</span>
+                  <span>{entry.totalPredictions} pronósticos</span>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="text-lg font-bold text-slate-900 dark:text-white">{entry.totalPoints}</span>
+                <span className="text-[10px] text-slate-400 ml-1">pts</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
