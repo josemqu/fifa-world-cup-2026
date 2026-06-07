@@ -257,7 +257,7 @@ function ProdePageContent() {
 
   // Initial redirect if parameters are missing
   useEffect(() => {
-    if (!searchParams.has("tab")) {
+    if (!searchParams.has("tab") && !searchParams.has("joinCode")) {
       updateUrl(initialTab, initialStage, initialGroupId);
     }
   }, [searchParams, initialTab, initialStage, initialGroupId, updateUrl]);
