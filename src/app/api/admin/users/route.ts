@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
-import Prediction from "@/models/Prediction";
+import ProdePrediction from "@/models/ProdePrediction";
 
 // Simple admin check via email header (can be upgraded to JWT/session later)
 function isAdminEmail(email: string | null) {
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
 
     // Get prediction counts for each user
     const uids = users.map((u) => u.firebaseUid);
-    const predictionCounts = await Prediction.aggregate([
+    const predictionCounts = await ProdePrediction.aggregate([
       { $match: { firebaseUid: { $in: uids } } },
       { $group: { _id: "$firebaseUid", count: { $sum: 1 } } },
     ]);
