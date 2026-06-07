@@ -12,7 +12,10 @@ import {
   CheckCircle,
   XCircle,
   Trophy,
+  ArrowLeftRight,
 } from "lucide-react";
+import { clsx } from "clsx";
+import { PredictionComparisonModal } from "@/components/PredictionComparisonModal";
 
 interface DbUser {
   _id: string;
@@ -48,6 +51,7 @@ export default function AdminUsersPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [selectedCompareUser, setSelectedCompareUser] = useState<DbUser | null>(null);
 
   // Debounce search input
   useEffect(() => {
@@ -149,19 +153,20 @@ export default function AdminUsersPage() {
                 <th className="px-6 py-4 text-center">Sesiones</th>
                 <th className="px-6 py-4">Última Actividad</th>
                 <th className="px-6 py-4">Registro</th>
+                <th className="px-6 py-4 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 text-sm">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
+                  <td colSpan={8} className="px-6 py-12 text-center">
                     <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
                     <p className="text-xs text-slate-500">Cargando usuarios...</p>
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
                     No se encontraron usuarios.
                   </td>
                 </tr>
@@ -263,6 +268,30 @@ export default function AdminUsersPage() {
                           <span>{formatDate(u.createdAt)}</span>
                         </div>
                       </td>
+
+                      {/* Acciones */}
+                      <td className="px-6 py-4 text-center">
+                        <button
+                          disabled={u.predictionCount === 0 || u.firebaseUid === dbUser?.firebaseUid}
+                          onClick={() => setSelectedCompareUser(u)}
+                          className={clsx(
+                            "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all",
+                            u.predictionCount > 0 && u.firebaseUid !== dbUser?.firebaseUid
+                              ? "bg-indigo-600/10 hover:bg-indigo-600 text-indigo-400 hover:text-white border border-indigo-500/20 cursor-pointer"
+                              : "bg-slate-800/40 text-slate-600 border border-slate-800/20 cursor-not-allowed"
+                          )}
+                          title={
+                            u.firebaseUid === dbUser?.firebaseUid
+                              ? "Eres tú mismo"
+                              : u.predictionCount === 0
+                              ? "El usuario no tiene pronósticos"
+                              : "Comparar pronósticos"
+                          }
+                        >
+                          <ArrowLeftRight className="w-3.5 h-3.5" />
+                          <span>Comparar</span>
+                        </button>
+                      </td>
                     </tr>
                   );
                 })
@@ -300,6 +329,14 @@ export default function AdminUsersPage() {
           </div>
         )}
       </div>
+      {selectedCompareUser && dbUser?.firebaseUid && (
+        <PredictionComparisonModal
+          isOpen={!!selectedCompareUser}
+          onClose={() => setSelectedCompareUser(null)}
+          targetUser={selectedCompareUser}
+          adminUid={dbUser.firebaseUid}
+        />
+      )}
     </div>
   );
 }
