@@ -698,7 +698,7 @@ export function PredictionComparisonModal({
                               {/* Team names & flags */}
                               <div className="min-w-0">
                                 <p className="text-sm font-semibold text-white truncate max-w-[140px] sm:max-w-[180px]">{uHomeName}</p>
-                                <p className="text-[10px] text-slate-400 truncate max-w-[140px] sm:max-w-[180px]">{uAwayName}</p>
+                                <p className="text-sm font-semibold text-white truncate max-w-[140px] sm:max-w-[180px]">{uAwayName}</p>
                               </div>
                               <div className="flex flex-col gap-1 items-end shrink-0">
                                 <TeamFlag teamName={uHomeName} className="w-5 h-3.5" />
@@ -759,7 +759,7 @@ export function PredictionComparisonModal({
                               {/* Team names & flags */}
                               <div className="min-w-0">
                                 <p className="text-sm font-semibold text-white truncate max-w-[140px] sm:max-w-[180px]">{aHomeName}</p>
-                                <p className="text-[10px] text-slate-400 truncate max-w-[140px] sm:max-w-[180px]">{aAwayName}</p>
+                                <p className="text-sm font-semibold text-white truncate max-w-[140px] sm:max-w-[180px]">{aAwayName}</p>
                               </div>
                             </div>
                           </div>
