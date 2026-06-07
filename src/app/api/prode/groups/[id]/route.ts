@@ -25,13 +25,17 @@ export async function GET(
     const finishedMatches = await LiveScore.find({ status: "finished" });
     const finishedMatchIds = finishedMatches.map((m) => m.matchId);
 
-    const scoreMap: Record<string, { homeScore: number; awayScore: number }> =
-      {};
+    const scoreMap: Record<
+      string,
+      { homeScore: number; awayScore: number; homePenalties: number | null; awayPenalties: number | null }
+    > = {};
     for (const match of finishedMatches) {
       if (match.homeScore !== null && match.awayScore !== null) {
         scoreMap[match.matchId] = {
           homeScore: match.homeScore,
           awayScore: match.awayScore,
+          homePenalties: match.homePenalties,
+          awayPenalties: match.awayPenalties,
         };
       }
     }
@@ -43,7 +47,13 @@ export async function GET(
 
     const predictionsByUser: Record<
       string,
-      Array<{ matchId: string; homeScore: number; awayScore: number }>
+      Array<{
+        matchId: string;
+        homeScore: number;
+        awayScore: number;
+        homePenalties?: number;
+        awayPenalties?: number;
+      }>
     > = {};
     for (const pred of allPredictions) {
       if (!predictionsByUser[pred.firebaseUid]) {
@@ -80,7 +90,11 @@ export async function GET(
           pred.homeScore,
           pred.awayScore,
           actual.homeScore,
-          actual.awayScore
+          actual.awayScore,
+          pred.homePenalties,
+          pred.awayPenalties,
+          actual.homePenalties ?? undefined,
+          actual.awayPenalties ?? undefined
         );
         totalPoints += pts;
         if (pts === 3) exactCount++;

@@ -1,9 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useTournament } from "@/context/TournamentContext";
 import { INITIAL_GROUPS } from "@/data/initialData";
+import { Group, KnockoutMatch, Team } from "@/data/types";
+import { generateR32Matches } from "@/utils/knockoutUtils";
+import { recalculateGroupStats } from "@/utils/simulationUtils";
 import {
   R32_MATCHES,
   R16_MATCHES,
@@ -23,6 +27,7 @@ import {
   Check,
   Copy,
   Plus,
+  Minus,
   LogIn,
   Lock,
   Save,
@@ -45,6 +50,8 @@ type PredictionEntry = {
   matchId: string;
   homeScore: number | "";
   awayScore: number | "";
+  homePenalties?: number | "";
+  awayPenalties?: number | "";
 };
 
 type GroupData = {
@@ -94,7 +101,7 @@ function getKnockoutMatchIds(stageKey: string) {
 
 // Build full match lookup map
 function buildMatchLookup() {
-  const map = new Map<string, { homeTeamName: string; awayTeamName: string; utcDate: string; stage: string; groupId?: string }>();
+  const map = new Map<string, { homeTeamName: string; awayTeamName: string; utcDate: string; stage: string; groupId?: string; label?: string }>();
 
   for (const group of INITIAL_GROUPS) {
     for (const match of group.matches) {
@@ -132,6 +139,7 @@ function buildMatchLookup() {
       awayTeamName: (m as any).away || "Por definir",
       utcDate: details?.utcDate || "",
       stage: stageLabels[stageName] || stageName,
+      label: (m as any).label || undefined,
     });
   }
 
@@ -140,10 +148,68 @@ function buildMatchLookup() {
 
 const MATCH_LOOKUP = buildMatchLookup();
 
-export default function ProdePage() {
+function ProdePageContent() {
   const { user, dbUser, loading, loginWithGoogle } = useAuth();
   const { groups: tournamentGroups, knockoutMatches } = useTournament();
-  const [activeTab, setActiveTab] = useState<Tab>("predictions");
+  
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // 1. Get initial states from URL search params
+  const initialTab = (searchParams.get("tab") as Tab) || "predictions";
+  const initialStage = searchParams.get("stage") || "A";
+  const initialGroupId = searchParams.get("groupId") || null;
+
+  const [activeTab, setActiveTabState] = useState<Tab>(initialTab);
+  const [activeStage, setActiveStageState] = useState<string>(initialStage);
+  const [selectedGroupId, setSelectedGroupIdState] = useState<string | null>(initialGroupId);
+
+  // Sync URL search params with state
+  const updateUrl = useCallback((tab: Tab, stage: string, groupId: string | null) => {
+    const params = new URLSearchParams();
+    params.set("tab", tab);
+    if (tab === "predictions") {
+      params.set("stage", stage);
+    }
+    if (tab === "groups" && groupId) {
+      params.set("groupId", groupId);
+    }
+    router.replace(`/prode?${params.toString()}`, { scroll: false });
+  }, [router]);
+
+  // Setters that update URL
+  const setActiveTab = (tab: Tab) => {
+    setActiveTabState(tab);
+    updateUrl(tab, activeStage, selectedGroupId);
+  };
+
+  const setActiveStage = (stage: string) => {
+    setActiveStageState(stage);
+    updateUrl(activeTab, stage, selectedGroupId);
+  };
+
+  const setSelectedGroupId = (groupId: string | null) => {
+    setSelectedGroupIdState(groupId);
+    updateUrl(activeTab, activeStage, groupId);
+  };
+
+  // Sync from URL changes (e.g. back button / history navigation)
+  useEffect(() => {
+    const tab = (searchParams.get("tab") as Tab) || "predictions";
+    const stage = searchParams.get("stage") || "A";
+    const groupId = searchParams.get("groupId") || null;
+
+    setActiveTabState(tab);
+    setActiveStageState(stage);
+    setSelectedGroupIdState(groupId);
+  }, [searchParams]);
+
+  // Initial redirect if parameters are missing
+  useEffect(() => {
+    if (!searchParams.has("tab")) {
+      updateUrl(initialTab, initialStage, initialGroupId);
+    }
+  }, [searchParams, initialTab, initialStage, initialGroupId, updateUrl]);
 
   if (loading) {
     return (
@@ -235,12 +301,22 @@ export default function ProdePage() {
         <AnimatePresence mode="wait">
           {activeTab === "predictions" && (
             <motion.div key="predictions" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-              <PredictionsTab firebaseUid={user.uid} tournamentGroups={tournamentGroups} knockoutMatches={knockoutMatches} />
+              <PredictionsTab
+                firebaseUid={user.uid}
+                tournamentGroups={tournamentGroups}
+                knockoutMatches={knockoutMatches}
+                activeStage={activeStage}
+                setActiveStage={setActiveStage}
+              />
             </motion.div>
           )}
           {activeTab === "groups" && (
             <motion.div key="groups" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-              <GroupsTab firebaseUid={user.uid} />
+              <GroupsTab
+                firebaseUid={user.uid}
+                selectedGroupId={selectedGroupId}
+                setSelectedGroupId={setSelectedGroupId}
+              />
             </motion.div>
           )}
           {activeTab === "leaderboard" && (
@@ -254,16 +330,56 @@ export default function ProdePage() {
   );
 }
 
+export default function ProdePage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>}>
+      <ProdePageContent />
+    </Suspense>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ─── PREDICTIONS TAB ──────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════
 // ─── PREDICTIONS TAB ──────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════
 
-function PredictionsTab({ firebaseUid, tournamentGroups, knockoutMatches }: { firebaseUid: string; tournamentGroups: any[]; knockoutMatches: any[] }) {
+function formatPlaceholder(ph: string): string {
+  if (!ph) return "Por definir";
+  // Matches "1A", "2B", "3A", etc.
+  if (/^[1-3][A-L]$/.test(ph)) {
+    const rank = ph.charAt(0);
+    const group = ph.charAt(1);
+    return `${rank}° Grupo ${group}`;
+  }
+  // Matches "W73", "W104", etc.
+  if (ph.startsWith("W")) {
+    return `Ganador #${ph.substring(1)}`;
+  }
+  // Matches "L101", etc.
+  if (ph.startsWith("L")) {
+    return `Perdedor #${ph.substring(1)}`;
+  }
+  return ph;
+}
+
+function PredictionsTab({
+  firebaseUid,
+  tournamentGroups,
+  knockoutMatches,
+  activeStage,
+  setActiveStage,
+}: {
+  firebaseUid: string;
+  tournamentGroups: any[];
+  knockoutMatches: any[];
+  activeStage: string;
+  setActiveStage: (stage: string) => void;
+}) {
   const [predictions, setPredictions] = useState<Map<string, PredictionEntry>>(new Map());
   const [loadingPredictions, setLoadingPredictions] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedCount, setSavedCount] = useState(0);
-  const [activeStage, setActiveStage] = useState("A");
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingRef = useRef<Map<string, PredictionEntry>>(new Map());
 
@@ -277,7 +393,13 @@ function PredictionsTab({ firebaseUid, tournamentGroups, knockoutMatches }: { fi
           if (data.success && data.data) {
             const map = new Map<string, PredictionEntry>();
             for (const p of data.data) {
-              map.set(p.matchId, { matchId: p.matchId, homeScore: p.homeScore, awayScore: p.awayScore });
+              map.set(p.matchId, {
+                matchId: p.matchId,
+                homeScore: p.homeScore,
+                awayScore: p.awayScore,
+                homePenalties: p.homePenalties ?? "",
+                awayPenalties: p.awayPenalties ?? ""
+              });
             }
             setPredictions(map);
           }
@@ -309,6 +431,8 @@ function PredictionsTab({ firebaseUid, tournamentGroups, knockoutMatches }: { fi
             matchId: p.matchId,
             homeScore: Number(p.homeScore),
             awayScore: Number(p.awayScore),
+            homePenalties: p.homePenalties !== undefined && p.homePenalties !== "" ? Number(p.homePenalties) : undefined,
+            awayPenalties: p.awayPenalties !== undefined && p.awayPenalties !== "" ? Number(p.awayPenalties) : undefined,
           })),
         }),
       });
@@ -328,15 +452,58 @@ function PredictionsTab({ firebaseUid, tournamentGroups, knockoutMatches }: { fi
     const score = val === "" ? "" : Math.max(0, parseInt(val) || 0);
     setPredictions((prev) => {
       const newMap = new Map(prev);
-      const existing = newMap.get(matchId) || { matchId, homeScore: "", awayScore: "" };
-      const updated = { ...existing, [side === "home" ? "homeScore" : "awayScore"]: score };
+      const existing = (newMap.get(matchId) || { matchId, homeScore: "", awayScore: "", homePenalties: "", awayPenalties: "" }) as PredictionEntry;
+      const newHomeScore = side === "home" ? score : existing.homeScore;
+      const newAwayScore = side === "away" ? score : existing.awayScore;
+      const isTie = newHomeScore !== "" && newAwayScore !== "" && newHomeScore === newAwayScore;
+
+      const updated: PredictionEntry = {
+        ...existing,
+        [side === "home" ? "homeScore" : "awayScore"]: score,
+        ...(!isTie ? { homePenalties: "", awayPenalties: "" } : {})
+      };
       newMap.set(matchId, updated);
       return newMap;
     });
 
     // Debounce save
-    const entry = predictions.get(matchId) || { matchId, homeScore: "", awayScore: "" };
-    const updated = { ...entry, [side === "home" ? "homeScore" : "awayScore"]: score };
+    const entry = (predictions.get(matchId) || { matchId, homeScore: "", awayScore: "", homePenalties: "", awayPenalties: "" }) as PredictionEntry;
+    const newHomeScore = side === "home" ? score : entry.homeScore;
+    const newAwayScore = side === "away" ? score : entry.awayScore;
+    const isTie = newHomeScore !== "" && newAwayScore !== "" && newHomeScore === newAwayScore;
+
+    const updated: PredictionEntry = {
+      ...entry,
+      [side === "home" ? "homeScore" : "awayScore"]: score,
+      ...(!isTie ? { homePenalties: "", awayPenalties: "" } : {})
+    };
+    pendingRef.current.set(matchId, updated);
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      savePredictions(new Map(pendingRef.current));
+    }, 1500);
+  }, [predictions, savePredictions]);
+
+  const handlePenaltiesWinnerChange = useCallback((matchId: string, winnerSide: "home" | "away") => {
+    setPredictions((prev) => {
+      const newMap = new Map(prev);
+      const existing = (newMap.get(matchId) || { matchId, homeScore: "", awayScore: "", homePenalties: "", awayPenalties: "" }) as PredictionEntry;
+      const updated: PredictionEntry = {
+        ...existing,
+        homePenalties: winnerSide === "home" ? 1 : 0,
+        awayPenalties: winnerSide === "away" ? 1 : 0,
+      };
+      newMap.set(matchId, updated);
+      return newMap;
+    });
+
+    const entry = (predictions.get(matchId) || { matchId, homeScore: "", awayScore: "", homePenalties: "", awayPenalties: "" }) as PredictionEntry;
+    const updated: PredictionEntry = {
+      ...entry,
+      homePenalties: winnerSide === "home" ? 1 : 0,
+      awayPenalties: winnerSide === "away" ? 1 : 0,
+    };
     pendingRef.current.set(matchId, updated);
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -354,20 +521,168 @@ function PredictionsTab({ firebaseUid, tournamentGroups, knockoutMatches }: { fi
     return getKnockoutMatchIds(activeStage);
   }, [activeStage]);
 
+  // Resolve team names from our local dynamically-propagated prode matches
+  const prodeMatches = useMemo(() => {
+    // 1. Deep clone INITIAL_GROUPS
+    const clonedGroups = JSON.parse(JSON.stringify(INITIAL_GROUPS)) as Group[];
+
+    // 2. Overlay user predictions on clonedGroups
+    for (const group of clonedGroups) {
+      for (const match of group.matches) {
+        const pred = predictions.get(match.id);
+        if (pred && pred.homeScore !== "" && pred.awayScore !== "") {
+          match.homeScore = Number(pred.homeScore);
+          match.awayScore = Number(pred.awayScore);
+          match.finished = true;
+        } else {
+          match.homeScore = null;
+          match.awayScore = null;
+          match.finished = false;
+        }
+      }
+      // Recalculate standings for this group
+      const updated = recalculateGroupStats(group);
+      group.teams = updated.teams;
+    }
+
+    // 3. Generate R32 matches based on group standings predictions
+    const r32Matches = generateR32Matches(clonedGroups);
+
+    // 4. Set up all knockout matches structure
+    const allKnockouts = new Map<string, KnockoutMatch>();
+
+    // Add R32 matches
+    for (const m of r32Matches) {
+      allKnockouts.set(m.id, {
+        ...m,
+        homeScore: null,
+        awayScore: null,
+        winner: null
+      });
+    }
+
+    // Add R16, QF, SF, Final, 3rdPlace
+    const remainingDefs = [...R16_MATCHES, ...QF_MATCHES, ...SF_MATCHES, ...FINAL_MATCHES];
+
+    for (const def of remainingDefs) {
+      allKnockouts.set(def.id, {
+        id: def.id,
+        stage: def.id === "103" ? "3rdPlace" : (def.id === "104" ? "Final" : (Number(def.id) >= 101 ? "SF" : (Number(def.id) >= 97 ? "QF" : "R16"))),
+        homeTeam: { placeholder: def.home },
+        awayTeam: { placeholder: def.away },
+        homeScore: null,
+        awayScore: null,
+        winner: null,
+        nextMatchId: def.next || undefined,
+        utcDate: def.utcDate,
+        location: def.location
+      });
+    }
+
+    // 5. Sequential propagation (IDs 73 to 104)
+    const sortedIds = Array.from(allKnockouts.keys()).sort((a, b) => Number(a) - Number(b));
+    const matchResults = new Map<string, { winner: Team | null; loser: Team | null }>();
+
+    for (const id of sortedIds) {
+      const match = allKnockouts.get(id)!;
+
+      // Resolve homeTeam from previous matches if placeholder
+      if (match.homeTeam && "placeholder" in match.homeTeam) {
+        const ph = match.homeTeam.placeholder; // e.g. "W73" or "L101"
+        if (ph.startsWith("W") || ph.startsWith("L")) {
+          const sourceId = ph.substring(1);
+          const sourceRes = matchResults.get(sourceId);
+          if (sourceRes) {
+            match.homeTeam = ph.startsWith("W") ? sourceRes.winner : sourceRes.loser;
+          }
+        }
+      }
+
+      // Resolve awayTeam from previous matches if placeholder
+      if (match.awayTeam && "placeholder" in match.awayTeam) {
+        const ph = match.awayTeam.placeholder; // e.g. "W74" or "L102"
+        if (ph.startsWith("W") || ph.startsWith("L")) {
+          const sourceId = ph.substring(1);
+          const sourceRes = matchResults.get(sourceId);
+          if (sourceRes) {
+            match.awayTeam = ph.startsWith("W") ? sourceRes.winner : sourceRes.loser;
+          }
+        }
+      }
+
+      // Check user prediction for this match
+      const pred = predictions.get(id);
+      if (pred && pred.homeScore !== "" && pred.awayScore !== "") {
+        match.homeScore = Number(pred.homeScore);
+        match.awayScore = Number(pred.awayScore);
+        match.homePenalties = pred.homePenalties !== undefined && pred.homePenalties !== "" ? Number(pred.homePenalties) : null;
+        match.awayPenalties = pred.awayPenalties !== undefined && pred.awayPenalties !== "" ? Number(pred.awayPenalties) : null;
+
+        // Calculate winner/loser only if teams are real teams (not placeholders)
+        if (
+          match.homeTeam &&
+          !("placeholder" in match.homeTeam) &&
+          match.awayTeam &&
+          !("placeholder" in match.awayTeam)
+        ) {
+          const hTeam = match.homeTeam as Team;
+          const aTeam = match.awayTeam as Team;
+          const homeS = Number(pred.homeScore);
+          const awayS = Number(pred.awayScore);
+
+          let winner: Team | null = null;
+          let loser: Team | null = null;
+
+          if (homeS > awayS) {
+            winner = hTeam;
+            loser = aTeam;
+          } else if (awayS > homeS) {
+            winner = aTeam;
+            loser = hTeam;
+          } else {
+            // Tie-breaker: Check if user predicted penalties winner
+            if (pred.homePenalties === 1 && pred.awayPenalties === 0) {
+              winner = hTeam;
+              loser = aTeam;
+            } else if (pred.awayPenalties === 1 && pred.homePenalties === 0) {
+              winner = aTeam;
+              loser = hTeam;
+            } else {
+              // Fallback: FIFA ranking (lower is better)
+              const rHome = hTeam.ranking || 999;
+              const rAway = aTeam.ranking || 999;
+              if (rHome < rAway) {
+                winner = hTeam;
+                loser = aTeam;
+              } else {
+                winner = aTeam;
+                loser = hTeam;
+              }
+            }
+          }
+          match.winner = winner;
+          matchResults.set(id, { winner, loser });
+        }
+      }
+    }
+
+    return allKnockouts;
+  }, [predictions]);
+
   // Resolve team names from tournament context for knockout matches
   const resolvedTeamNames = useMemo(() => {
     const map = new Map<string, { home: string; away: string }>();
-    for (const km of knockoutMatches) {
+    for (const [id, km] of prodeMatches) {
       const homeName = km.homeTeam
-        ? ("placeholder" in km.homeTeam ? km.homeTeam.placeholder : km.homeTeam.name)
+        ? ("placeholder" in km.homeTeam ? formatPlaceholder(km.homeTeam.placeholder) : km.homeTeam.name)
         : "Por definir";
       const awayName = km.awayTeam
-        ? ("placeholder" in km.awayTeam ? km.awayTeam.placeholder : km.awayTeam.name)
+        ? ("placeholder" in km.awayTeam ? formatPlaceholder(km.awayTeam.placeholder) : km.awayTeam.name)
         : "Por definir";
-      map.set(km.id, { home: homeName, away: awayName });
+      map.set(id, { home: homeName, away: awayName });
     }
     return map;
-  }, [knockoutMatches]);
+  }, [prodeMatches]);
 
   if (loadingPredictions) {
     return (
@@ -461,7 +776,11 @@ function PredictionsTab({ firebaseUid, tournamentGroups, knockoutMatches }: { fi
               isLocked={isLocked}
               homeScore={pred?.homeScore ?? ""}
               awayScore={pred?.awayScore ?? ""}
+              homePenalties={pred?.homePenalties ?? ""}
+              awayPenalties={pred?.awayPenalties ?? ""}
               onScoreChange={handleScoreChange}
+              onPenaltiesWinnerChange={handlePenaltiesWinnerChange}
+              label={info?.label}
             />
           );
         })}
@@ -483,7 +802,11 @@ function ProdeMatchCard({
   isLocked,
   homeScore,
   awayScore,
+  homePenalties,
+  awayPenalties,
   onScoreChange,
+  onPenaltiesWinnerChange,
+  label,
 }: {
   matchId: string;
   homeTeamName: string;
@@ -492,7 +815,11 @@ function ProdeMatchCard({
   isLocked: boolean;
   homeScore: number | "";
   awayScore: number | "";
+  homePenalties?: number | "";
+  awayPenalties?: number | "";
   onScoreChange: (matchId: string, side: "home" | "away", val: string) => void;
+  onPenaltiesWinnerChange: (matchId: string, winnerSide: "home" | "away") => void;
+  label?: string;
 }) {
   const matchDate = utcDate ? new Date(utcDate) : null;
   const formattedDate = matchDate
@@ -502,6 +829,18 @@ function ProdeMatchCard({
     ? matchDate.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false })
     : "";
 
+  const adjustScore = (side: "home" | "away", delta: number) => {
+    if (isLocked) return;
+    const currentVal = side === "home" ? homeScore : awayScore;
+    const currentNum = currentVal === "" ? 0 : Number(currentVal);
+    const newVal = Math.max(0, currentNum + delta);
+    onScoreChange(matchId, side, newVal.toString());
+  };
+
+  const isKnockout = /^\d+$/.test(matchId);
+  const isTie = homeScore !== "" && awayScore !== "" && homeScore === awayScore;
+  const showPenaltiesSelector = isKnockout && isTie;
+
   return (
     <div
       className={clsx(
@@ -510,6 +849,13 @@ function ProdeMatchCard({
       )}
     >
       <div className="p-3 sm:p-4">
+        {label && (
+          <div className="mb-2 pb-1.5 border-b border-slate-100 dark:border-slate-700/50 text-center">
+            <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+              {label}
+            </span>
+          </div>
+        )}
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           {/* Home Team */}
           <div className="flex items-center gap-2.5 min-w-0">
@@ -520,28 +866,74 @@ function ProdeMatchCard({
           </div>
 
           {/* Score Inputs */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            <input
-              type="number"
-              min="0"
-              max="20"
-              placeholder="-"
-              disabled={isLocked}
-              value={homeScore}
-              onChange={(e) => onScoreChange(matchId, "home", e.target.value)}
-              className="w-10 h-10 text-center text-sm font-bold bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            />
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1">
+              {!isLocked && (
+                <div className="flex flex-col gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => adjustScore("home", 1)}
+                    className="flex items-center justify-center w-4 h-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 active:scale-90 rounded text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 transition-all"
+                    title="Aumentar"
+                  >
+                    <Plus className="w-2.5 h-2.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => adjustScore("home", -1)}
+                    className="flex items-center justify-center w-4 h-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 active:scale-90 rounded text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 transition-all"
+                    title="Disminuir"
+                  >
+                    <Minus className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+              )}
+              <input
+                type="number"
+                min="0"
+                max="20"
+                placeholder="-"
+                disabled={isLocked}
+                value={homeScore}
+                onChange={(e) => onScoreChange(matchId, "home", e.target.value)}
+                className="w-10 h-10 text-center text-sm font-bold bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+            </div>
+
             <span className="text-slate-300 dark:text-slate-600 font-bold text-xs">:</span>
-            <input
-              type="number"
-              min="0"
-              max="20"
-              placeholder="-"
-              disabled={isLocked}
-              value={awayScore}
-              onChange={(e) => onScoreChange(matchId, "away", e.target.value)}
-              className="w-10 h-10 text-center text-sm font-bold bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            />
+
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                min="0"
+                max="20"
+                placeholder="-"
+                disabled={isLocked}
+                value={awayScore}
+                onChange={(e) => onScoreChange(matchId, "away", e.target.value)}
+                className="w-10 h-10 text-center text-sm font-bold bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              {!isLocked && (
+                <div className="flex flex-col gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => adjustScore("away", 1)}
+                    className="flex items-center justify-center w-4 h-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 active:scale-90 rounded text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 transition-all"
+                    title="Aumentar"
+                  >
+                    <Plus className="w-2.5 h-2.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => adjustScore("away", -1)}
+                    className="flex items-center justify-center w-4 h-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 active:scale-90 rounded text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 transition-all"
+                    title="Disminuir"
+                  >
+                    <Minus className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+              )}
+            </div>
             {isLocked && <Lock className="w-3.5 h-3.5 text-slate-400 ml-1" />}
           </div>
 
@@ -553,6 +945,43 @@ function ProdeMatchCard({
             <TeamFlag teamName={awayTeamName} className="w-7 h-5 shrink-0 rounded-sm shadow-sm" />
           </div>
         </div>
+
+        {/* Penalties Winner Selector */}
+        {showPenaltiesSelector && (
+          <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-700/50 flex flex-col items-center gap-1.5 animate-fade-in">
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+              ¿Quién avanza por penales?
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={isLocked}
+                onClick={() => onPenaltiesWinnerChange(matchId, "home")}
+                className={clsx(
+                  "px-3 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer",
+                  homePenalties === 1 && awayPenalties === 0
+                    ? "bg-emerald-500 border-emerald-500 text-white shadow-xs"
+                    : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+                )}
+              >
+                {homeTeamName}
+              </button>
+              <button
+                type="button"
+                disabled={isLocked}
+                onClick={() => onPenaltiesWinnerChange(matchId, "away")}
+                className={clsx(
+                  "px-3 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer",
+                  awayPenalties === 1 && homePenalties === 0
+                    ? "bg-emerald-500 border-emerald-500 text-white shadow-xs"
+                    : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+                )}
+              >
+                {awayTeamName}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Match Date & Time */}
         {matchDate && (
@@ -571,12 +1000,19 @@ function ProdeMatchCard({
 // ─── GROUPS TAB ───────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════
 
-function GroupsTab({ firebaseUid }: { firebaseUid: string }) {
+function GroupsTab({
+  firebaseUid,
+  selectedGroupId,
+  setSelectedGroupId,
+}: {
+  firebaseUid: string;
+  selectedGroupId: string | null;
+  setSelectedGroupId: (groupId: string | null) => void;
+}) {
   const [groups, setGroups] = useState<GroupData[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [groupDetail, setGroupDetail] = useState<GroupDetailData | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
@@ -667,8 +1103,7 @@ function GroupsTab({ firebaseUid }: { firebaseUid: string }) {
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
-  const openGroupDetail = async (groupId: string) => {
-    setSelectedGroupId(groupId);
+  const openGroupDetail = useCallback(async (groupId: string) => {
     setLoadingDetail(true);
     try {
       const res = await fetch(`/api/prode/groups/${groupId}`);
@@ -681,7 +1116,15 @@ function GroupsTab({ firebaseUid }: { firebaseUid: string }) {
     } finally {
       setLoadingDetail(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (selectedGroupId) {
+      openGroupDetail(selectedGroupId);
+    } else {
+      setGroupDetail(null);
+    }
+  }, [selectedGroupId, openGroupDetail]);
 
   // Group detail view
   if (selectedGroupId) {
@@ -871,7 +1314,7 @@ function GroupsTab({ firebaseUid }: { firebaseUid: string }) {
           {groups.map((group) => (
             <button
               key={group._id}
-              onClick={() => openGroupDetail(group._id)}
+              onClick={() => setSelectedGroupId(group._id)}
               className="w-full bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 flex items-center gap-4 hover:bg-slate-50 dark:hover:bg-slate-750 transition-all text-left group"
             >
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shrink-0 shadow-sm">

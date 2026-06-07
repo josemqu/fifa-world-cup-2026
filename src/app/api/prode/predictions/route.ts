@@ -55,7 +55,7 @@ export async function GET(request: Request) {
 
     const predictions = await ProdePrediction.find(
       { firebaseUid },
-      { matchId: 1, homeScore: 1, awayScore: 1, _id: 0 }
+      { matchId: 1, homeScore: 1, awayScore: 1, homePenalties: 1, awayPenalties: 1, _id: 0 }
     );
 
     return NextResponse.json({ success: true, data: predictions });
@@ -106,6 +106,8 @@ export async function POST(request: Request) {
             $set: {
               homeScore: pred.homeScore,
               awayScore: pred.awayScore,
+              homePenalties: pred.homePenalties,
+              awayPenalties: pred.awayPenalties,
             },
           },
           upsert: true,

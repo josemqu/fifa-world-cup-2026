@@ -5,6 +5,8 @@ export interface IProdePrediction extends Document {
   matchId: string;
   homeScore: number;
   awayScore: number;
+  homePenalties?: number;
+  awayPenalties?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -15,6 +17,8 @@ const ProdePredictionSchema: Schema = new Schema(
     matchId: { type: String, required: true, index: true },
     homeScore: { type: Number, required: true },
     awayScore: { type: Number, required: true },
+    homePenalties: { type: Number },
+    awayPenalties: { type: Number },
   },
   {
     timestamps: true,
