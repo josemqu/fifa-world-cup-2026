@@ -2,8 +2,8 @@ import { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "World Cup 2026 Simulator",
-    short_name: "World Cup 2026",
+    name: "Mundial de Selecciones 2026",
+    short_name: "Mundial 2026",
     description: "Fixture interactivo y simulador para el Mundial 2026",
     start_url: "/",
     display: "standalone",

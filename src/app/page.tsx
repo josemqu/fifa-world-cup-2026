@@ -18,7 +18,7 @@ export default function Home() {
               </p>
 
               <h2 className="mt-6 text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                World Cup{" "}
+                Mundial de Selecciones{" "}
                 <span className="text-blue-600 dark:text-blue-400">2026</span>
               </h2>
 

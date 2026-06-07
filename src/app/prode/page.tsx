@@ -1312,10 +1312,18 @@ function GroupsTab({
       ) : groups.length > 0 ? (
         <div className="space-y-2">
           {groups.map((group) => (
-            <button
+            <div
               key={group._id}
+              role="button"
+              tabIndex={0}
               onClick={() => setSelectedGroupId(group._id)}
-              className="w-full bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 flex items-center gap-4 hover:bg-slate-50 dark:hover:bg-slate-750 transition-all text-left group"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setSelectedGroupId(group._id);
+                }
+              }}
+              className="w-full bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 flex items-center gap-4 hover:bg-slate-50 dark:hover:bg-slate-750 transition-all text-left group cursor-pointer"
             >
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shrink-0 shadow-sm">
                 <Users className="w-5 h-5 text-white" />
@@ -1333,6 +1341,7 @@ function GroupsTab({
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <button
+                  type="button"
                   onClick={(e) => { e.stopPropagation(); handleCopyCode(group.code); }}
                   className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors"
                   title="Copiar código"
@@ -1345,7 +1354,7 @@ function GroupsTab({
                 </button>
                 <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-slate-500 dark:group-hover:text-slate-400 transition-colors" />
               </div>
-            </button>
+            </div>
           ))}
         </div>
       ) : (

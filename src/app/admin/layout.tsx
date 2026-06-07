@@ -83,7 +83,7 @@ export default function AdminLayout({
             </div>
             <div>
               <p className="text-sm font-bold text-white">Admin Panel</p>
-              <p className="text-xs text-slate-500">World Cup 2026</p>
+              <p className="text-xs text-slate-500">Mundial 2026</p>
             </div>
           </div>
         </div>

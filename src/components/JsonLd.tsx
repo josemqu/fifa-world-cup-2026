@@ -2,7 +2,7 @@ export const JsonLd = () => {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: "World Cup 2026 Simulator",
+    name: "Mundial de Selecciones 2026",
     applicationCategory: "SportsApplication",
     operatingSystem: "Any",
     description:

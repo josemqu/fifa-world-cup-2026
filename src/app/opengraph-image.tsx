@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
 
-export const alt = "World Cup 2026 Simulator";
+export const alt = "Mundial de Selecciones 2026";
 export const size = {
   width: 1200,
   height: 630,
@@ -54,9 +54,9 @@ export default async function Image() {
             <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
           </svg>
         </div>
-        <div style={{ fontSize: 80, marginBottom: 20 }}>World Cup 2026</div>
+        <div style={{ fontSize: 60, marginBottom: 20 }}>Mundial de Selecciones 2026</div>
         <div style={{ fontSize: 40, opacity: 0.8 }}>
-          Simulator & Fixture Interactivo
+          Simulador y Fixture Interactivo
         </div>
         <div
           style={{
