@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/og-image.png",
+        url: "/opengraph-image",
         width: 1200,
         height: 630,
         alt: "Mundial de Selecciones 2026 Fixture Preview",
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
     title: "Mundial de Selecciones 2026 - Fixture Interactivo",
     description:
       "Simula el camino al título del Mundial 2026. Haz tus predicciones ahora.",
-    images: ["/og-image.png"],
+    images: ["/opengraph-image"],
     creator: "@jose",
   },
   icons: {
