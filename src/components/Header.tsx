@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
-import { LogOut, User as UserIcon, Settings, ChevronDown, Home, Calendar, Trophy, GitFork, Swords, Sparkles, ShieldAlert, Target } from "lucide-react";
+import { LogOut, User as UserIcon, Settings, ChevronDown, Home, Calendar, Trophy, GitFork, Swords, Sparkles, ShieldAlert, Target, MessageSquare } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useRef, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
@@ -31,6 +31,7 @@ export function Header() {
   const isPredictions = pathname === "/predictions";
   const isMatchups = pathname === "/matchups";
   const isProde = pathname === "/prode";
+  const isFeedback = pathname === "/feedback";
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -243,8 +244,13 @@ export function Header() {
                   <div className="relative" ref={dropdownRef}>
                     <button
                       onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                      className="flex items-center gap-3 bg-white dark:bg-slate-800 p-1.5 pr-3 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                      className="relative flex items-center gap-3 bg-white dark:bg-slate-800 p-1.5 pr-3 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                     >
+                      {/* Pulsing indicator dot */}
+                      <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
+                      </span>
                       {user.photoURL ? (
                         <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 relative ring-1 ring-slate-200 dark:ring-slate-700">
                           <Image
@@ -302,6 +308,20 @@ export function Header() {
                             <Settings className="w-4 h-4" />
                             Editar Perfil
                           </button>
+                          <Link
+                            href="/feedback"
+                            onClick={() => setIsDropdownOpen(false)}
+                            className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg flex items-center justify-between gap-2 transition-colors group"
+                          >
+                            <div className="flex items-center gap-2">
+                              <MessageSquare className="w-4 h-4 text-blue-500" />
+                              <span>Feedback</span>
+                            </div>
+                            <span className="relative flex h-2 w-2 shrink-0">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                            </span>
+                          </Link>
                           <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
                           
                           {mounted && (

@@ -17,6 +17,14 @@ export function Footer() {
             <Link href="/privacidad" className="hover:text-slate-900 dark:hover:text-white transition-colors">
               Privacidad
             </Link>
+            <span className="opacity-30">|</span>
+            <Link href="/feedback" className="hover:text-slate-900 dark:hover:text-white transition-colors flex items-center gap-1">
+              <span>Feedback</span>
+              <span className="relative flex h-1.5 w-1.5 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500"></span>
+              </span>
+            </Link>
           </div>
           <span className="opacity-30 hidden md:inline">|</span>
           <span className="hidden md:inline">

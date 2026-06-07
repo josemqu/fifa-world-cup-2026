@@ -37,12 +37,16 @@ export function GoogleOneTap() {
 
       if (window.google && !initialized.current && !user) {
         try {
+          const isLocalhost =
+            window.location.hostname === "localhost" ||
+            window.location.hostname === "127.0.0.1";
+
           window.google.accounts.id.initialize({
             client_id: clientId,
             callback: handleCredentialResponse,
             auto_select: false,
             cancel_on_tap_outside: true,
-            use_fedcm_for_prompt: true,
+            use_fedcm_for_prompt: !isLocalhost,
           });
 
           window.google.accounts.id.prompt();
