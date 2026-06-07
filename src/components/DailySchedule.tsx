@@ -3,7 +3,7 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useCurrentTime } from "@/hooks/useCurrentTime";
-import { Group, Match, KnockoutMatch, Team } from "@/data/types";
+import { Group, KnockoutMatch, Team } from "@/data/types";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { MatchDateTime } from "@/components/ui/MatchDateTime";
 import { Tooltip } from "@/components/ui/Tooltip";
@@ -154,7 +154,7 @@ export function DailySchedule({
     return { todayKey: today, yesterdayKey: yesterday, tomorrowKey: tomorrow };
   }, [now]);
 
-  const getInitialDayIndex = useCallback(() => {
+  const currentDayIndex = useMemo(() => {
     if (sortedDays.length === 0) return 0;
     
     // Check if a specific day is requested via query param
@@ -176,41 +176,44 @@ export function DailySchedule({
   }, [sortedDays, todayKey, searchParams]);
 
   const [mounted, setMounted] = useState(false);
-  const [currentDayIndex, setCurrentDayIndex] = useState(0);
   const [direction, setDirection] = useState<'left' | 'right' | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
+  const prevDayIndexRef = useRef<number | null>(null);
 
   // Initial load sync
   useEffect(() => {
     if (!mounted) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMounted(true);
-      const initialIndex = getInitialDayIndex();
-      setCurrentDayIndex(initialIndex);
       
       // If day is not present in URL, set it once quietly
-      if (!searchParams.has("day") && sortedDays[initialIndex]) {
+      if (!searchParams.has("day") && sortedDays[currentDayIndex]) {
         const params = new URLSearchParams(searchParams.toString());
-        params.set("day", sortedDays[initialIndex]);
+        params.set("day", sortedDays[currentDayIndex]);
         router.replace(`/schedule?${params.toString()}`, { scroll: false });
       }
     }
-  }, [getInitialDayIndex, mounted, searchParams, sortedDays, router]);
+  }, [mounted, searchParams, sortedDays, router, currentDayIndex]);
 
-  // Sync selected day and match highlighting from search parameters dynamically (handles subsequent navigations)
+  // Track animation direction based on derived currentDayIndex change
   useEffect(() => {
     if (mounted) {
-      const requestedDay = searchParams.get("day");
-      if (requestedDay) {
-        const dayIndex = sortedDays.indexOf(requestedDay);
-        if (dayIndex !== -1 && dayIndex !== currentDayIndex) {
-          setDirection(dayIndex > currentDayIndex ? "right" : "left");
-          setCurrentDayIndex(dayIndex);
-        }
+      const prev = prevDayIndexRef.current;
+      if (prev !== null && currentDayIndex !== prev) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setDirection(currentDayIndex > prev ? "right" : "left");
       }
+      prevDayIndexRef.current = currentDayIndex;
+    }
+  }, [currentDayIndex, mounted]);
 
+  // Sync match highlighting from search parameters dynamically
+  useEffect(() => {
+    if (mounted) {
       const matchId = searchParams.get("match");
       if (matchId) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setActiveHighlightId(matchId);
         const timer = setTimeout(() => {
           setActiveHighlightId(null);
@@ -218,14 +221,11 @@ export function DailySchedule({
         return () => clearTimeout(timer);
       }
     }
-  }, [searchParams, sortedDays, mounted, currentDayIndex]);
+  }, [searchParams, mounted]);
 
   const goToPrevDay = useCallback(() => {
     if (currentDayIndex > 0) {
-      setDirection("left");
       const nextIndex = currentDayIndex - 1;
-      setCurrentDayIndex(nextIndex);
-      
       const newDay = sortedDays[nextIndex];
       const params = new URLSearchParams(searchParams.toString());
       params.set("day", newDay);
@@ -237,10 +237,7 @@ export function DailySchedule({
 
   const goToNextDay = useCallback(() => {
     if (currentDayIndex < sortedDays.length - 1) {
-      setDirection("right");
       const nextIndex = currentDayIndex + 1;
-      setCurrentDayIndex(nextIndex);
-      
       const newDay = sortedDays[nextIndex];
       const params = new URLSearchParams(searchParams.toString());
       params.set("day", newDay);
@@ -279,18 +276,14 @@ export function DailySchedule({
   const goToToday = useCallback(() => {
     let todayIndex = sortedDays.indexOf(todayKey);
     if (todayIndex === -1) {
-      // Find the closest future day
       todayIndex = sortedDays.findIndex((d) => d >= todayKey);
     }
     if (todayIndex === -1) {
-      // All days are past, show the last day
       todayIndex = sortedDays.length - 1;
     }
 
     const todayDay = sortedDays[todayIndex];
     if (todayIndex !== currentDayIndex) {
-      setDirection(todayIndex > currentDayIndex ? "right" : "left");
-      setCurrentDayIndex(todayIndex);
       const params = new URLSearchParams(searchParams.toString());
       params.set("day", todayDay);
       params.delete("match");
