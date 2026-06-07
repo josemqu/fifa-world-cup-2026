@@ -42,6 +42,8 @@ import {
   Target,
   Zap,
   ShieldCheck,
+  Share2,
+  AlertTriangle,
 } from "lucide-react";
 
 type Tab = "predictions" | "groups" | "leaderboard";
@@ -193,6 +195,55 @@ function ProdePageContent() {
     updateUrl(activeTab, activeStage, groupId);
   };
 
+  // Auto-join state
+  const [autoJoining, setAutoJoining] = useState(false);
+  const [autoJoinError, setAutoJoinError] = useState<string | null>(null);
+  const [autoJoinSuccess, setAutoJoinSuccess] = useState<string | null>(null);
+  const processedCodesRef = useRef<Set<string>>(new Set());
+
+  // Effect for auto-joining a group via link
+  useEffect(() => {
+    const autoJoin = async () => {
+      const joinCode = searchParams.get("joinCode");
+      if (!user || !joinCode || autoJoining || processedCodesRef.current.has(joinCode.toUpperCase())) return;
+
+      processedCodesRef.current.add(joinCode.toUpperCase());
+      setAutoJoining(true);
+      setAutoJoinError(null);
+      setAutoJoinSuccess(null);
+
+      try {
+        const res = await fetch("/api/prode/groups/join", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            firebaseUid: user.uid,
+            code: joinCode.trim().toUpperCase(),
+          }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setAutoJoinSuccess(`¡Te uniste al grupo "${data.data.name}"!`);
+          setActiveTab("groups");
+          setSelectedGroupId(data.data._id);
+          setTimeout(() => setAutoJoinSuccess(null), 5000);
+        } else {
+          setAutoJoinError(data.error || "No se pudo unir al grupo.");
+          setTimeout(() => setAutoJoinError(null), 5000);
+          updateUrl(activeTab, activeStage, selectedGroupId);
+        }
+      } catch (err) {
+        console.error("Error in auto-join:", err);
+        setAutoJoinError("Error de conexión al intentar unirse al grupo.");
+        setTimeout(() => setAutoJoinError(null), 5000);
+        updateUrl(activeTab, activeStage, selectedGroupId);
+      } finally {
+        setAutoJoining(false);
+      }
+    };
+    autoJoin();
+  }, [user, searchParams, activeTab, activeStage, selectedGroupId, updateUrl, autoJoining]);
+
   // Sync from URL changes (e.g. back button / history navigation)
   useEffect(() => {
     const tab = (searchParams.get("tab") as Tab) || "predictions";
@@ -322,6 +373,51 @@ function ProdePageContent() {
           {activeTab === "leaderboard" && (
             <motion.div key="leaderboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
               <LeaderboardTab />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Floating Toast Notification Container */}
+      <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+        <AnimatePresence>
+          {autoJoinSuccess && (
+            <motion.div
+              initial={{ opacity: 0, y: 50, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.9 }}
+              className="bg-emerald-500 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 font-semibold pointer-events-auto border border-emerald-400"
+            >
+              <Check className="w-5 h-5 shrink-0" />
+              <div className="flex-1 text-sm">{autoJoinSuccess}</div>
+              <button onClick={() => setAutoJoinSuccess(null)} className="hover:opacity-80 text-white cursor-pointer ml-1">
+                ✕
+              </button>
+            </motion.div>
+          )}
+          {autoJoinError && (
+            <motion.div
+              initial={{ opacity: 0, y: 50, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.9 }}
+              className="bg-red-500 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 font-semibold pointer-events-auto border border-red-400"
+            >
+              <AlertTriangle className="w-5 h-5 shrink-0" />
+              <div className="flex-1 text-sm">{autoJoinError}</div>
+              <button onClick={() => setAutoJoinError(null)} className="hover:opacity-80 text-white cursor-pointer ml-1">
+                ✕
+              </button>
+            </motion.div>
+          )}
+          {autoJoining && (
+            <motion.div
+              initial={{ opacity: 0, y: 50, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.9 }}
+              className="bg-blue-600 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 font-semibold pointer-events-auto border border-blue-500"
+            >
+              <Loader2 className="w-5 h-5 animate-spin shrink-0" />
+              <div className="flex-1 text-sm">Uniéndote al grupo...</div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -1000,6 +1096,16 @@ function ProdeMatchCard({
 // ─── GROUPS TAB ───────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════
 
+const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    {...props}
+  >
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.458 5.704 1.459h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+  </svg>
+);
+
 function GroupsTab({
   firebaseUid,
   selectedGroupId,
@@ -1027,6 +1133,40 @@ function GroupsTab({
 
   // Clipboard copy state
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [copiedLinkCode, setCopiedLinkCode] = useState<string | null>(null);
+
+  const handleShareWhatsApp = (name: string, code: string) => {
+    const inviteLink = `${window.location.origin}/prode?joinCode=${code}`;
+    const text = `🏆 ¡Sumate a mi grupo de prode *${name}* para el Mundial 2026! ⚽\n\n👉 Hacé clic en este link para unirte automáticamente:\n${inviteLink}\n\nO ingresá el código de invitación desde la app: *${code}*`;
+    const encodedText = encodeURIComponent(text);
+    window.open(`https://wa.me/?text=${encodedText}`, "_blank");
+  };
+
+  const handleShareLink = async (name: string, code: string) => {
+    const inviteLink = `${window.location.origin}/prode?joinCode=${code}`;
+    const shareData = {
+      title: `Prode Mundial 2026 - Grupo ${name}`,
+      text: `¡Sumate a mi grupo de prode "${name}" para el Mundial 2026!`,
+      url: inviteLink,
+    };
+
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (err) {
+        console.log("Error sharing:", err);
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setCopiedLinkCode(code);
+      setTimeout(() => setCopiedLinkCode(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy link:", err);
+    }
+  };
 
   const loadGroups = useCallback(async () => {
     try {
@@ -1146,26 +1286,55 @@ function GroupsTab({
           <div className="space-y-4">
             {/* Group Header */}
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white">{groupDetail.group.name}</h3>
                   <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
                     {groupDetail.group.members.length} miembros
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-sm bg-slate-100 dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-300">
-                    {groupDetail.group.code}
-                  </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center bg-slate-100 dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <span className="font-mono text-sm font-bold text-slate-700 dark:text-slate-300 mr-2">
+                      Código: {groupDetail.group.code}
+                    </span>
+                    <button
+                      onClick={() => handleCopyCode(groupDetail.group.code)}
+                      className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition-colors cursor-pointer"
+                      title="Copiar código"
+                    >
+                      {copiedCode === groupDetail.group.code ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5 text-slate-400" />
+                      )}
+                    </button>
+                  </div>
+
                   <button
-                    onClick={() => handleCopyCode(groupDetail.group.code)}
-                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                    title="Copiar código"
+                    onClick={() => handleShareWhatsApp(groupDetail.group.name, groupDetail.group.code)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#25D366] hover:bg-[#20ba56] text-white text-xs font-bold rounded-lg transition-colors shadow-sm cursor-pointer"
+                    title="Compartir por WhatsApp"
                   >
-                    {copiedCode === groupDetail.group.code ? (
-                      <Check className="w-4 h-4 text-emerald-500" />
+                    <WhatsAppIcon className="w-3.5 h-3.5" />
+                    <span>WhatsApp</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleShareLink(groupDetail.group.name, groupDetail.group.code)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm cursor-pointer"
+                    title="Compartir Link de Invitación"
+                  >
+                    {copiedLinkCode === groupDetail.group.code ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>¡Copiado!</span>
+                      </>
                     ) : (
-                      <Copy className="w-4 h-4 text-slate-400" />
+                      <>
+                        <Share2 className="w-3.5 h-3.5" />
+                        <span>Compartir Link</span>
+                      </>
                     )}
                   </button>
                 </div>
@@ -1339,11 +1508,31 @@ function GroupsTab({
                   <span>{group.members.length} miembros</span>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); handleShareWhatsApp(group.name, group.code); }}
+                  className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors cursor-pointer"
+                  title="Compartir por WhatsApp"
+                >
+                  <WhatsAppIcon className="w-4 h-4 text-[#25D366]" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); handleShareLink(group.name, group.code); }}
+                  className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors cursor-pointer"
+                  title="Compartir Link de Invitación"
+                >
+                  {copiedLinkCode === group.code ? (
+                    <Check className="w-4 h-4 text-emerald-500" />
+                  ) : (
+                    <Share2 className="w-4 h-4 text-slate-400" />
+                  )}
+                </button>
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); handleCopyCode(group.code); }}
-                  className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors"
+                  className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors cursor-pointer"
                   title="Copiar código"
                 >
                   {copiedCode === group.code ? (
