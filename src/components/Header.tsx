@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
-import { LogOut, User as UserIcon, Settings, ChevronDown, Home, Calendar, Trophy, GitFork, Sparkles, ShieldAlert, Target, MessageSquare, Menu, X, Github } from "lucide-react";
+import { LogOut, User as UserIcon, Settings, ChevronDown, Home, Calendar, Trophy, GitFork, Sparkles, ShieldAlert, Target, MessageSquare, Menu, X, Github, Activity } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useRef, useEffect, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -252,16 +252,30 @@ export function Header() {
                     {isDropdownOpen && (
                       <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50">
                         <div className="p-1">
-                          {dbUser?.role === "admin" && (
+                          {(dbUser?.role === "admin" || (user?.email?.toLowerCase().includes("mailjmq") || dbUser?.email?.toLowerCase().includes("mailjmq"))) && (
                             <>
-                              <Link
-                                href="/admin"
-                                onClick={() => setIsDropdownOpen(false)}
-                                className="w-full text-left px-3 py-2 text-sm text-indigo-600 dark:text-indigo-400 font-bold hover:bg-slate-100/80 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2 transition-colors"
-                              >
-                                <ShieldAlert className="w-4 h-4 text-indigo-500" />
-                                Panel de Admin
-                              </Link>
+                              {dbUser?.role === "admin" && (
+                                <Link
+                                  href="/admin"
+                                  onClick={() => setIsDropdownOpen(false)}
+                                  className="w-full text-left px-3 py-2 text-sm text-indigo-600 dark:text-indigo-400 font-bold hover:bg-slate-100/80 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2 transition-colors"
+                                >
+                                  <ShieldAlert className="w-4 h-4 text-indigo-500" />
+                                  Panel de Admin
+                                </Link>
+                              )}
+                              {(dbUser?.role === "admin" || user?.email?.toLowerCase().includes("mailjmq") || dbUser?.email?.toLowerCase().includes("mailjmq")) && (
+                                <button
+                                  onClick={() => {
+                                    setIsDropdownOpen(false);
+                                    window.dispatchEvent(new Event("open-live-simulation"));
+                                  }}
+                                  className="w-full text-left px-3 py-2 text-sm text-blue-600 dark:text-blue-400 font-bold hover:bg-slate-100/80 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2 transition-colors"
+                                >
+                                  <Activity className="w-4 h-4 text-blue-500 animate-pulse" />
+                                  Simulación en Vivo
+                                </button>
+                              )}
                               <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
                             </>
                           )}
