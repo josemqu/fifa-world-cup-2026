@@ -26,8 +26,7 @@ export function Header() {
 
   const isHome = pathname === "/";
   const isSchedule = pathname === "/schedule";
-  const isGroups = pathname === "/groups";
-  const isKnockout = pathname === "/knockout";
+  const isFixture = pathname === "/fixture";
   const isPredictions = pathname === "/predictions";
   const isProde = pathname === "/prode";
   const isFeedback = pathname === "/feedback";
@@ -133,40 +132,22 @@ export function Header() {
                 <span className="relative z-10">Cronograma</span>
               </Link>
               <Link
-                href="/groups"
+                href="/fixture"
                 className={clsx(
                   "relative px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center focus:outline-none transition-all duration-200 whitespace-nowrap",
-                  isGroups
+                  isFixture
                     ? "text-blue-600 dark:text-blue-100"
                     : "text-slate-500 dark:text-slate-400 hover:bg-white/20 hover:text-slate-700 dark:hover:text-slate-200"
                 )}
               >
-                {isGroups && (
+                {isFixture && (
                   <motion.div
                     layoutId="activeTab"
                     className="absolute inset-0 bg-white dark:bg-slate-700 rounded-lg shadow-sm"
                     transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                   />
                 )}
-                <span className="relative z-10">Grupos</span>
-              </Link>
-              <Link
-                href="/knockout"
-                className={clsx(
-                  "relative px-5 rounded-lg py-2 text-xs font-bold leading-5 text-center focus:outline-none transition-all duration-200 whitespace-nowrap",
-                  isKnockout
-                    ? "text-blue-600 dark:text-blue-100"
-                    : "text-slate-500 dark:text-slate-400 hover:bg-white/20 hover:text-slate-700 dark:hover:text-slate-200"
-                )}
-              >
-                {isKnockout && (
-                  <motion.div
-                    layoutId="activeTab"
-                    className="absolute inset-0 bg-white dark:bg-slate-700 rounded-lg shadow-sm"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                  />
-                )}
-                <span className="relative z-10">Llaves</span>
+                <span className="relative z-10">Fixture</span>
               </Link>
 
               <Link
@@ -374,31 +355,19 @@ export function Header() {
           )}
         >
           <Calendar className="w-5 h-5" />
-          <span className="text-[10px] font-semibold">Fixture</span>
+          <span className="text-[10px] font-semibold">Cronograma</span>
         </Link>
         <Link
-          href="/groups"
+          href="/fixture"
           className={clsx(
             "flex flex-col items-center gap-1 py-1 px-2 text-center transition-colors rounded-lg",
-            isGroups
+            isFixture
               ? "text-blue-600 dark:text-blue-400 font-bold"
               : "text-slate-500 dark:text-slate-400"
           )}
         >
           <Trophy className="w-5 h-5" />
-          <span className="text-[10px] font-semibold">Grupos</span>
-        </Link>
-        <Link
-          href="/knockout"
-          className={clsx(
-            "flex flex-col items-center gap-1 py-1 px-2 text-center transition-colors rounded-lg",
-            isKnockout
-              ? "text-blue-600 dark:text-blue-400 font-bold"
-              : "text-slate-500 dark:text-slate-400"
-          )}
-        >
-          <GitFork className="w-5 h-5" />
-          <span className="text-[10px] font-semibold">Llaves</span>
+          <span className="text-[10px] font-semibold">Fixture</span>
         </Link>
 
         <Link
