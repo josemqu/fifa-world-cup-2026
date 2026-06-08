@@ -53,7 +53,7 @@ export default function Home() {
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600/80 dark:text-blue-400/80 mb-2">
                 Faltan para el Kickoff
               </span>
-              <Countdown targetDate="2026-06-11T16:00:00Z" />
+              <Countdown targetDate="2026-06-11T19:00:00Z" />
             </div>
           </div>
         </div>
