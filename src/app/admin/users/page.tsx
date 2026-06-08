@@ -145,7 +145,7 @@ export default function AdminUsersPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/50 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 <th className="px-6 py-4">Usuario</th>
                 <th className="px-6 py-4">Ubicación / Favorito</th>
                 <th className="px-6 py-4 text-center">Perfil</th>
@@ -278,7 +278,7 @@ export default function AdminUsersPage() {
                             "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all",
                             u.predictionCount > 0 && u.firebaseUid !== dbUser?.firebaseUid
                               ? "bg-indigo-600/10 hover:bg-indigo-600 text-indigo-600 dark:text-indigo-400 hover:text-white dark:hover:text-white border border-indigo-500/20 cursor-pointer"
-                              : "bg-slate-100 dark:bg-slate-850/40 text-slate-400 dark:text-slate-600 border border-slate-200 dark:border-slate-800/20 cursor-not-allowed"
+                              : "bg-slate-100 dark:bg-slate-800/40 text-slate-450 dark:text-slate-600 border border-slate-200 dark:border-slate-800/20 cursor-not-allowed"
                           )}
                           title={
                             u.firebaseUid === dbUser?.firebaseUid

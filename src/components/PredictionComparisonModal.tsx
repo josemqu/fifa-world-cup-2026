@@ -497,32 +497,32 @@ export function PredictionComparisonModal({
             ) : (
               <>
                 {/* Stats Summary Widget */}
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 bg-slate-50 dark:bg-slate-850/40 p-4 border border-slate-200 dark:border-slate-800 rounded-2xl">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 bg-slate-50 dark:bg-slate-800/40 p-4 border border-slate-200 dark:border-slate-800 rounded-2xl">
                   <div className="flex items-center gap-3 p-2 border-r border-slate-200 dark:border-slate-800/60 sm:last:border-0">
                     <Award className="w-8 h-8 text-indigo-400" />
                     <div>
-                      <p className="text-[10px] uppercase text-slate-505 dark:text-slate-500 font-bold tracking-wider">Marcador Exacto</p>
+                      <p className="text-[10px] uppercase text-slate-500 dark:text-slate-500 font-bold tracking-wider">Marcador Exacto</p>
                       <p className="text-lg font-extrabold text-slate-900 dark:text-white">{stats.exactMatches}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-2 border-r border-slate-200 dark:border-slate-800/60 sm:last:border-0">
                     <TrendingUp className="w-8 h-8 text-emerald-400" />
                     <div>
-                      <p className="text-[10px] uppercase text-slate-505 dark:text-slate-500 font-bold tracking-wider">Ganador/Empate</p>
+                      <p className="text-[10px] uppercase text-slate-500 dark:text-slate-500 font-bold tracking-wider">Ganador/Empate</p>
                       <p className="text-lg font-extrabold text-slate-900 dark:text-white">{stats.outcomeMatches}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-2 border-r border-slate-200 dark:border-slate-800/60 sm:last:border-0">
                     <AlertCircle className="w-8 h-8 text-amber-500" />
                     <div>
-                      <p className="text-[10px] uppercase text-slate-505 dark:text-slate-500 font-bold tracking-wider">Diferentes</p>
+                      <p className="text-[10px] uppercase text-slate-500 dark:text-slate-500 font-bold tracking-wider">Diferentes</p>
                       <p className="text-lg font-extrabold text-slate-900 dark:text-white">{stats.differs}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-2 sm:last:border-0">
                     <Flame className="w-8 h-8 text-cyan-400" />
                     <div>
-                      <p className="text-[10px] uppercase text-slate-505 dark:text-slate-500 font-bold tracking-wider">Coincidencia</p>
+                      <p className="text-[10px] uppercase text-slate-500 dark:text-slate-500 font-bold tracking-wider">Coincidencia</p>
                       <p className="text-lg font-extrabold text-slate-900 dark:text-white">{stats.matchPercentage}%</p>
                     </div>
                   </div>
