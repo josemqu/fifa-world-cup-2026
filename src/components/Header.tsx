@@ -4,10 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
-import { LogOut, User as UserIcon, Settings, ChevronDown, Home, Calendar, Trophy, GitFork, Sparkles, ShieldAlert, Target, MessageSquare } from "lucide-react";
+import { LogOut, User as UserIcon, Settings, ChevronDown, Home, Calendar, Trophy, GitFork, Sparkles, ShieldAlert, Target, MessageSquare, Menu, X, Github } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useRef, useEffect, Suspense } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { NextMatchCountdown } from "@/components/NextMatchCountdown";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "next-themes";
@@ -20,6 +20,7 @@ export function Header() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setMounted(true), []);
@@ -327,6 +328,15 @@ export function Header() {
                 )}
               </>
             )}
+            
+            {/* Mobile Hamburger Menu Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="md:hidden p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              aria-label="Abrir menú"
+            >
+              <Menu className="w-5.5 h-5.5" />
+            </button>
           </div>
         </div>
       </header>
@@ -395,6 +405,196 @@ export function Header() {
           <span className="text-[10px] font-semibold">Prode</span>
         </Link>
       </nav>
+
+      {/* Mobile Drawer Navigation Menu */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] md:hidden"
+            />
+
+            {/* Drawer */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+              className="fixed right-0 top-0 bottom-0 w-72 max-w-[85vw] z-[100] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col md:hidden font-sans"
+            >
+              {/* Drawer Header */}
+              <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800/80">
+                <div className="flex items-center gap-2">
+                  <div className="relative w-7 h-8">
+                    <Image
+                      src="https://digitalhub.fifa.com/transform/157d23bf-7e13-4d7b-949e-5d27d340987e/WC26_Logo?&io=transform:fill,height:210&quality=75"
+                      alt="World Cup 2026 Logo"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-slate-900 dark:text-white leading-tight">
+                      Mundial <span className="text-blue-600 dark:text-blue-400">2026</span>
+                    </h3>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                      Fixture y Simulador
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 transition-colors"
+                  aria-label="Cerrar menú"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Drawer Content */}
+              <div className="flex-1 overflow-y-auto p-4 flex flex-col justify-between">
+                {/* Main Navigation links */}
+                <div className="space-y-4">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    Navegación
+                  </span>
+                  <nav className="flex flex-col gap-1">
+                    <Link
+                      href="/"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={clsx(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+                        isHome
+                          ? "bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-bold"
+                          : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                      )}
+                    >
+                      <Home className="w-4.5 h-4.5" />
+                      <span>Inicio</span>
+                    </Link>
+                    <Link
+                      href="/schedule"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={clsx(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+                        isSchedule
+                          ? "bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-bold"
+                          : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                      )}
+                    >
+                      <Calendar className="w-4.5 h-4.5" />
+                      <span>Cronograma</span>
+                    </Link>
+                    <Link
+                      href="/fixture"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={clsx(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+                        isFixture
+                          ? "bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-bold"
+                          : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                      )}
+                    >
+                      <Trophy className="w-4.5 h-4.5" />
+                      <span>Fixture</span>
+                    </Link>
+                    <Link
+                      href="/predictions"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={clsx(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+                        isPredictions
+                          ? "bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-bold"
+                          : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                      )}
+                    >
+                      <Sparkles className="w-4.5 h-4.5" />
+                      <span>Predicciones</span>
+                    </Link>
+                    <Link
+                      href="/prode"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={clsx(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+                        isProde
+                          ? "bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-bold"
+                          : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                      )}
+                    >
+                      <Target className="w-4.5 h-4.5" />
+                      <span>Prode</span>
+                    </Link>
+                  </nav>
+                </div>
+
+                {/* Footer Content */}
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 space-y-4">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    Información y Enlaces
+                  </span>
+                  <div className="flex flex-col gap-2.5 text-xs text-slate-600 dark:text-slate-300">
+                    <Link
+                      href="/condiciones"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors py-1 flex items-center gap-2"
+                    >
+                      <span>Términos y Condiciones</span>
+                    </Link>
+                    <Link
+                      href="/privacidad"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors py-1 flex items-center gap-2"
+                    >
+                      <span>Política de Privacidad</span>
+                    </Link>
+                    <Link
+                      href="/feedback"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors py-1 flex items-center gap-2"
+                    >
+                      <span>Feedback</span>
+                      <span className="relative flex h-1.5 w-1.5 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500"></span>
+                      </span>
+                    </Link>
+                    <a
+                      href="https://github.com/josemqu/fifa-world-cup-2026"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors py-1 flex items-center gap-2"
+                    >
+                      <Github className="w-4 h-4" />
+                      <span>GitHub</span>
+                    </a>
+                  </div>
+
+                  {/* Copyright and Credits */}
+                  <div className="text-[10px] text-slate-400 dark:text-slate-500 leading-normal pt-2">
+                    <p>© 2026 Mundial de Selecciones</p>
+                    <p className="mt-1">
+                      Desarrollado por{" "}
+                      <a
+                        href="https://github.com/josemqu"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline hover:text-slate-600 dark:hover:text-slate-400 text-slate-500 dark:text-slate-400"
+                      >
+                        josemqu
+                      </a>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   );
 }
