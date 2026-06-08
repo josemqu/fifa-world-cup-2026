@@ -64,13 +64,13 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex items-start gap-4 hover:border-slate-700 transition-colors duration-200">
+    <div className="bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-800 rounded-2xl p-5 flex items-start gap-4 hover:border-slate-300 dark:hover:border-slate-700 transition-colors duration-200">
       <div className={`p-3 rounded-xl ${color} shrink-0`}>
         <Icon className="w-5 h-5 text-white" />
       </div>
       <div className="min-w-0">
         <p className="text-xs text-slate-500 font-medium mb-1">{label}</p>
-        <p className="text-2xl font-bold text-white">
+        <p className="text-2xl font-bold text-slate-900 dark:text-white">
           {typeof value === "number" ? value.toLocaleString() : value}
         </p>
         {sub && <p className="text-xs text-slate-500 mt-0.5">{sub}</p>}
@@ -89,8 +89,8 @@ function ChartCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-      <h3 className="text-sm font-semibold text-slate-300 mb-4">{title}</h3>
+    <div className="bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-800 rounded-2xl p-5">
+      <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">{title}</h3>
       {children}
     </div>
   );
@@ -116,8 +116,8 @@ const CHART_COLORS = [
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 shadow-xl text-xs">
-        {label && <p className="text-slate-400 mb-1">{label}</p>}
+      <div className="bg-white border border-slate-200 dark:bg-slate-800 dark:border-slate-700 rounded-xl px-3 py-2 shadow-xl text-xs text-slate-900 dark:text-white">
+        {label && <p className="text-slate-550 dark:text-slate-400 mb-1">{label}</p>}
         {payload.map((p: any, i: number) => (
           <p key={i} style={{ color: p.color || p.fill }} className="font-semibold">
             {p.name}: {p.value.toLocaleString()}
@@ -225,7 +225,7 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
           <p className="text-sm text-slate-500 mt-1">
             Estadísticas de la aplicación · últimos 30 días
           </p>
@@ -233,7 +233,7 @@ export default function AdminDashboard() {
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm text-slate-300 hover:text-white transition-all duration-200 disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 dark:border-transparent dark:bg-slate-800 dark:hover:bg-slate-700 text-sm text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white transition-all duration-200 disabled:opacity-50 shadow-xs"
         >
           <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
           Actualizar
@@ -300,7 +300,7 @@ export default function AdminDashboard() {
                   <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
               <XAxis
                 dataKey="date"
                 tickFormatter={fmtDate}
@@ -396,7 +396,7 @@ export default function AdminDashboard() {
                 layout="vertical"
                 margin={{ top: 0, right: 10, left: 10, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" horizontal={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" horizontal={false} />
                 <XAxis
                   type="number"
                   tick={{ fill: "#64748b", fontSize: 11 }}
@@ -429,7 +429,7 @@ export default function AdminDashboard() {
                 layout="vertical"
                 margin={{ top: 0, right: 10, left: 10, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" horizontal={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" horizontal={false} />
                 <XAxis
                   type="number"
                   tick={{ fill: "#64748b", fontSize: 11 }}
@@ -458,7 +458,7 @@ export default function AdminDashboard() {
                 layout="vertical"
                 margin={{ top: 0, right: 10, left: 10, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" horizontal={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" horizontal={false} />
                 <XAxis
                   type="number"
                   tick={{ fill: "#64748b", fontSize: 11 }}

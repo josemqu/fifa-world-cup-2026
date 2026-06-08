@@ -464,24 +464,24 @@ export function PredictionComparisonModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden"
+          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-slate-800 bg-slate-900/50 sticky top-0 backdrop-blur-sm z-10">
+          <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 sticky top-0 backdrop-blur-sm z-10">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 text-indigo-400">
                 <Trophy className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">Comparar Pronósticos</h3>
-                <p className="text-xs text-slate-400">
-                  Comparando con <span className="text-indigo-400 font-semibold">{targetUser.displayName}</span>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Comparar Pronósticos</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Comparando con <span className="text-indigo-600 dark:text-indigo-400 font-semibold">{targetUser.displayName}</span>
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800/80 rounded-xl transition-all"
+              className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded-xl transition-all"
             >
               <X className="w-5 h-5" />
             </button>
@@ -492,64 +492,64 @@ export function PredictionComparisonModal({
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-3">
                 <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm text-slate-400">Cargando comparación de pronósticos...</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Cargando comparación de pronósticos...</p>
               </div>
             ) : (
               <>
                 {/* Stats Summary Widget */}
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 bg-slate-850/40 p-4 border border-slate-800 rounded-2xl">
-                  <div className="flex items-center gap-3 p-2 border-r border-slate-800/60 sm:last:border-0">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 bg-slate-50 dark:bg-slate-850/40 p-4 border border-slate-200 dark:border-slate-800 rounded-2xl">
+                  <div className="flex items-center gap-3 p-2 border-r border-slate-200 dark:border-slate-800/60 sm:last:border-0">
                     <Award className="w-8 h-8 text-indigo-400" />
                     <div>
-                      <p className="text-[10px] uppercase text-slate-500 font-bold tracking-wider">Marcador Exacto</p>
-                      <p className="text-lg font-extrabold text-white">{stats.exactMatches}</p>
+                      <p className="text-[10px] uppercase text-slate-505 dark:text-slate-500 font-bold tracking-wider">Marcador Exacto</p>
+                      <p className="text-lg font-extrabold text-slate-900 dark:text-white">{stats.exactMatches}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 p-2 border-r border-slate-800/60 sm:last:border-0">
+                  <div className="flex items-center gap-3 p-2 border-r border-slate-200 dark:border-slate-800/60 sm:last:border-0">
                     <TrendingUp className="w-8 h-8 text-emerald-400" />
                     <div>
-                      <p className="text-[10px] uppercase text-slate-500 font-bold tracking-wider">Ganador/Empate</p>
-                      <p className="text-lg font-extrabold text-white">{stats.outcomeMatches}</p>
+                      <p className="text-[10px] uppercase text-slate-505 dark:text-slate-500 font-bold tracking-wider">Ganador/Empate</p>
+                      <p className="text-lg font-extrabold text-slate-900 dark:text-white">{stats.outcomeMatches}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 p-2 border-r border-slate-800/60 sm:last:border-0">
+                  <div className="flex items-center gap-3 p-2 border-r border-slate-200 dark:border-slate-800/60 sm:last:border-0">
                     <AlertCircle className="w-8 h-8 text-amber-500" />
                     <div>
-                      <p className="text-[10px] uppercase text-slate-500 font-bold tracking-wider">Diferentes</p>
-                      <p className="text-lg font-extrabold text-white">{stats.differs}</p>
+                      <p className="text-[10px] uppercase text-slate-505 dark:text-slate-500 font-bold tracking-wider">Diferentes</p>
+                      <p className="text-lg font-extrabold text-slate-900 dark:text-white">{stats.differs}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-2 sm:last:border-0">
                     <Flame className="w-8 h-8 text-cyan-400" />
                     <div>
-                      <p className="text-[10px] uppercase text-slate-500 font-bold tracking-wider">Coincidencia</p>
-                      <p className="text-lg font-extrabold text-white">{stats.matchPercentage}%</p>
+                      <p className="text-[10px] uppercase text-slate-505 dark:text-slate-500 font-bold tracking-wider">Coincidencia</p>
+                      <p className="text-lg font-extrabold text-slate-900 dark:text-white">{stats.matchPercentage}%</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Compare Users Columns Headers */}
-                <div className="grid grid-cols-12 gap-4 items-center bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">
-                  <div className="col-span-5 text-left flex items-center gap-2">
+                <div className="grid grid-cols-12 gap-4 items-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-center">
+                  <div className="col-span-5 text-left flex items-center gap-2 text-slate-700 dark:text-slate-300 font-semibold">
                     <UserIcon className="w-4 h-4 text-indigo-400" />
                     <span>{targetUser.displayName}</span>
                   </div>
-                  <div className="col-span-2 text-slate-500">vs</div>
-                  <div className="col-span-5 text-right flex items-center justify-end gap-2">
+                  <div className="col-span-2 text-slate-400 dark:text-slate-500">vs</div>
+                  <div className="col-span-5 text-right flex items-center justify-end gap-2 text-slate-700 dark:text-slate-300 font-semibold">
                     <span>Tus Pronósticos (Admin)</span>
                     <UserIcon className="w-4 h-4 text-emerald-400" />
                   </div>
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-2 p-1 bg-slate-950/40 border border-slate-800/60 rounded-xl">
+                <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/60 rounded-xl">
                   <button
                     onClick={() => setActiveTab("groups")}
                     className={clsx(
                       "flex-1 py-2 text-xs font-bold rounded-lg transition-all",
                       activeTab === "groups"
-                        ? "bg-slate-800 text-white shadow-xs"
-                        : "text-slate-400 hover:text-white"
+                        ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     )}
                   >
                     Fase de Grupos
@@ -559,8 +559,8 @@ export function PredictionComparisonModal({
                     className={clsx(
                       "flex-1 py-2 text-xs font-bold rounded-lg transition-all",
                       activeTab === "knockouts"
-                        ? "bg-slate-800 text-white shadow-xs"
-                        : "text-slate-400 hover:text-white"
+                        ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     )}
                   >
                     Fase Eliminatoria
@@ -579,7 +579,7 @@ export function PredictionComparisonModal({
                               "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
                               selectedSubTab === g
                                 ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/20"
-                                : "bg-slate-800/40 text-slate-450 hover:text-white hover:bg-slate-800"
+                                : "bg-slate-100 dark:bg-slate-800/40 text-slate-600 dark:text-slate-450 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800"
                             )}
                           >
                             Grupo {g}
@@ -593,7 +593,7 @@ export function PredictionComparisonModal({
                               "px-4 py-1.5 rounded-lg text-xs font-bold transition-all",
                               selectedSubTab === s.key
                                 ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/20"
-                                : "bg-slate-800/40 text-slate-450 hover:text-white hover:bg-slate-800"
+                                : "bg-slate-100 dark:bg-slate-800/40 text-slate-600 dark:text-slate-450 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800"
                             )}
                           >
                             {s.label}
@@ -660,7 +660,7 @@ export function PredictionComparisonModal({
                       return (
                         <div
                           key={m.id}
-                          className="bg-slate-900 border border-slate-800/80 rounded-2xl p-4 space-y-3 hover:border-slate-700 transition-colors"
+                          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 space-y-3 hover:border-slate-350 dark:hover:border-slate-700 transition-colors shadow-xs"
                         >
                           {/* Top row: Match metadata & comparison tag */}
                           <div className="flex items-center justify-between text-[11px] text-slate-500">
@@ -669,22 +669,22 @@ export function PredictionComparisonModal({
                             {/* Match comparison status badge */}
                             <div>
                               {matchStatus === "exact" && (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                                   <CheckCircle2 className="w-3 h-3" /> Coinciden exactos (+3)
                                 </span>
                               )}
                               {matchStatus === "outcome" && (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/10">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600/80 dark:text-emerald-400/80 border border-emerald-500/10">
                                   Coincide resultado (+1)
                                 </span>
                               )}
                               {matchStatus === "differ" && (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                                   Difieren (0)
                                 </span>
                               )}
                               {matchStatus === "pending" && (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-450">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-450">
                                   Pendiente
                                 </span>
                               )}
@@ -697,26 +697,26 @@ export function PredictionComparisonModal({
                             <div className="col-span-5 flex items-center justify-end gap-3 text-right">
                               {/* Team names & flags */}
                               <div className="min-w-0">
-                                <p className="text-sm font-semibold text-white truncate max-w-[140px] sm:max-w-[180px]">{uHomeName}</p>
-                                <p className="text-sm font-semibold text-white truncate max-w-[140px] sm:max-w-[180px]">{uAwayName}</p>
+                                <p className="text-sm font-semibold text-slate-900 dark:text-white truncate max-w-[140px] sm:max-w-[180px]">{uHomeName}</p>
+                                <p className="text-sm font-semibold text-slate-900 dark:text-white truncate max-w-[140px] sm:max-w-[180px]">{uAwayName}</p>
                               </div>
                               <div className="flex flex-col gap-1 items-end shrink-0">
                                 <TeamFlag teamName={uHomeName} className="w-5 h-3.5" />
                                 <TeamFlag teamName={uAwayName} className="w-5 h-3.5" />
                               </div>
                               {/* Predicted score box */}
-                              <div className="bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800 shrink-0 min-w-[55px] text-center">
+                              <div className="bg-slate-50 dark:bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 shrink-0 min-w-[55px] text-center">
                                 {hasUserPred ? (
-                                  <div className="font-mono text-sm font-bold text-indigo-400 flex flex-col items-center">
+                                  <div className="font-mono text-sm font-bold text-indigo-650 dark:text-indigo-400 flex flex-col items-center">
                                     <span>{m.userHomeScore} - {m.userAwayScore}</span>
                                     {(m.userHomePen !== "" || m.userAwayPen !== "") && (
-                                      <span className="text-[9px] text-indigo-500 font-normal">
+                                      <span className="text-[9px] text-indigo-500 dark:text-indigo-500 font-normal">
                                         ({m.userHomePen}-{m.userAwayPen})
                                       </span>
                                     )}
                                   </div>
                                 ) : (
-                                  <span className="text-slate-700 text-xs">-</span>
+                                  <span className="text-slate-400 dark:text-slate-700 text-xs">-</span>
                                 )}
                               </div>
                             </div>
@@ -724,32 +724,32 @@ export function PredictionComparisonModal({
                             {/* Center connector VS / Warn icon */}
                             <div className="col-span-2 flex flex-col items-center justify-center text-center">
                               {differentTeams ? (
-                                <div className="p-1.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20" title="Equipos diferentes en la llave">
+                                <div className="p-1.5 rounded-full bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/20" title="Equipos diferentes en la llave">
                                   <AlertCircle className="w-4 h-4" />
                                 </div>
                               ) : (
-                                <span className="text-[10px] text-slate-600 font-extrabold uppercase">VS</span>
+                                <span className="text-[10px] text-slate-400 dark:text-slate-600 font-extrabold uppercase">VS</span>
                               )}
                               {differentTeams && (
-                                <span className="text-[8px] text-amber-500/80 font-bold mt-1 max-w-[70px] leading-tight block">Cruces dist.</span>
+                                <span className="text-[8px] text-amber-600 dark:text-amber-500/80 font-bold mt-1 max-w-[70px] leading-tight block">Cruces dist.</span>
                               )}
                             </div>
 
                             {/* Admin prediction */}
                             <div className="col-span-5 flex items-center justify-start gap-3 text-left">
                               {/* Predicted score box */}
-                              <div className="bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800 shrink-0 min-w-[55px] text-center">
+                              <div className="bg-slate-50 dark:bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 shrink-0 min-w-[55px] text-center">
                                 {hasAdminPred ? (
-                                  <div className="font-mono text-sm font-bold text-emerald-400 flex flex-col items-center">
+                                  <div className="font-mono text-sm font-bold text-emerald-650 dark:text-emerald-400 flex flex-col items-center">
                                     <span>{m.adminHomeScore} - {m.adminAwayScore}</span>
                                     {(m.adminHomePen !== "" || m.adminAwayPen !== "") && (
-                                      <span className="text-[9px] text-emerald-500 font-normal">
+                                      <span className="text-[9px] text-emerald-500 dark:text-emerald-500 font-normal">
                                         ({m.adminHomePen}-{m.adminAwayPen})
                                       </span>
                                     )}
                                   </div>
                                 ) : (
-                                  <span className="text-slate-700 text-xs">-</span>
+                                  <span className="text-slate-400 dark:text-slate-700 text-xs">-</span>
                                 )}
                               </div>
                               <div className="flex flex-col gap-1 items-start shrink-0">
@@ -758,8 +758,8 @@ export function PredictionComparisonModal({
                               </div>
                               {/* Team names & flags */}
                               <div className="min-w-0">
-                                <p className="text-sm font-semibold text-white truncate max-w-[140px] sm:max-w-[180px]">{aHomeName}</p>
-                                <p className="text-sm font-semibold text-white truncate max-w-[140px] sm:max-w-[180px]">{aAwayName}</p>
+                                <p className="text-sm font-semibold text-slate-900 dark:text-white truncate max-w-[140px] sm:max-w-[180px]">{aHomeName}</p>
+                                <p className="text-sm font-semibold text-slate-900 dark:text-white truncate max-w-[140px] sm:max-w-[180px]">{aAwayName}</p>
                               </div>
                             </div>
                           </div>
@@ -773,10 +773,10 @@ export function PredictionComparisonModal({
           </div>
 
           {/* Footer */}
-          <div className="p-5 border-t border-slate-800 bg-slate-950/40 rounded-b-3xl flex justify-end">
+          <div className="p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 rounded-b-3xl flex justify-end">
             <button
               onClick={onClose}
-              className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl text-sm font-bold transition-all shadow-sm"
+              className="px-5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-transparent rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer"
             >
               Cerrar
             </button>

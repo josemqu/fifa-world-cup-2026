@@ -5,11 +5,13 @@
 :root {
   --background: #f8fafc;
   --foreground: #171717;
+  --chart-grid: #e2e8f0;
 }
 
 .dark {
   --background: #0a0a0a;
   --foreground: #ededed;
+  --chart-grid: #1e293b;
 }
 
 @theme inline {
