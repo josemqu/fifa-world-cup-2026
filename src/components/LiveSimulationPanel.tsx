@@ -103,6 +103,13 @@ function RealLiveSimulationPanel({ dbUser, user }: RealLiveSimulationPanelProps)
     }
   }, []);
 
+  // Listen for global open event from user menu
+  useEffect(() => {
+    const handleOpen = () => setIsOpen(true);
+    window.addEventListener("open-live-simulation", handleOpen);
+    return () => window.removeEventListener("open-live-simulation", handleOpen);
+  }, []);
+
   const triggerGoalAlert = (scoringTeam: string, match: LiveMatch) => {
     const alertId = `${Date.now()}-${Math.random()}`;
     const newAlert: GoalAlert = {
@@ -274,34 +281,7 @@ function RealLiveSimulationPanel({ dbUser, user }: RealLiveSimulationPanelProps)
         </AnimatePresence>
       </div>
 
-      {/* Floating Trigger Handle (hidden when open) */}
-      <AnimatePresence>
-        {!isOpen && (
-          <motion.button
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            onClick={() => setIsOpen(true)}
-            className="fixed right-0 top-1/3 -translate-y-1/2 z-[40] bg-slate-900/95 dark:bg-slate-800/95 backdrop-blur-md text-white px-2.5 py-4 rounded-l-xl shadow-xl flex flex-col items-center gap-2 cursor-pointer border border-r-0 border-slate-700/50 dark:border-slate-600/50 hover:bg-blue-600 dark:hover:bg-blue-700 transition-all pointer-events-auto"
-            title="Abrir Panel de Simulación"
-          >
-            <div className="relative flex h-2 w-2 items-center justify-center">
-              {isActive ? (
-                <>
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
-                </>
-              ) : (
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-rose-500"></span>
-              )}
-            </div>
-            <Activity className="w-4 h-4" />
-            <span className="text-[8px] font-bold uppercase tracking-wider [writing-mode:vertical-lr] rotate-180">
-              Simulación
-            </span>
-          </motion.button>
-        )}
-      </AnimatePresence>
+
 
       {/* SIDE MENU DRAWER */}
       <AnimatePresence>
