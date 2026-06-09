@@ -99,20 +99,28 @@ export async function POST(request: Request) {
         continue;
       }
 
-      ops.push({
-        updateOne: {
-          filter: { firebaseUid, matchId: pred.matchId },
-          update: {
-            $set: {
-              homeScore: pred.homeScore,
-              awayScore: pred.awayScore,
-              homePenalties: pred.homePenalties,
-              awayPenalties: pred.awayPenalties,
-            },
+      if (pred.homeScore === null || pred.awayScore === null) {
+        ops.push({
+          deleteOne: {
+            filter: { firebaseUid, matchId: pred.matchId },
           },
-          upsert: true,
-        },
-      });
+        });
+      } else {
+        ops.push({
+          updateOne: {
+            filter: { firebaseUid, matchId: pred.matchId },
+            update: {
+              $set: {
+                homeScore: pred.homeScore,
+                awayScore: pred.awayScore,
+                homePenalties: pred.homePenalties,
+                awayPenalties: pred.awayPenalties,
+              },
+            },
+            upsert: true,
+          },
+        });
+      }
       saved++;
     }
 

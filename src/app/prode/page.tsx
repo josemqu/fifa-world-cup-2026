@@ -44,6 +44,7 @@ import {
   ShieldCheck,
   Share2,
   AlertTriangle,
+  RotateCcw,
 } from "lucide-react";
 
 type Tab = "predictions" | "groups" | "leaderboard";
@@ -514,7 +515,7 @@ function PredictionsTab({
     setSaving(true);
     try {
       const predsArray = Array.from(toSave.values()).filter(
-        (p) => p.homeScore !== "" && p.awayScore !== ""
+        (p) => (p.homeScore !== "" && p.awayScore !== "") || (p.homeScore === "" && p.awayScore === "")
       );
       if (predsArray.length === 0) { setSaving(false); return; }
 
@@ -525,8 +526,8 @@ function PredictionsTab({
           firebaseUid,
           predictions: predsArray.map((p) => ({
             matchId: p.matchId,
-            homeScore: Number(p.homeScore),
-            awayScore: Number(p.awayScore),
+            homeScore: p.homeScore === "" ? null : Number(p.homeScore),
+            awayScore: p.awayScore === "" ? null : Number(p.awayScore),
             homePenalties: p.homePenalties !== undefined && p.homePenalties !== "" ? Number(p.homePenalties) : undefined,
             awayPenalties: p.awayPenalties !== undefined && p.awayPenalties !== "" ? Number(p.awayPenalties) : undefined,
           })),
@@ -599,6 +600,37 @@ function PredictionsTab({
       ...entry,
       homePenalties: winnerSide === "home" ? 1 : 0,
       awayPenalties: winnerSide === "away" ? 1 : 0,
+    };
+    pendingRef.current.set(matchId, updated);
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      savePredictions(new Map(pendingRef.current));
+    }, 1500);
+  }, [predictions, savePredictions]);
+
+  const handleResetMatch = useCallback((matchId: string) => {
+    setPredictions((prev) => {
+      const newMap = new Map(prev);
+      const existing = (newMap.get(matchId) || { matchId, homeScore: "", awayScore: "", homePenalties: "", awayPenalties: "" }) as PredictionEntry;
+      const updated: PredictionEntry = {
+        ...existing,
+        homeScore: "",
+        awayScore: "",
+        homePenalties: "",
+        awayPenalties: ""
+      };
+      newMap.set(matchId, updated);
+      return newMap;
+    });
+
+    const entry = (predictions.get(matchId) || { matchId, homeScore: "", awayScore: "", homePenalties: "", awayPenalties: "" }) as PredictionEntry;
+    const updated: PredictionEntry = {
+      ...entry,
+      homeScore: "",
+      awayScore: "",
+      homePenalties: "",
+      awayPenalties: ""
     };
     pendingRef.current.set(matchId, updated);
 
@@ -789,7 +821,7 @@ function PredictionsTab({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-xl mx-auto">
       {/* Save Status Indicator */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -811,43 +843,40 @@ function PredictionsTab({
       </div>
 
       {/* Stage Selector */}
-      <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-        <div className="flex gap-1.5 pb-2 min-w-max">
-          {/* Group Stage pills */}
-          <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg p-1">
-            {GROUP_LABELS.map((g) => (
-              <button
-                key={g}
-                onClick={() => setActiveStage(g)}
-                className={clsx(
-                  "px-3 py-1.5 rounded-md text-xs font-bold transition-all",
-                  activeStage === g
-                    ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                )}
-              >
-                {g}
-              </button>
-            ))}
-          </div>
-          {/* Knockout stage pills */}
-          <div className="w-px bg-slate-200 dark:bg-slate-700 mx-1" />
-          <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg p-1">
-            {KNOCKOUT_STAGES.map((s) => (
-              <button
-                key={s.key}
-                onClick={() => setActiveStage(s.key)}
-                className={clsx(
-                  "px-3 py-1.5 rounded-md text-xs font-bold transition-all whitespace-nowrap",
-                  activeStage === s.key
-                    ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                )}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
+      <div className="space-y-2">
+        {/* Group Stage pills */}
+        <div className="flex flex-wrap gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg p-1">
+          {GROUP_LABELS.map((g) => (
+            <button
+              key={g}
+              onClick={() => setActiveStage(g)}
+              className={clsx(
+                "flex-1 min-w-[28px] py-1.5 rounded-md text-xs font-bold transition-all text-center",
+                activeStage === g
+                  ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              )}
+            >
+              {g}
+            </button>
+          ))}
+        </div>
+        {/* Knockout stage pills */}
+        <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg p-1">
+          {KNOCKOUT_STAGES.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => setActiveStage(s.key)}
+              className={clsx(
+                "flex-1 py-1.5 rounded-md text-xs font-bold transition-all whitespace-nowrap text-center",
+                activeStage === s.key
+                  ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              )}
+            >
+              {s.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -876,6 +905,7 @@ function PredictionsTab({
               awayPenalties={pred?.awayPenalties ?? ""}
               onScoreChange={handleScoreChange}
               onPenaltiesWinnerChange={handlePenaltiesWinnerChange}
+              onResetMatch={handleResetMatch}
               label={info?.label}
             />
           );
@@ -915,6 +945,7 @@ function ProdeMatchCard({
   awayPenalties?: number | "";
   onScoreChange: (matchId: string, side: "home" | "away", val: string) => void;
   onPenaltiesWinnerChange: (matchId: string, winnerSide: "home" | "away") => void;
+  onResetMatch: (matchId: string) => void;
   label?: string;
 }) {
   const matchDate = utcDate ? new Date(utcDate) : null;
@@ -1079,14 +1110,29 @@ function ProdeMatchCard({
           </div>
         )}
 
-        {/* Match Date & Time */}
-        {matchDate && (
-          <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-center gap-2 text-[10px] text-slate-400 dark:text-slate-500">
-            <span>{formattedDate}</span>
-            <span className="font-bold text-slate-500 dark:text-slate-400">{formattedTime}</span>
-            <span className="font-mono text-[9px] text-slate-300 dark:text-slate-600">#{matchId}</span>
+        {/* Match Date & Time / Reset Button */}
+        <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500">
+          <div className="flex items-center gap-2">
+            {matchDate && (
+              <>
+                <span>{formattedDate}</span>
+                <span className="font-bold text-slate-500 dark:text-slate-400">{formattedTime}</span>
+              </>
+            )}
+            <span className="font-mono text-[9px] text-slate-350 dark:text-slate-650">#{matchId}</span>
           </div>
-        )}
+          {!isLocked && (homeScore !== "" || awayScore !== "") && (
+            <button
+              type="button"
+              onClick={() => onResetMatch(matchId)}
+              className="flex items-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
+              title="Resetear pronóstico"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Resetear</span>
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
