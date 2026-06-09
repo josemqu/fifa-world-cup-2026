@@ -219,13 +219,18 @@ export function GroupCard({
           )}
 
           {onToggleMatches && (
-            <button
-              onClick={onToggleMatches}
-              className="p-1 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 rounded-md transition-colors"
-              title={showMatches ? "Ocultar partidos" : "Mostrar partidos"}
+            <Tooltip
+              content={showMatches ? "Ocultar partidos" : "Mostrar partidos"}
+              placement="top"
+              wrapperClassName="cursor-pointer"
             >
-              {showMatches ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
+              <button
+                onClick={onToggleMatches}
+                className="p-1 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 rounded-md transition-colors"
+              >
+                {showMatches ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+            </Tooltip>
           )}
         </div>
       </div>
