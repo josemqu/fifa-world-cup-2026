@@ -932,6 +932,7 @@ function ProdeMatchCard({
   awayPenalties,
   onScoreChange,
   onPenaltiesWinnerChange,
+  onResetMatch,
   label,
 }: {
   matchId: string;
