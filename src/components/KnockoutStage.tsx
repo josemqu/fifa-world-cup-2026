@@ -1037,7 +1037,7 @@ export function KnockoutStage({
       {/* Third Place Table Removed (Migrated to GroupStage) */}
 
       <FloatingContainer>
-        <Tooltip content="Simular resultados de la Fase Eliminatoria" placement="left">
+        <Tooltip content="Simular resultados de las Llaves" placement="left">
           <FloatingButton
             onClick={simulateKnockout}
             className="bg-indigo-600 hover:bg-indigo-700"
@@ -1055,7 +1055,7 @@ export function KnockoutStage({
                 clipRule="evenodd"
               />
             </svg>
-            Simular Eliminatoria
+            Simular Llaves
           </FloatingButton>
         </Tooltip>
 

@@ -930,7 +930,7 @@ function PredictionsPageContent() {
                           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                             Avance por ronda
                           </span>
-                          <Tooltip content="La probabilidad estimada de que este equipo clasifique y dispute cada ronda de la fase eliminatoria." placement="top">
+                          <Tooltip content="La probabilidad estimada de que este equipo clasifique y dispute cada ronda de la segunda fase." placement="top">
                             <Info className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 cursor-help" />
                           </Tooltip>
                         </div>

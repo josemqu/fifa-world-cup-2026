@@ -38,7 +38,7 @@ export default function Home() {
                   href="/knockout"
                   className="inline-flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 px-5 py-3 text-sm font-bold border border-slate-200 dark:border-slate-700 shadow-sm transition-colors"
                 >
-                  Ver Fase Eliminatoria
+                  Ver Llaves
                 </Link>
                 <Link
                   href="/predictions"

@@ -109,7 +109,7 @@ function FixturePageContent() {
               Fixture del Mundial 2026
             </h2>
             <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 max-w-xl">
-              Explorá la fase de grupos y simulá los cruces de la fase eliminatoria rumbo a la gran final.
+              Explorá la fase de grupos y simulá los cruces de la segunda fase rumbo a la gran final.
             </p>
           </div>
         </div>
@@ -134,7 +134,7 @@ function FixturePageContent() {
             )}
             <span className="relative z-10 flex items-center gap-2">
               <Trophy className="w-3.5 h-3.5" />
-              Fase de Grupos
+              Grupos
             </span>
           </button>
 
