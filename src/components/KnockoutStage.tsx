@@ -130,8 +130,8 @@ function MatchCard({
   const isAwayProjected =
     (!awayTeam || "placeholder" in awayTeam) && !!prob?.projectedAwayTeam;
 
-  const displayedHome = isHomeProjected ? prob!.projectedHomeTeam : homeTeam;
-  const displayedAway = isAwayProjected ? prob!.projectedAwayTeam : awayTeam;
+  const displayedHome = homeTeam;
+  const displayedAway = awayTeam;
 
   const homeName =
     displayedHome && "placeholder" in displayedHome
@@ -202,15 +202,15 @@ function MatchCard({
       )}
     >
       {/* Header Section: Stage & Date (Schedule Style) */}
-      <div className="border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/30 px-3 py-2 flex justify-between items-center rounded-t-lg min-h-[32px]">
+      <div className="border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/30 px-3 flex justify-between items-center rounded-t-lg h-9">
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
             #{match.id}
           </span>
         </div>
-        <MatchDateTime 
-          utcDate={match.utcDate} 
+        <MatchDateTime
+          utcDate={match.utcDate}
           dateClassName="text-[10px] font-medium text-slate-400 dark:text-slate-500"
           timeClassName="text-[10px] font-bold text-slate-600 dark:text-slate-300"
         />
@@ -265,13 +265,7 @@ function MatchCard({
                   </Tooltip>
                 )}
               </div>
-              {showTeamProbabilities &&
-                isHomeProjected &&
-                (prob!.homeTeamProb * 100).toFixed(0) !== "100" && (
-                  <span className="text-[10px] text-blue-500/70 dark:text-blue-400/70 font-mono whitespace-nowrap shrink-0">
-                    {(prob!.homeTeamProb * 100).toFixed(0)}%
-                  </span>
-                )}
+
             </div>
             <div className="flex items-center gap-1 shrink-0">
               {isTied && (
@@ -344,7 +338,7 @@ function MatchCard({
                         : "text-slate-900 dark:text-slate-100",
                       isAwayProjected && "text-blue-600 dark:text-blue-400",
                       awayIsFavorite &&
-                        "font-bold text-indigo-700 dark:text-indigo-300",
+                      "font-bold text-indigo-700 dark:text-indigo-300",
                     )}
                   >
                     {awayName}
@@ -364,16 +358,15 @@ function MatchCard({
                 )}
               </div>
               {showTeamProbabilities &&
-                (isAwayProjected || showProbabilities) &&
+                !isAwayProjected &&
+                showProbabilities &&
                 (prob!.awayTeamProb * 100).toFixed(0) !== "100" && (
                   <span
                     className={clsx(
                       "text-[10px] font-mono whitespace-nowrap shrink-0 transition-colors",
-                      isAwayProjected
-                        ? "text-blue-500/70 dark:text-blue-400/70"
-                        : awayIsFavorite
-                          ? "text-indigo-600 dark:text-indigo-400 font-bold"
-                          : "text-slate-400/70",
+                      awayIsFavorite
+                        ? "text-indigo-600 dark:text-indigo-400 font-bold"
+                        : "text-slate-400/70",
                     )}
                   >
                     {(prob!.awayTeamProb * 100).toFixed(0)}%
@@ -432,14 +425,14 @@ function MatchCard({
       </div>
 
       {/* Footer Section: Probability & Controls */}
-      <div className="border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/30 px-3 py-1.5 flex flex-col mt-auto rounded-b-lg gap-1.5">
+      <div className="border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/30 px-3 flex justify-between items-center mt-auto rounded-b-lg h-9 gap-2">
         {/* Stadium & Location */}
-        {match.location && (
-          <div className="flex items-center gap-1.5">
+        {match.location ? (
+          <div className="flex items-center gap-1.5 min-w-0 flex-1">
             <Tooltip
               content={match.location}
               placement="bottom"
-              wrapperClassName="min-w-0"
+              wrapperClassName="min-w-0 flex-1"
             >
               <span className="text-[9px] text-slate-400 dark:text-slate-500 truncate block cursor-help">
                 📍 {match.location.split(" - ")[0]}
@@ -452,73 +445,32 @@ function MatchCard({
               </span>
             </Tooltip>
           </div>
+        ) : (
+          <div className="flex-1" />
         )}
 
-        <div className="flex justify-between items-center gap-2 min-h-[16px]">
-          <div className="flex items-center">
-            {prob &&
-            prob.matchupProb > 0 &&
-            (prob.matchupProb * 100).toFixed(0) !== "100" &&
-            !isMatchupDetermined && (
-              <Tooltip
-                placement={tooltipPlacement}
-                content={
-                  <div className="flex gap-1 whitespace-nowrap">
-                    <span>Probabilidad de cruce entre</span>
-                    <span className="font-bold text-yellow-300">
-                      {homeName}
-                    </span>{" "}
-                    y{" "}
-                    <span className="font-bold text-yellow-300">
-                      {awayName}
-                    </span>
-                  </div>
-                }
-              >
-                <div className="flex items-center gap-1.5 cursor-help">
-                  <span className="text-[9px] font-medium text-slate-400 uppercase tracking-tight">
-                    Cruce:
-                  </span>
-                  <span
-                    className={clsx(
-                      "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-                      prob.matchupProb > 0.8
-                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                        : prob.matchupProb > 0.5
-                          ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                          : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400",
-                    )}
-                  >
-                    {(prob.matchupProb * 100).toFixed(0)}%
-                  </span>
-                </div>
+        {canEdit && (
+          <div className="flex items-center gap-1 shrink-0">
+            {hasResult && (
+              <Tooltip content="Resetear resultado" placement="top">
+                <button
+                  onClick={() => onReset?.(match)}
+                  className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
               </Tooltip>
             )}
+            <Tooltip content="Simular este partido" placement="top">
+              <button
+                onClick={() => onSimulate?.(match)}
+                className="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+              >
+                <Play className="w-3.5 h-3.5 fill-current opacity-80" />
+              </button>
+            </Tooltip>
           </div>
-
-          {canEdit && (
-            <div className="flex items-center gap-1">
-              {hasResult && (
-                <Tooltip content="Resetear resultado" placement="top">
-                  <button
-                    onClick={() => onReset?.(match)}
-                    className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                  </button>
-                </Tooltip>
-              )}
-                <Tooltip content="Simular este partido" placement="top">
-                  <button
-                    onClick={() => onSimulate?.(match)}
-                    className="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-                  >
-                    <Play className="w-3.5 h-3.5 fill-current opacity-80" />
-                  </button>
-                </Tooltip>
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );
@@ -854,7 +806,7 @@ export function KnockoutStage({
                 <ChampionBanner champion={champion} />
               </div>
             )}
-            
+
             {finalMatch && (
               <div className="space-y-3">
                 <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-center">
