@@ -45,6 +45,8 @@ import {
   Share2,
   AlertTriangle,
   RotateCcw,
+  Info,
+  X,
 } from "lucide-react";
 
 type Tab = "predictions" | "groups" | "leaderboard";
@@ -166,6 +168,7 @@ function ProdePageContent() {
   const [activeTab, setActiveTabState] = useState<Tab>(initialTab);
   const [activeStage, setActiveStageState] = useState<string>(initialStage);
   const [selectedGroupId, setSelectedGroupIdState] = useState<string | null>(initialGroupId);
+  const [showRulesModal, setShowRulesModal] = useState(false);
 
   // Sync URL search params with state
   const updateUrl = useCallback((tab: Tab, stage: string, groupId: string | null) => {
@@ -311,14 +314,23 @@ function ProdePageContent() {
     <PageTransition className="max-w-5xl mx-auto p-4 md:p-6">
       <div className="space-y-6">
         {/* Page Header */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-md shadow-emerald-500/20">
-            <Trophy className="w-5 h-5 text-white" />
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-md shadow-emerald-500/20">
+              <Trophy className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Prode</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Predecí, competí, ganá</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Prode</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Predecí, competí, ganá</p>
-          </div>
+          <button
+            onClick={() => setShowRulesModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-650 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+          >
+            <Info className="w-4 h-4 text-emerald-500" />
+            <span>Reglas y Puntos</span>
+          </button>
         </div>
 
         {/* Tab Navigation */}
@@ -423,6 +435,122 @@ function ProdePageContent() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Rules Modal */}
+      <AnimatePresence>
+        {showRulesModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+            onClick={() => setShowRulesModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", duration: 0.4 }}
+              className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden max-h-[85vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
+                <div className="flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-emerald-500" />
+                  <h3 className="font-bold text-slate-900 dark:text-white">Reglas y Sistema de Puntos</h3>
+                </div>
+                <button
+                  onClick={() => setShowRulesModal(false)}
+                  className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-750 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-6">
+                {/* Points Section */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-550">
+                    ¿Cómo sumar puntos?
+                  </h4>
+                  
+                  {/* 3 Points */}
+                  <div className="flex gap-3 p-3 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-100 dark:border-emerald-900/20">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-white font-extrabold text-sm shrink-0">
+                      3
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-slate-900 dark:text-white">Resultado Exacto</p>
+                      <p className="text-xs text-slate-650 dark:text-slate-400 leading-relaxed">
+                        Acertás los goles de ambos equipos. En fase de eliminación directa, si el partido termina empatado en el tiempo regular (90 min), debés acertar además qué equipo clasifica por penales.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 1 Point */}
+                  <div className="flex gap-3 p-3 rounded-xl bg-blue-50/50 dark:bg-blue-950/10 border border-blue-100 dark:border-blue-900/20">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center text-white font-extrabold text-sm shrink-0">
+                      1
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-slate-900 dark:text-white">Resultado Parcial / Tendencia</p>
+                      <p className="text-xs text-slate-650 dark:text-slate-400 leading-relaxed">
+                        Acertás quién gana el partido (pero no por cuántos goles exactos) o acertás que empatan (sin importar si adivinás la cantidad de goles). También sumás 1 punto en eliminación directa si acertás el empate exacto pero no quién clasifica.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 0 Points */}
+                  <div className="flex gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
+                    <div className="w-8 h-8 rounded-lg bg-slate-400 dark:bg-slate-700 flex items-center justify-center text-white font-extrabold text-sm shrink-0">
+                      0
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-slate-900 dark:text-white">Sin Aciertos</p>
+                      <p className="text-xs text-slate-650 dark:text-slate-400 leading-relaxed">
+                        No acertás el ganador ni el empate.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* General Rules Section */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-550">
+                    Reglas Generales
+                  </h4>
+                  <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-400 leading-relaxed list-disc list-inside">
+                    <li>
+                      <strong className="text-slate-800 dark:text-slate-200">Límite de tiempo:</strong> Podés cambiar tus pronósticos hasta el horario exacto del inicio de cada partido. Una vez comenzado, se bloquea automáticamente.
+                    </li>
+                    <li>
+                      <strong className="text-slate-800 dark:text-slate-200">Fase de Grupos:</strong> Se pronostica el resultado final de los 90 minutos de juego (más tiempo de descuento).
+                    </li>
+                    <li>
+                      <strong className="text-slate-800 dark:text-slate-200">Fase Eliminatoria:</strong> Si ingresás un empate en el marcador, se habilitará una opción para que elijas qué equipo clasifica por penales. Si pronosticás que un equipo gana, no es necesario elegir los penales.
+                    </li>
+                    <li>
+                      <strong className="text-slate-800 dark:text-slate-200">Guardado Automático:</strong> A medida que modificás los números de goles, verás un indicador arriba que dice "Guardado". No hace falta apretar ningún botón de guardar.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-5 py-4 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/50 flex justify-end shrink-0">
+                <button
+                  onClick={() => setShowRulesModal(false)}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 font-bold rounded-xl text-xs transition-all cursor-pointer active:scale-95 shadow-sm"
+                >
+                  Entendido
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </PageTransition>
   );
 }
