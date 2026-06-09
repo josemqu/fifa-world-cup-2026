@@ -43,7 +43,7 @@ const itemVariants = {
 
 export default function Home() {
   return (
-    <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-10 md:py-14 space-y-12 md:space-y-16">
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 md:py-14 space-y-12 md:space-y-16">
       {/* SECTION 1: HERO & COUNTDOWN */}
       <section className="relative overflow-hidden rounded-3xl border border-slate-200/60 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/60 backdrop-blur-md shadow-sm">
         <div className="absolute inset-0">
