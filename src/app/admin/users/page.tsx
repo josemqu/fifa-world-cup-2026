@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Search,
   ChevronLeft,
@@ -51,54 +51,112 @@ interface PaginationData {
 
 export default function AdminUsersPage() {
   const { dbUser } = useAuth();
-  const [users, setUsers] = useState<DbUser[]>([]);
-  const [pagination, setPagination] = useState<PaginationData | null>(null);
+  const [allUsers, setAllUsers] = useState<DbUser[]>([]);
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [selectedCompareUser, setSelectedCompareUser] = useState<DbUser | null>(null);
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
 
-  // Debounce search input
+  const isProfileComplete = (u: DbUser) => {
+    return !!(
+      u.displayName &&
+      u.nickname &&
+      u.country &&
+      u.favoriteTeam &&
+      u.gender &&
+      (u.age || u.birthDate)
+    );
+  };
+
+  // Reset page to 1 when search changes
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1); // Reset to page 1 on search
-    }, 500);
-    return () => clearTimeout(timer);
+    setPage(1);
   }, [search]);
 
   const fetchUsers = useCallback(async () => {
     if (!dbUser?.email) return;
     setLoading(true);
     try {
+      // Fetch all users at once by passing a high limit
       const queryParams = new URLSearchParams({
-        page: page.toString(),
-        limit: "15",
-        search: debouncedSearch,
-        sortBy,
-        sortOrder,
+        page: "1",
+        limit: "10000",
+        search: "",
+        sortBy: "createdAt",
+        sortOrder: "desc",
       });
       const res = await fetch(`/api/admin/users?${queryParams.toString()}`, {
         headers: { "x-admin-email": dbUser.email },
       });
       const json = await res.json();
       if (json.success) {
-        setUsers(json.data);
-        setPagination(json.pagination);
+        setAllUsers(json.data);
       }
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, [dbUser, page, debouncedSearch, sortBy, sortOrder]);
+  }, [dbUser]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  // Client-side search / filtering
+  const filteredUsers = useMemo(() => {
+    const s = search.trim().toLowerCase();
+    if (!s) return allUsers;
+    return allUsers.filter(
+      (u) =>
+        u.displayName?.toLowerCase().includes(s) ||
+        u.email?.toLowerCase().includes(s) ||
+        u.nickname?.toLowerCase().includes(s)
+    );
+  }, [allUsers, search]);
+
+  // Client-side sorting
+  const sortedUsers = useMemo(() => {
+    const sorted = [...filteredUsers];
+    sorted.sort((a, b) => {
+      let valA: any;
+      let valB: any;
+
+      if (sortBy === "profileComplete") {
+        valA = isProfileComplete(a) ? 1 : 0;
+        valB = isProfileComplete(b) ? 1 : 0;
+      } else {
+        valA = a[sortBy as keyof DbUser];
+        valB = b[sortBy as keyof DbUser];
+      }
+
+      if (valA === undefined || valA === null) return sortOrder === "asc" ? 1 : -1;
+      if (valB === undefined || valB === null) return sortOrder === "asc" ? -1 : 1;
+
+      if (typeof valA === "string" && typeof valB === "string") {
+        return sortOrder === "asc"
+          ? valA.localeCompare(valB)
+          : valB.localeCompare(valA);
+      }
+
+      return sortOrder === "asc"
+        ? (valA > valB ? 1 : -1)
+        : (valA < valB ? 1 : -1);
+    });
+    return sorted;
+  }, [filteredUsers, sortBy, sortOrder]);
+
+  const limit = 15;
+  const total = sortedUsers.length;
+  const pages = Math.ceil(total / limit);
+
+  // Client-side pagination
+  const paginatedUsers = useMemo(() => {
+    const start = (page - 1) * limit;
+    return sortedUsers.slice(start, start + limit);
+  }, [sortedUsers, page]);
 
   const handleSort = (field: string) => {
     if (sortBy === field) {
@@ -138,7 +196,7 @@ export default function AdminUsersPage() {
       });
       const json = await res.json();
       if (json.success) {
-        setUsers((prev) =>
+        setAllUsers((prev) =>
           prev.map((u) =>
             u.firebaseUid === user.firebaseUid
               ? { ...u, excludeFromStats: updatedValue }
@@ -166,16 +224,7 @@ export default function AdminUsersPage() {
     }
   };
 
-  const isProfileComplete = (u: DbUser) => {
-    return !!(
-      u.displayName &&
-      u.nickname &&
-      u.country &&
-      u.favoriteTeam &&
-      u.gender &&
-      (u.age || u.birthDate)
-    );
-  };
+
 
   return (
     <div className="space-y-6">
@@ -266,14 +315,14 @@ export default function AdminUsersPage() {
                     <p className="text-xs text-slate-500">Cargando usuarios...</p>
                   </td>
                 </tr>
-              ) : users.length === 0 ? (
+              ) : paginatedUsers.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-6 py-12 text-center text-slate-500">
                     No se encontraron usuarios.
                   </td>
                 </tr>
               ) : (
-                users.map((u) => {
+                paginatedUsers.map((u) => {
                   const completed = isProfileComplete(u);
                   return (
                     <tr key={u._id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
@@ -431,16 +480,15 @@ export default function AdminUsersPage() {
             </tbody>
           </table>
         </div>
-
         {/* Pagination */}
-        {pagination && pagination.pages > 1 && (
+        {pages > 1 && (
           <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <p className="text-xs text-slate-500">
-              Mostrando <span className="text-slate-800 dark:text-slate-350">{(page - 1) * pagination.limit + 1}</span> a{" "}
+              Mostrando <span className="text-slate-800 dark:text-slate-350">{(page - 1) * limit + 1}</span> a{" "}
               <span className="text-slate-800 dark:text-slate-350">
-                {Math.min(page * pagination.limit, pagination.total)}
+                {Math.min(page * limit, total)}
               </span>{" "}
-              de <span className="text-slate-800 dark:text-slate-350">{pagination.total}</span> usuarios
+              de <span className="text-slate-800 dark:text-slate-350">{total}</span> usuarios
             </p>
             <div className="flex gap-2">
               <button
@@ -451,7 +499,7 @@ export default function AdminUsersPage() {
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
-                disabled={page === pagination.pages}
+                disabled={page === pages}
                 onClick={() => setPage((p) => p + 1)}
                 className="p-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-transparent rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
