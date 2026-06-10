@@ -78,6 +78,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
 
       if (currentUser) {
+        if (typeof document !== "undefined") {
+          document.cookie = "is_logged_in=true; path=/; max-age=31536000; SameSite=Lax";
+        }
         // Sync with DB asynchronously
         const syncUser = async () => {
           try {
@@ -132,6 +135,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
         syncUser();
       } else {
+        if (typeof document !== "undefined") {
+          document.cookie = "is_logged_in=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+        }
         setDbUser(null);
       }
     });
