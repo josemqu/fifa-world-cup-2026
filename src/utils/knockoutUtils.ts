@@ -241,3 +241,57 @@ export function generateR32Matches(groups: Group[]) {
     };
   });
 }
+
+/**
+ * Returns a descriptive Spanish explanation for a tournament placeholder team.
+ * E.g., "W89" -> "Ganador del partido #89"
+ *       "L101" -> "Perdedor del partido #101"
+ *       "1A" -> "1° del Grupo A"
+ *       "3° (A/B/C/D/F)" -> "Mejor tercero de los grupos A, B, C, D o F"
+ */
+export function getPlaceholderExplanation(ph: string): string {
+  if (!ph) return "";
+
+  // Check for W[number]
+  const winnerMatch = ph.match(/^[Ww](\d+)$/);
+  if (winnerMatch) {
+    return `Ganador del partido #${winnerMatch[1]}`;
+  }
+
+  // Check for L[number]
+  const loserMatch = ph.match(/^[Ll](\d+)$/);
+  if (loserMatch) {
+    return `Perdedor del partido #${loserMatch[1]}`;
+  }
+
+  // Check for [1-3][A-L]
+  const groupPosMatch = ph.match(/^([1-3])([A-L])$/i);
+  if (groupPosMatch) {
+    const pos = groupPosMatch[1];
+    const group = groupPosMatch[2].toUpperCase();
+    let posText = "";
+    if (pos === "1") posText = "1°";
+    else if (pos === "2") posText = "2°";
+    else if (pos === "3") posText = "3°";
+    return `${posText} del Grupo ${group}`;
+  }
+
+  // Check for 3° (A/B/C...) or similar
+  const bestThirdMatch = ph.match(/^3°\s*\((.+)\)$/i);
+  if (bestThirdMatch) {
+    const groupsStr = bestThirdMatch[1];
+    const groupsList = groupsStr.split("/");
+    if (groupsList.length > 1) {
+      const last = groupsList.pop();
+      return `Mejor tercero de los grupos ${groupsList.join(", ")} o ${last}`;
+    }
+    return `Mejor tercero del grupo ${groupsStr}`;
+  }
+
+  if (ph === "3?") {
+    return "Mejor tercero clasificado";
+  }
+
+  return ph;
+}
+

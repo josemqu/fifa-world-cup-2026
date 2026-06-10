@@ -2,6 +2,7 @@ import { Group, KnockoutMatch, Team } from "@/data/types";
 import {
   getGroupStandings,
   getSortedThirdPlaceTeams,
+  getPlaceholderExplanation,
 } from "@/utils/knockoutUtils";
 import { predictMatchScore } from "@/utils/simulationUtils";
 import { clsx } from "clsx";
@@ -236,7 +237,11 @@ function MatchCard({
                   className="w-4 h-3 shrink-0"
                 />
                 <Tooltip
-                  content={homeName}
+                  content={
+                    isHomePlaceholder && !isHomeProjected && homeName
+                      ? getPlaceholderExplanation(homeName)
+                      : homeName
+                  }
                   placement="top"
                   wrapperClassName="min-w-0 flex-1"
                 >
@@ -342,7 +347,11 @@ function MatchCard({
                   showPlaceholder={false}
                 />
                 <Tooltip
-                  content={awayName}
+                  content={
+                    isAwayPlaceholder && !isAwayProjected && awayName
+                      ? getPlaceholderExplanation(awayName)
+                      : awayName
+                  }
                   placement="top"
                   wrapperClassName="min-w-0 flex-1"
                 >

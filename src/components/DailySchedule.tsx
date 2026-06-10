@@ -11,6 +11,7 @@ import { useTournament } from "@/context/TournamentContext";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { clsx } from "clsx";
 import { FlashScoreInput } from "@/components/ui/FlashScoreInput";
+import { getPlaceholderExplanation } from "@/utils/knockoutUtils";
 
 
 interface DailyScheduleProps {
@@ -574,7 +575,7 @@ function ScheduleMatchCard({ match, highlightMatchId }: { match: NormalizedMatch
               className="w-6 h-4 shrink-0"
             />
             <Tooltip 
-              content={match.homeTeamName} 
+              content={getPlaceholderExplanation(match.homeTeamName)} 
               placement="top"
               wrapperClassName="min-w-0 flex-1"
             >
@@ -619,7 +620,7 @@ function ScheduleMatchCard({ match, highlightMatchId }: { match: NormalizedMatch
           {/* Away */}
           <div className="flex items-center gap-2 min-w-0 justify-end">
             <Tooltip 
-              content={match.awayTeamName} 
+              content={getPlaceholderExplanation(match.awayTeamName)} 
               placement="top"
               wrapperClassName="min-w-0 flex-1"
             >
