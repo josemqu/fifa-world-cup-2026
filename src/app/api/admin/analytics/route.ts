@@ -29,6 +29,10 @@ export async function GET(request: Request) {
     const last7Days = new Date(now);
     last7Days.setDate(last7Days.getDate() - 7);
 
+    // ── Get excluded user UIDs ──────────────────────────────────────────────
+    const excludedUsers = await User.find({ excludeFromStats: true }).select("firebaseUid").lean();
+    const excludedUids = excludedUsers.map((u) => u.firebaseUid);
+
     // ── Summary KPIs ──────────────────────────────────────────────────────────
     const [
       totalUsers,
@@ -37,16 +41,16 @@ export async function GET(request: Request) {
       activeThisWeek,
       totalPredictions,
     ] = await Promise.all([
-      User.countDocuments(),
-      User.countDocuments({ createdAt: { $gte: todayStart } }),
-      User.countDocuments({ lastActiveAt: { $gte: todayStart } }),
-      User.countDocuments({ lastActiveAt: { $gte: last7Days } }),
-      ProdePrediction.countDocuments(),
+      User.countDocuments({ firebaseUid: { $nin: excludedUids } }),
+      User.countDocuments({ createdAt: { $gte: todayStart }, firebaseUid: { $nin: excludedUids } }),
+      User.countDocuments({ lastActiveAt: { $gte: todayStart }, firebaseUid: { $nin: excludedUids } }),
+      User.countDocuments({ lastActiveAt: { $gte: last7Days }, firebaseUid: { $nin: excludedUids } }),
+      ProdePrediction.countDocuments({ firebaseUid: { $nin: excludedUids } }),
     ]);
 
     // ── Daily registrations (last 30 days) ───────────────────────────────────
     const dailyRegistrations = await User.aggregate([
-      { $match: { createdAt: { $gte: last30Days } } },
+      { $match: { createdAt: { $gte: last30Days }, firebaseUid: { $nin: excludedUids } } },
       {
         $group: {
           _id: {
@@ -61,7 +65,7 @@ export async function GET(request: Request) {
 
     // ── Daily active users (last 30 days) ─────────────────────────────────────
     const dailyActiveUsers = await User.aggregate([
-      { $match: { lastActiveAt: { $gte: last30Days } } },
+      { $match: { lastActiveAt: { $gte: last30Days }, firebaseUid: { $nin: excludedUids } } },
       {
         $group: {
           _id: {
@@ -76,7 +80,7 @@ export async function GET(request: Request) {
 
     // ── Activity by action type (last 30 days) ────────────────────────────────
     const activityByType = await UserActivity.aggregate([
-      { $match: { createdAt: { $gte: last30Days } } },
+      { $match: { createdAt: { $gte: last30Days }, firebaseUid: { $nin: excludedUids } } },
       { $group: { _id: "$action", count: { $sum: 1 } } },
       { $project: { action: "$_id", count: 1, _id: 0 } },
       { $sort: { count: -1 } },
@@ -84,7 +88,7 @@ export async function GET(request: Request) {
 
     // ── Daily login events (last 30 days) ─────────────────────────────────────
     const dailyLogins = await UserActivity.aggregate([
-      { $match: { action: "LOGIN", createdAt: { $gte: last30Days } } },
+      { $match: { action: "LOGIN", createdAt: { $gte: last30Days }, firebaseUid: { $nin: excludedUids } } },
       {
         $group: {
           _id: {
@@ -99,7 +103,7 @@ export async function GET(request: Request) {
 
     // ── Top pages viewed ──────────────────────────────────────────────────────
     const topPages = await UserActivity.aggregate([
-      { $match: { action: "PAGE_VIEW", createdAt: { $gte: last30Days } } },
+      { $match: { action: "PAGE_VIEW", createdAt: { $gte: last30Days }, firebaseUid: { $nin: excludedUids } } },
       { $group: { _id: "$metadata.path", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 10 },
@@ -108,7 +112,7 @@ export async function GET(request: Request) {
 
     // ── Users by country ─────────────────────────────────────────────────────
     const usersByCountry = await User.aggregate([
-      { $match: { country: { $exists: true, $ne: null } } },
+      { $match: { country: { $exists: true, $ne: null }, firebaseUid: { $nin: excludedUids } } },
       { $group: { _id: "$country", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 10 },
@@ -117,7 +121,7 @@ export async function GET(request: Request) {
 
     // ── Users by favorite team ────────────────────────────────────────────────
     const usersByFavoriteTeam = await User.aggregate([
-      { $match: { favoriteTeam: { $exists: true, $ne: null } } },
+      { $match: { favoriteTeam: { $exists: true, $ne: null }, firebaseUid: { $nin: excludedUids } } },
       { $group: { _id: "$favoriteTeam", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 10 },

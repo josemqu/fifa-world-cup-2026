@@ -11,6 +11,7 @@ export interface IUser extends Document {
   age?: number;
   birthDate?: string;
   role: "user" | "admin";
+  excludeFromStats?: boolean;
   preferences: {
     language: string;
   };
@@ -33,6 +34,7 @@ const UserSchema: Schema = new Schema(
     age: { type: Number },
     birthDate: { type: String },
     role: { type: String, enum: ["user", "admin"], default: "user" },
+    excludeFromStats: { type: Boolean, default: false },
     preferences: {
       language: { type: String, default: "es" },
     },

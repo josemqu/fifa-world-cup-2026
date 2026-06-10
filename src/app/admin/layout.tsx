@@ -13,6 +13,7 @@ import {
   Trophy,
   Menu,
   X,
+  UsersRound,
 } from "lucide-react";
 
 const navItems = [
@@ -25,6 +26,11 @@ const navItems = [
     href: "/admin/users",
     label: "Usuarios",
     icon: Users,
+  },
+  {
+    href: "/admin/groups",
+    label: "Grupos",
+    icon: UsersRound,
   },
 ];
 

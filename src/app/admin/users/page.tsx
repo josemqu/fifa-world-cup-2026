@@ -13,6 +13,11 @@ import {
   XCircle,
   Trophy,
   ArrowLeftRight,
+  ArrowUpDown,
+  ChevronUp,
+  ChevronDown,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { PredictionComparisonModal } from "@/components/PredictionComparisonModal";
@@ -34,6 +39,7 @@ interface DbUser {
   lastActiveAt?: string;
   createdAt: string;
   predictionCount: number;
+  excludeFromStats?: boolean;
 }
 
 interface PaginationData {
@@ -52,6 +58,8 @@ export default function AdminUsersPage() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [selectedCompareUser, setSelectedCompareUser] = useState<DbUser | null>(null);
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("desc");
 
   // Debounce search input
   useEffect(() => {
@@ -70,6 +78,8 @@ export default function AdminUsersPage() {
         page: page.toString(),
         limit: "15",
         search: debouncedSearch,
+        sortBy,
+        sortOrder,
       });
       const res = await fetch(`/api/admin/users?${queryParams.toString()}`, {
         headers: { "x-admin-email": dbUser.email },
@@ -84,11 +94,62 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [dbUser, page, debouncedSearch]);
+  }, [dbUser, page, debouncedSearch, sortBy, sortOrder]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder((o) => (o === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(field);
+      setSortOrder("desc");
+    }
+    setPage(1);
+  };
+
+  const renderSortIcon = (field: string) => {
+    if (sortBy !== field) {
+      return <ArrowUpDown className="w-3.5 h-3.5 ml-1 inline-block opacity-40 hover:opacity-100 transition-opacity" />;
+    }
+    return sortOrder === "asc" ? (
+      <ChevronUp className="w-3.5 h-3.5 ml-1 inline-block text-indigo-600 dark:text-indigo-400 font-bold" />
+    ) : (
+      <ChevronDown className="w-3.5 h-3.5 ml-1 inline-block text-indigo-600 dark:text-indigo-400 font-bold" />
+    );
+  };
+
+  const toggleExcludeFromStats = async (user: DbUser) => {
+    if (!dbUser?.email) return;
+    try {
+      const updatedValue = !user.excludeFromStats;
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-email": dbUser.email,
+        },
+        body: JSON.stringify({
+          firebaseUid: user.firebaseUid,
+          excludeFromStats: updatedValue,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.firebaseUid === user.firebaseUid
+              ? { ...u, excludeFromStats: updatedValue }
+              : u
+          )
+        );
+      }
+    } catch (e) {
+      console.error("Error toggling user stats exclusion:", e);
+    }
+  };
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "-";
@@ -146,27 +207,68 @@ export default function AdminUsersPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                <th className="px-6 py-4">Usuario</th>
-                <th className="px-6 py-4">Ubicación / Favorito</th>
-                <th className="px-6 py-4 text-center">Perfil</th>
-                <th className="px-6 py-4 text-center">Predicciones</th>
-                <th className="px-6 py-4 text-center">Sesiones</th>
-                <th className="px-6 py-4">Última Actividad</th>
-                <th className="px-6 py-4">Registro</th>
+                <th
+                  onClick={() => handleSort("displayName")}
+                  className="px-6 py-4 cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
+                >
+                  Usuario {renderSortIcon("displayName")}
+                </th>
+                <th
+                  onClick={() => handleSort("country")}
+                  className="px-6 py-4 cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
+                >
+                  Ubicación {renderSortIcon("country")}
+                </th>
+                <th
+                  onClick={() => handleSort("profileComplete")}
+                  className="px-6 py-4 text-center cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
+                >
+                  Perfil {renderSortIcon("profileComplete")}
+                </th>
+                <th
+                  onClick={() => handleSort("predictionCount")}
+                  className="px-6 py-4 text-center cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
+                >
+                  Predicciones {renderSortIcon("predictionCount")}
+                </th>
+                <th
+                  onClick={() => handleSort("loginCount")}
+                  className="px-6 py-4 text-center cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
+                >
+                  Sesiones {renderSortIcon("loginCount")}
+                </th>
+                <th
+                  onClick={() => handleSort("lastActiveAt")}
+                  className="px-6 py-4 cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
+                >
+                  Última Actividad {renderSortIcon("lastActiveAt")}
+                </th>
+                <th
+                  onClick={() => handleSort("createdAt")}
+                  className="px-6 py-4 cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
+                >
+                  Registro {renderSortIcon("createdAt")}
+                </th>
+                <th
+                  onClick={() => handleSort("excludeFromStats")}
+                  className="px-6 py-4 text-center cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
+                >
+                  Stats {renderSortIcon("excludeFromStats")}
+                </th>
                 <th className="px-6 py-4 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200/80 dark:divide-slate-800/60 text-sm">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center">
+                  <td colSpan={9} className="px-6 py-12 text-center">
                     <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
                     <p className="text-xs text-slate-500">Cargando usuarios...</p>
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={9} className="px-6 py-12 text-center text-slate-500">
                     No se encontraron usuarios.
                   </td>
                 </tr>
@@ -267,6 +369,36 @@ export default function AdminUsersPage() {
                           <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-600" />
                           <span>{formatDate(u.createdAt)}</span>
                         </div>
+                      </td>
+
+                      {/* Stats toggle */}
+                      <td className="px-6 py-4 text-center">
+                        <button
+                          onClick={() => toggleExcludeFromStats(u)}
+                          className={clsx(
+                            "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-full transition-all border shadow-xs cursor-pointer",
+                            u.excludeFromStats
+                              ? "bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                              : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                          )}
+                          title={
+                            u.excludeFromStats
+                              ? "Excluido de las estadísticas del panel de control y leaderboard"
+                              : "Incluido en las estadísticas"
+                          }
+                        >
+                          {u.excludeFromStats ? (
+                            <>
+                              <EyeOff className="w-3.5 h-3.5" />
+                              <span>Oculto</span>
+                            </>
+                          ) : (
+                            <>
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Visible</span>
+                            </>
+                          )}
+                        </button>
                       </td>
 
                       {/* Acciones */}

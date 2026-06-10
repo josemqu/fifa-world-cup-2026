@@ -51,22 +51,13 @@ export async function GET() {
     const uids = Object.keys(predictionsByUser);
 
     const users = await User.find(
-      { firebaseUid: { $in: uids } },
+      { firebaseUid: { $in: uids }, excludeFromStats: { $ne: true } },
       { firebaseUid: 1, displayName: 1, nickname: 1, _id: 0 }
     );
-    const userMap: Record<
-      string,
-      { displayName: string; nickname?: string }
-    > = {};
-    for (const user of users) {
-      userMap[user.firebaseUid] = {
-        displayName: user.displayName,
-        nickname: user.nickname,
-      };
-    }
 
-    const leaderboard = uids.map((uid) => {
-      const preds = predictionsByUser[uid];
+    const leaderboard = users.map((user) => {
+      const uid = user.firebaseUid;
+      const preds = predictionsByUser[uid] || [];
       let totalPoints = 0;
       let exactCount = 0;
       let correctCount = 0;
@@ -89,11 +80,10 @@ export async function GET() {
         if (pts === 1) correctCount++;
       }
 
-      const profile = userMap[uid] || {};
       return {
         firebaseUid: uid,
-        displayName: profile.displayName || uid,
-        nickname: profile.nickname || null,
+        displayName: user.displayName || uid,
+        nickname: user.nickname || null,
         totalPoints,
         exactCount,
         correctCount,
