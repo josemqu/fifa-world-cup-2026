@@ -139,9 +139,9 @@ export default function PredictionsMethodologyPage() {
         </div>
 
         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 md:p-8">
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
             Cómo estimamos los resultados de los partidos
-          </h2>
+          </h1>
           <p className="mt-2 text-slate-600 dark:text-slate-400 leading-relaxed">
             Este simulador estima probabilidades y marcadores usando una mezcla
             de fuerza relativa (tipo Elo a partir de Puntos FIFA) y un modelo de

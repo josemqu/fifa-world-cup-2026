@@ -284,9 +284,9 @@ function ProdePageContent() {
             <Trophy className="w-10 h-10 text-white" />
           </div>
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
               Prode Mundial 2026
-            </h2>
+            </h1>
             <p className="text-slate-500 dark:text-slate-400 max-w-md">
               Predecí los resultados de todos los partidos, competí con tus amigos
               y subí en el ranking global.

@@ -2,6 +2,11 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Términos y Condiciones",
+  description:
+    "Términos y Condiciones de uso del fixture interactivo y simulador del Mundial de Selecciones 2026. Información sobre propiedad intelectual, límites de responsabilidad y carácter educativo.",
+  alternates: {
+    canonical: "/condiciones",
+  },
 };
 
 export default function CondicionesPage() {

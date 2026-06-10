@@ -2,6 +2,11 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Política de Privacidad",
+  description:
+    "Política de Privacidad del sitio interactivo del Mundial de Selecciones 2026. Detalle del tratamiento de tus datos, autenticación con Google y cookies.",
+  alternates: {
+    canonical: "/privacidad",
+  },
 };
 
 export default function PrivacidadPage() {

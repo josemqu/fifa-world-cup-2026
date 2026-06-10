@@ -82,10 +82,10 @@ export function Header() {
                 />
               </div>
               <div>
-                <h1 className="text-xl md:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
+                <div className="text-xl md:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
                   Mundial{" "}
                   <span className="text-blue-600 dark:text-blue-400">2026</span>
-                </h1>
+                </div>
                 <p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 font-medium">
                   Fixture y Simulador
                 </p>

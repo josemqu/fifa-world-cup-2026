@@ -5,8 +5,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/api/"],
+      disallow: ["/api/", "/admin/"],
     },
-    sitemap: "https://fifa-world-cup-2026.vercel.app//sitemap.xml",
+    sitemap: "https://fifa-world-cup-2026.vercel.app/sitemap.xml",
   };
 }

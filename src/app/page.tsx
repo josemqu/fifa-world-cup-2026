@@ -62,12 +62,12 @@ export default function Home() {
                 Edición Expandida 48 Selecciones
               </span>
 
-              <h2 className="mt-6 text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
+              <h1 className="mt-6 text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
                 Mundial de Selecciones{" "}
                 <span className="bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-400">
                   2026
                 </span>
-              </h2>
+              </h1>
 
               <p className="mt-4 text-base md:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl">
                 Simulá partidos, corré predicciones de Montecarlo con alta precisión

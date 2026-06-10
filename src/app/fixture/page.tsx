@@ -36,10 +36,10 @@ function FixturePageContent() {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Trophy className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               Fixture del Mundial 2026
-            </h2>
+            </h1>
             <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 max-w-xl">
               Explorá la fase de grupos y simulá los cruces de la segunda fase rumbo a la gran final.
             </p>

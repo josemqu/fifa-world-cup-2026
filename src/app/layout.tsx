@@ -18,6 +18,9 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://fifa-world-cup-2026.vercel.app/"),
+  alternates: {
+    canonical: "/",
+  },
   title: {
     default: "Mundial de Selecciones 2026 - Fixture Interactivo y Simulador",
     template: "%s | Mundial de Selecciones 2026",
