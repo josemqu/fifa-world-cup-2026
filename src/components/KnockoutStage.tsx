@@ -247,6 +247,8 @@ function MatchCard({
                         ? "text-slate-400 italic"
                         : "text-slate-900 dark:text-slate-100",
                       isHomeProjected && "text-blue-600 dark:text-blue-400",
+                      homeIsFavorite &&
+                      "font-bold text-indigo-700 dark:text-indigo-300",
                     )}
                   >
                     {homeName}
@@ -265,7 +267,21 @@ function MatchCard({
                   </Tooltip>
                 )}
               </div>
-
+              {showTeamProbabilities &&
+                !isHomeProjected &&
+                showProbabilities &&
+                (prob!.homeTeamProb * 100).toFixed(0) !== "100" && (
+                  <span
+                    className={clsx(
+                      "text-[10px] font-mono whitespace-nowrap shrink-0 transition-colors",
+                      homeIsFavorite
+                        ? "text-indigo-600 dark:text-indigo-400 font-bold"
+                        : "text-slate-400/70",
+                    )}
+                  >
+                    {(prob!.homeTeamProb * 100).toFixed(0)}%
+                  </span>
+                )}
             </div>
             <div className="flex items-center gap-1 shrink-0">
               {isTied && (
