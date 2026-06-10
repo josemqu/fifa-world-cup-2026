@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Search,
   ChevronLeft,
@@ -16,11 +16,9 @@ import {
   ChevronUp,
   ChevronDown,
   Activity,
-  Hash,
   RefreshCw,
   X,
   MapPin,
-  ExternalLink,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
@@ -59,20 +57,11 @@ interface EnrichedGroup {
   membersList: Member[];
 }
 
-interface PaginationData {
-  page: number;
-  limit: number;
-  total: number;
-  pages: number;
-}
-
 export default function AdminGroupsPage() {
   const { dbUser } = useAuth();
-  const [groups, setGroups] = useState<EnrichedGroup[]>([]);
+  const [allGroups, setAllGroups] = useState<EnrichedGroup[]>([]);
   const [kpis, setKpis] = useState<GroupKPIs | null>(null);
-  const [pagination, setPagination] = useState<PaginationData | null>(null);
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -83,34 +72,47 @@ export default function AdminGroupsPage() {
   const [selectedGroup, setSelectedGroup] = useState<EnrichedGroup | null>(null);
   const [selectedCompareUser, setSelectedCompareUser] = useState<Member | null>(null);
 
-  // Debounce search
+  // Reset page to 1 when search changes
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 500);
-    return () => clearTimeout(timer);
+    setPage(1);
   }, [search]);
+
+  // Load saved sorting from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedSortBy = window.localStorage.getItem("admin_groups_sort_by");
+      const savedSortOrder = window.localStorage.getItem("admin_groups_sort_order");
+      if (savedSortBy) setSortBy(savedSortBy);
+      if (savedSortOrder) setSortOrder(savedSortOrder);
+    }
+  }, []);
+
+  // Save sorting to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("admin_groups_sort_by", sortBy);
+      window.localStorage.setItem("admin_groups_sort_order", sortOrder);
+    }
+  }, [sortBy, sortOrder]);
 
   const fetchGroups = useCallback(async () => {
     if (!dbUser?.email) return;
     if (!refreshing) setLoading(true);
     try {
       const queryParams = new URLSearchParams({
-        page: page.toString(),
-        limit: "15",
-        search: debouncedSearch,
-        sortBy,
-        sortOrder,
+        page: "1",
+        limit: "10000",
+        search: "",
+        sortBy: "createdAt",
+        sortOrder: "desc",
       });
       const res = await fetch(`/api/admin/groups?${queryParams.toString()}`, {
         headers: { "x-admin-email": dbUser.email },
       });
       const json = await res.json();
       if (json.success) {
-        setGroups(json.data);
+        setAllGroups(json.data);
         setKpis(json.kpis);
-        setPagination(json.pagination);
       }
     } catch (e) {
       console.error("Error fetching prode groups:", e);
@@ -118,7 +120,7 @@ export default function AdminGroupsPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [dbUser, page, debouncedSearch, sortBy, sortOrder, refreshing]);
+  }, [dbUser, refreshing]);
 
   useEffect(() => {
     fetchGroups();
@@ -128,6 +130,70 @@ export default function AdminGroupsPage() {
     setRefreshing(true);
     fetchGroups();
   };
+
+  // Client-side search / filtering
+  const filteredGroups = useMemo(() => {
+    const s = search.trim().toLowerCase();
+    if (!s) return allGroups;
+    return allGroups.filter(
+      (g) =>
+        g.name?.toLowerCase().includes(s) ||
+        g.code?.toLowerCase().includes(s) ||
+        g.owner?.displayName?.toLowerCase().includes(s) ||
+        g.owner?.email?.toLowerCase().includes(s) ||
+        g.owner?.nickname?.toLowerCase().includes(s)
+    );
+  }, [allGroups, search]);
+
+  // Client-side sorting
+  const sortedGroups = useMemo(() => {
+    const sorted = [...filteredGroups];
+    sorted.sort((a, b) => {
+      let valA: string | number | undefined | null;
+      let valB: string | number | undefined | null;
+
+      if (sortBy === "name") {
+        valA = a.name;
+        valB = b.name;
+      } else if (sortBy === "code") {
+        valA = a.code;
+        valB = b.code;
+      } else if (sortBy === "membersCount") {
+        valA = a.membersCount;
+        valB = b.membersCount;
+      } else if (sortBy === "updatedAt") {
+        valA = a.updatedAt;
+        valB = b.updatedAt;
+      } else {
+        valA = a.createdAt;
+        valB = b.createdAt;
+      }
+
+      if (valA === undefined || valA === null) return sortOrder === "asc" ? 1 : -1;
+      if (valB === undefined || valB === null) return sortOrder === "asc" ? -1 : 1;
+
+      if (typeof valA === "string" && typeof valB === "string") {
+        return sortOrder === "asc"
+          ? valA.localeCompare(valB)
+          : valB.localeCompare(valA);
+      }
+
+      return sortOrder === "asc"
+        ? (valA > valB ? 1 : -1)
+        : (valA < valB ? 1 : -1);
+    });
+    return sorted;
+  }, [filteredGroups, sortBy, sortOrder]);
+
+  const limit = 15;
+  const total = sortedGroups.length;
+  const pages = Math.ceil(total / limit);
+
+  // Client-side pagination
+  const paginatedGroups = useMemo(() => {
+    const start = (page - 1) * limit;
+    return sortedGroups.slice(start, start + limit);
+  }, [sortedGroups, page]);
 
   const handleSort = (field: string) => {
     if (sortBy === field) {
@@ -160,7 +226,7 @@ export default function AdminGroupsPage() {
         hour: "2-digit",
         minute: "2-digit",
       });
-    } catch (e) {
+    } catch {
       return "-";
     }
   };
@@ -291,14 +357,14 @@ export default function AdminGroupsPage() {
                     <p className="text-xs text-slate-500">Cargando grupos...</p>
                   </td>
                 </tr>
-              ) : groups.length === 0 ? (
+              ) : sortedGroups.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
                     No se encontraron grupos.
                   </td>
                 </tr>
               ) : (
-                groups.map((g) => (
+                paginatedGroups.map((g) => (
                   <tr key={g._id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
                     {/* Name */}
                     <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">
@@ -362,14 +428,14 @@ export default function AdminGroupsPage() {
         </div>
 
         {/* Pagination */}
-        {pagination && pagination.pages > 1 && (
+        {pages > 1 && (
           <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <p className="text-xs text-slate-500">
-              Mostrando <span className="text-slate-800 dark:text-slate-350">{(page - 1) * pagination.limit + 1}</span> a{" "}
+              Mostrando <span className="text-slate-800 dark:text-slate-350">{(page - 1) * limit + 1}</span> a{" "}
               <span className="text-slate-800 dark:text-slate-350">
-                {Math.min(page * pagination.limit, pagination.total)}
+                {Math.min(page * limit, total)}
               </span>{" "}
-              de <span className="text-slate-800 dark:text-slate-350">{pagination.total}</span> grupos
+              de <span className="text-slate-800 dark:text-slate-350">{total}</span> grupos
             </p>
             <div className="flex gap-2">
               <button
@@ -380,7 +446,7 @@ export default function AdminGroupsPage() {
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
-                disabled={page === pagination.pages}
+                disabled={page === pages}
                 onClick={() => setPage((p) => p + 1)}
                 className="p-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-transparent rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >

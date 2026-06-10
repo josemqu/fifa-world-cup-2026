@@ -42,13 +42,6 @@ interface DbUser {
   excludeFromStats?: boolean;
 }
 
-interface PaginationData {
-  page: number;
-  limit: number;
-  total: number;
-  pages: number;
-}
-
 export default function AdminUsersPage() {
   const { dbUser } = useAuth();
   const [allUsers, setAllUsers] = useState<DbUser[]>([]);
@@ -74,6 +67,24 @@ export default function AdminUsersPage() {
   useEffect(() => {
     setPage(1);
   }, [search]);
+
+  // Load saved sorting from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedSortBy = window.localStorage.getItem("admin_users_sort_by");
+      const savedSortOrder = window.localStorage.getItem("admin_users_sort_order");
+      if (savedSortBy) setSortBy(savedSortBy);
+      if (savedSortOrder) setSortOrder(savedSortOrder);
+    }
+  }, []);
+
+  // Save sorting to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("admin_users_sort_by", sortBy);
+      window.localStorage.setItem("admin_users_sort_order", sortOrder);
+    }
+  }, [sortBy, sortOrder]);
 
   const fetchUsers = useCallback(async () => {
     if (!dbUser?.email) return;
@@ -121,8 +132,8 @@ export default function AdminUsersPage() {
   const sortedUsers = useMemo(() => {
     const sorted = [...filteredUsers];
     sorted.sort((a, b) => {
-      let valA: any;
-      let valB: any;
+      let valA: string | number | boolean | undefined | null;
+      let valB: string | number | boolean | undefined | null;
 
       if (sortBy === "profileComplete") {
         valA = isProfileComplete(a) ? 1 : 0;
@@ -219,7 +230,7 @@ export default function AdminUsersPage() {
         hour: "2-digit",
         minute: "2-digit",
       });
-    } catch (e) {
+    } catch {
       return "-";
     }
   };
