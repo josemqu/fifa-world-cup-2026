@@ -194,7 +194,7 @@ export function Header() {
                 <span className="relative z-10">Prode</span>
               </Link>
             </nav>
-            <Suspense fallback={<div className="w-[120px] h-[34px] bg-blue-50/40 dark:bg-blue-950/20 border border-blue-200/20 dark:border-blue-800/10 rounded-lg animate-pulse shrink-0" />}>
+            <Suspense fallback={<div className="w-[154px] h-[34px] bg-blue-50/40 dark:bg-blue-950/20 border border-blue-200/20 dark:border-blue-800/10 rounded-lg animate-pulse shrink-0" />}>
               <NextMatchCountdown />
             </Suspense>
           </div>

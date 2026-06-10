@@ -120,7 +120,7 @@ export function NextMatchCountdown() {
 
   if (!now) {
     return (
-      <div className="w-[120px] h-[34px] bg-blue-50/40 dark:bg-blue-950/20 border border-blue-200/20 dark:border-blue-800/10 rounded-lg animate-pulse shrink-0" />
+      <div className="w-[154px] h-[34px] bg-blue-50/40 dark:bg-blue-950/20 border border-blue-200/20 dark:border-blue-800/10 rounded-lg animate-pulse shrink-0" />
     );
   }
 
@@ -190,7 +190,7 @@ export function NextMatchCountdown() {
     >
       <Link
         href={`/schedule?day=${nextMatch.matchDay}&match=${nextMatch.matchId}&t=${Date.now()}`}
-        className="group/countdown relative flex items-center gap-2 px-3 py-1.5 rounded-lg 
+        className="group/countdown relative flex items-center justify-center gap-2 w-[154px] h-[34px] px-3 rounded-lg 
           bg-blue-50/80 dark:bg-blue-950/40 
           border border-blue-200/60 dark:border-blue-800/40 
           hover:bg-blue-100/80 dark:hover:bg-blue-900/40 
