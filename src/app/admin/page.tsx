@@ -281,25 +281,11 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Main area chart */}
+      {/* Main daily activity chart */}
       {charts && (
         <ChartCard title="Actividad diaria — Registros, Activos y Logins">
           <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={mergedDailyData} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
-              <defs>
-                <linearGradient id="gReg" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="gAct" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="gLog" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                </linearGradient>
-              </defs>
+            <BarChart data={mergedDailyData} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
               <XAxis
                 dataKey="date"
@@ -325,31 +311,25 @@ export default function AdminDashboard() {
                     : "Logins"
                 }
               />
-              <Area
-                type="monotone"
+              <Bar
                 dataKey="registros"
-                stroke="#6366f1"
-                strokeWidth={2}
-                fill="url(#gReg)"
-                dot={false}
+                name="registros"
+                fill="#6366f1"
+                radius={[4, 4, 0, 0]}
               />
-              <Area
-                type="monotone"
+              <Bar
                 dataKey="activos"
-                stroke="#06b6d4"
-                strokeWidth={2}
-                fill="url(#gAct)"
-                dot={false}
+                name="activos"
+                fill="#06b6d4"
+                radius={[4, 4, 0, 0]}
               />
-              <Area
-                type="monotone"
+              <Bar
                 dataKey="logins"
-                stroke="#10b981"
-                strokeWidth={2}
-                fill="url(#gLog)"
-                dot={false}
+                name="logins"
+                fill="#10b981"
+                radius={[4, 4, 0, 0]}
               />
-            </AreaChart>
+            </BarChart>
           </ResponsiveContainer>
         </ChartCard>
       )}
