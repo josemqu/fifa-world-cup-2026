@@ -1523,30 +1523,38 @@ function GroupsTab({
               </div>
               {groupDetail.leaderboard.length > 0 ? (
                 <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                  {groupDetail.leaderboard.map((entry, i) => (
-                    <div key={entry.firebaseUid} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                      <div className="w-8 flex justify-center">
-                        {i === 0 ? <Crown className="w-5 h-5 text-yellow-500" /> :
-                         i === 1 ? <Medal className="w-5 h-5 text-slate-400" /> :
-                         i === 2 ? <Medal className="w-5 h-5 text-amber-700" /> :
-                         <span className="text-sm font-mono text-slate-400">{i + 1}</span>}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
-                          {entry.nickname || entry.displayName}
-                        </p>
-                        <div className="flex gap-3 text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                          <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{entry.exactCount} exactos</span>
-                          <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" />{entry.correctCount} aciertos</span>
-                          <span>{entry.totalPredictions} pronósticos</span>
+                  {(() => {
+                    let currentRank = 1;
+                    return groupDetail.leaderboard.map((entry, index) => {
+                      if (index > 0 && entry.totalPoints < groupDetail.leaderboard[index - 1].totalPoints) {
+                        currentRank = index + 1;
+                      }
+                      return (
+                        <div key={entry.firebaseUid} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <div className="w-8 flex justify-center">
+                            {currentRank === 1 ? <Crown className="w-5 h-5 text-yellow-500" /> :
+                             currentRank === 2 ? <Medal className="w-5 h-5 text-slate-400" /> :
+                             currentRank === 3 ? <Medal className="w-5 h-5 text-amber-700" /> :
+                             <span className="text-sm font-mono text-slate-400">{currentRank}</span>}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                              {entry.nickname || entry.displayName}
+                            </p>
+                            <div className="flex gap-3 text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                              <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{entry.exactCount} exactos</span>
+                              <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" />{entry.correctCount} aciertos</span>
+                              <span>{entry.totalPredictions} pronósticos</span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-lg font-bold text-slate-900 dark:text-white">{entry.totalPoints}</span>
+                            <span className="text-[10px] text-slate-400 ml-1">pts</span>
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-lg font-bold text-slate-900 dark:text-white">{entry.totalPoints}</span>
-                        <span className="text-[10px] text-slate-400 ml-1">pts</span>
-                      </div>
-                    </div>
-                  ))}
+                      );
+                    });
+                  })()}
                 </div>
               ) : (
                 <div className="text-center py-12 text-slate-400 dark:text-slate-600">
@@ -1793,45 +1801,51 @@ function LeaderboardTab() {
         </h4>
       </div>
       <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
-        {leaderboard.map((entry, i) => {
-          const isCurrentUser = user?.uid === entry.firebaseUid;
-          return (
-            <div
-              key={entry.firebaseUid}
-              className={clsx(
-                "flex items-center gap-3 px-5 py-3 transition-colors",
-                isCurrentUser
-                  ? "bg-blue-50/50 dark:bg-blue-950/20 border-l-2 border-blue-500"
-                  : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
-              )}
-            >
-              <div className="w-8 flex justify-center">
-                {i === 0 ? <Crown className="w-5 h-5 text-yellow-500" /> :
-                 i === 1 ? <Medal className="w-5 h-5 text-slate-400" /> :
-                 i === 2 ? <Medal className="w-5 h-5 text-amber-700" /> :
-                 <span className="text-sm font-mono text-slate-400">{i + 1}</span>}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className={clsx(
-                  "text-sm font-medium truncate",
-                  isCurrentUser ? "text-blue-700 dark:text-blue-300 font-bold" : "text-slate-900 dark:text-slate-100"
-                )}>
-                  {entry.nickname || entry.displayName}
-                  {isCurrentUser && <span className="ml-2 text-[10px] text-blue-500 font-normal">(Vos)</span>}
-                </p>
-                <div className="flex gap-3 text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                  <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{entry.exactCount} exactos</span>
-                  <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" />{entry.correctCount} aciertos</span>
-                  <span>{entry.totalPredictions} pronósticos</span>
+        {(() => {
+          let currentRank = 1;
+          return leaderboard.map((entry, index) => {
+            if (index > 0 && entry.totalPoints < leaderboard[index - 1].totalPoints) {
+              currentRank = index + 1;
+            }
+            const isCurrentUser = user?.uid === entry.firebaseUid;
+            return (
+              <div
+                key={entry.firebaseUid}
+                className={clsx(
+                  "flex items-center gap-3 px-5 py-3 transition-colors",
+                  isCurrentUser
+                    ? "bg-blue-50/50 dark:bg-blue-950/20 border-l-2 border-blue-500"
+                    : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                )}
+              >
+                <div className="w-8 flex justify-center">
+                  {currentRank === 1 ? <Crown className="w-5 h-5 text-yellow-500" /> :
+                   currentRank === 2 ? <Medal className="w-5 h-5 text-slate-400" /> :
+                   currentRank === 3 ? <Medal className="w-5 h-5 text-amber-700" /> :
+                   <span className="text-sm font-mono text-slate-400">{currentRank}</span>}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={clsx(
+                    "text-sm font-medium truncate",
+                    isCurrentUser ? "text-blue-700 dark:text-blue-300 font-bold" : "text-slate-900 dark:text-slate-100"
+                  )}>
+                    {entry.nickname || entry.displayName}
+                    {isCurrentUser && <span className="ml-2 text-[10px] text-blue-500 font-normal">(Vos)</span>}
+                  </p>
+                  <div className="flex gap-3 text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                    <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{entry.exactCount} exactos</span>
+                    <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" />{entry.correctCount} aciertos</span>
+                    <span>{entry.totalPredictions} pronósticos</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-lg font-bold text-slate-900 dark:text-white">{entry.totalPoints}</span>
+                  <span className="text-[10px] text-slate-400 ml-1">pts</span>
                 </div>
               </div>
-              <div className="text-right">
-                <span className="text-lg font-bold text-slate-900 dark:text-white">{entry.totalPoints}</span>
-                <span className="text-[10px] text-slate-400 ml-1">pts</span>
-              </div>
-            </div>
-          );
-        })}
+            );
+          });
+        })()}
       </div>
     </div>
   );
