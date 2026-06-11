@@ -1,0 +1,97 @@
+name: Live Scores Sync
+
+# ─── Triggers ─────────────────────────────────────────────────
+# 1. Cron: every 2 minutes during the FIFA World Cup 2026 (Jun 11 – Jul 19)
+# 2. Manual: workflow_dispatch for testing
+on:
+  schedule:
+    # Every 2 minutes — GitHub Actions may delay up to ~1 min on free tier
+    - cron: "*/2 * * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Override sync date (YYYY-MM-DD). Leave empty for today."
+        required: false
+        type: string
+
+# ─── Concurrency ──────────────────────────────────────────────
+# Prevent overlapping runs — if a previous sync is still running, skip this one
+concurrency:
+  group: live-scores-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    # Only run during the tournament window (Jun 11 – Jul 20, 2026)
+    # This prevents burning Actions minutes outside the World Cup
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' &&
+       github.event.schedule != '' )
+
+    timeout-minutes: 1
+
+    steps:
+      - name: Check tournament dates
+        id: date-check
+        run: |
+          TODAY=$(date -u +%Y-%m-%d)
+          START="2026-06-11"
+          END="2026-07-20"
+
+          if [[ "$TODAY" < "$START" || "$TODAY" > "$END" ]]; then
+            echo "Outside tournament window ($TODAY). Skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Within tournament window ($TODAY). Proceeding."
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Sync live scores
+        if: steps.date-check.outputs.skip != 'true'
+        env:
+          DEPLOY_URL: ${{ secrets.DEPLOY_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          URL="${DEPLOY_URL:-https://fifa-world-cup-2026.vercel.app}"
+
+          # Build the sync URL
+          SYNC_URL="${URL}/api/scores/sync?action=cron"
+
+          # Add optional date override
+          if [ -n "${{ inputs.date }}" ]; then
+            SYNC_URL="${SYNC_URL}&date=${{ inputs.date }}"
+          fi
+
+          echo "🔄 Syncing scores from: ${SYNC_URL}"
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            --max-time 30 \
+            "${SYNC_URL}")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "📡 HTTP Status: ${HTTP_CODE}"
+          echo "📦 Response: ${BODY}"
+
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo "✅ Sync successful"
+
+            # Parse key metrics from response
+            LIVE=$(echo "$BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('live', 'N/A'))" 2>/dev/null || echo "N/A")
+            UPDATED=$(echo "$BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('updated', 'N/A'))" 2>/dev/null || echo "N/A")
+            TOTAL=$(echo "$BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('total', 'N/A'))" 2>/dev/null || echo "N/A")
+
+            echo ""
+            echo "📊 Results:"
+            echo "   Total fixtures: ${TOTAL}"
+            echo "   Updated: ${UPDATED}"
+            echo "   Live matches: ${LIVE}"
+          else
+            echo "❌ Sync failed with HTTP ${HTTP_CODE}"
+            exit 1
+          fi
