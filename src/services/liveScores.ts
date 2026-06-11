@@ -65,6 +65,34 @@ export interface NormalizedScore {
 
 // ─── JWT Authentication Caching ────────────────────────────────
 
+// ─── Fetch with Retry Utility ──────────────────────────────────
+
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  retries = 3,
+  delayMs = 1000
+): Promise<Response> {
+  let lastError: any;
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, options);
+      return res;
+    } catch (err: any) {
+      lastError = err;
+      console.warn(
+        `[liveScores] Fetch attempt ${attempt} failed for ${url}: ${err.message || err}. Retrying in ${delayMs}ms...`
+      );
+      if (attempt < retries) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+  throw lastError;
+}
+
+// ─── JWT Authentication Caching ────────────────────────────────
+
 let cachedToken: string | null = null;
 let cachedTokenExpiry = 0; // Epoch timestamp in seconds
 
@@ -85,12 +113,12 @@ async function getAuthToken(): Promise<string> {
 
   // 1. Try to authenticate
   try {
-    const authRes = await fetch(`${baseUrl}/auth/authenticate`, {
+    const authRes = await fetchWithRetry(`${baseUrl}/auth/authenticate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
       cache: "no-store",
-    });
+    }, 3, 1000);
 
     if (authRes.ok) {
       const data = await authRes.json();
@@ -102,7 +130,7 @@ async function getAuthToken(): Promise<string> {
         } catch {
           cachedTokenExpiry = now + 3600;
         }
-        return cachedToken;
+        return data.token;
       }
     }
   } catch (err) {
@@ -111,12 +139,12 @@ async function getAuthToken(): Promise<string> {
 
   // 2. If authentication fails, register the user (self-healing)
   try {
-    const regRes = await fetch(`${baseUrl}/auth/register`, {
+    const regRes = await fetchWithRetry(`${baseUrl}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: "Jose API", email, password }),
       cache: "no-store",
-    });
+    }, 3, 1000);
 
     const data = await regRes.json();
     if (regRes.ok && data.token) {
@@ -127,7 +155,7 @@ async function getAuthToken(): Promise<string> {
       } catch {
         cachedTokenExpiry = now + 3600;
       }
-      return cachedToken;
+      return data.token;
     } else {
       throw new Error(data.error || "Registration failed");
     }
@@ -167,12 +195,12 @@ export async function fetchFixtures(
   const token = await getAuthToken();
   const baseUrl = "https://worldcup26.ir";
 
-  const response = await fetch(`${baseUrl}/get/games`, {
+  const response = await fetchWithRetry(`${baseUrl}/get/games`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
     cache: "no-store",
-  });
+  }, 3, 1000);
 
   if (!response.ok) {
     throw new Error(
