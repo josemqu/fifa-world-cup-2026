@@ -96,7 +96,8 @@ export function useLiveScores(enabled: boolean = true) {
             score.groupId,
             score.matchId,
             score.homeScore,
-            score.awayScore
+            score.awayScore,
+            score.status === "finished"
           );
         } else if (score.stage === "knockout") {
           updateKnockoutMatch(
@@ -104,7 +105,8 @@ export function useLiveScores(enabled: boolean = true) {
             score.homeScore,
             score.awayScore,
             score.homePenalties,
-            score.awayPenalties
+            score.awayPenalties,
+            score.status === "finished"
           );
         }
       }

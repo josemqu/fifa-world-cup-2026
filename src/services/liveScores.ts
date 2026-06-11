@@ -167,7 +167,10 @@ async function getAuthToken(): Promise<string> {
 // ─── Status Mapping ───────────────────────────────────────────
 
 function normalizeStatus(finished: string, timeElapsed: string): MatchStatus {
-  const isFinished = finished?.toUpperCase() === "TRUE" || timeElapsed?.toUpperCase() === "FT";
+  const isFinished =
+    finished?.toUpperCase() === "TRUE" ||
+    timeElapsed?.toUpperCase() === "FT" ||
+    timeElapsed?.toUpperCase() === "FINISHED";
   if (isFinished) return "finished";
 
   const isHalftime = timeElapsed?.toUpperCase() === "HT";
@@ -293,7 +296,15 @@ export function normalizeFixtures(
     const homePenalties = null;
     const awayPenalties = null;
 
-    const elapsed = isNaN(Number(game.time_elapsed)) ? null : Number(game.time_elapsed);
+    let elapsed: number | null = null;
+    const elapsedUpper = game.time_elapsed?.toUpperCase();
+    if (elapsedUpper === "FINISHED" || elapsedUpper === "FT") {
+      elapsed = 90;
+    } else if (elapsedUpper === "HT") {
+      elapsed = 45;
+    } else if (game.time_elapsed !== "notstarted" && !isNaN(Number(game.time_elapsed))) {
+      elapsed = Number(game.time_elapsed);
+    }
 
     results.push({
       matchId,

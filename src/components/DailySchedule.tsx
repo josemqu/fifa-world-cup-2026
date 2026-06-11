@@ -30,6 +30,7 @@ type NormalizedMatch = {
   stage: string; // "Grupo A", "16avos", etc.
   isKnockout: boolean;
   groupId?: string;
+  finished?: boolean;
 };
 
 const TOURNAMENT_START = "2026-06-11";
@@ -78,6 +79,7 @@ export function DailySchedule({
           stage: `Fase de grupos — Fecha ${matchday}`,
           isKnockout: false,
           groupId: group.name,
+          finished: match.finished,
         });
       });
     }
@@ -94,6 +96,7 @@ export function DailySchedule({
         location: match.location,
         stage: STAGE_LABELS[match.stage] || match.stage,
         isKnockout: true,
+        finished: match.finished,
       });
     }
 
@@ -598,7 +601,7 @@ function ScheduleMatchCard({ match, highlightMatchId }: { match: NormalizedMatch
               type="number"
               min="0"
               placeholder="-"
-              disabled={isPlaceholder}
+              disabled={isPlaceholder || match.finished}
               value={match.homeScore ?? ""}
               onChange={(e) => handleScoreChange("home", e.target.value)}
               className="w-8 h-8 text-center text-xs font-bold bg-slate-100 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-30 transition-all appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -610,7 +613,7 @@ function ScheduleMatchCard({ match, highlightMatchId }: { match: NormalizedMatch
               type="number"
               min="0"
               placeholder="-"
-              disabled={isPlaceholder}
+              disabled={isPlaceholder || match.finished}
               value={match.awayScore ?? ""}
               onChange={(e) => handleScoreChange("away", e.target.value)}
               className="w-8 h-8 text-center text-xs font-bold bg-slate-100 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-30 transition-all appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"

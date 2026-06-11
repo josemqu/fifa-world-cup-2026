@@ -53,6 +53,7 @@ export type KnockoutMatch = {
   nextMatchId?: string; // Where the winner goes
   utcDate: string; // ISO 8601 UTC string
   location?: string;
+  finished?: boolean;
   probabilisticData?: {
     homeTeamProb: number; // 0-1
     awayTeamProb: number; // 0-1

@@ -57,6 +57,7 @@ interface TournamentContextType {
     matchId: string,
     homeScore: number | null,
     awayScore: number | null,
+    finished?: boolean,
   ) => void;
   updateKnockoutMatch: (
     matchId: string,
@@ -64,6 +65,7 @@ interface TournamentContextType {
     awayScore: number | null,
     homePenalties?: number | null,
     awayPenalties?: number | null,
+    finished?: boolean,
   ) => void;
   simulateGroups: () => void;
   simulateKnockout: () => void;
@@ -348,6 +350,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     matchId: string,
     homeScore: number | null,
     awayScore: number | null,
+    finished?: boolean,
   ) => {
     setGroups((currentGroups) => {
       return currentGroups.map((group) => {
@@ -360,7 +363,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
             ...match,
             homeScore: homeScore,
             awayScore: awayScore,
-            finished: homeScore !== null && awayScore !== null,
+            finished: finished !== undefined ? finished : (homeScore !== null && awayScore !== null),
           };
         });
 
@@ -376,6 +379,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     awayScore: number | null,
     homePenalties: number | null = null,
     awayPenalties: number | null = null,
+    finished?: boolean,
   ) => {
     setKnockoutMatches((currentMatches) => {
       let newMatches = [...currentMatches];
@@ -387,6 +391,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       match.awayScore = awayScore;
       match.homePenalties = homePenalties;
       match.awayPenalties = awayPenalties;
+      match.finished = finished !== undefined ? finished : (homeScore !== null && awayScore !== null);
 
       // Determine winner
       let winner: Team | null = null;

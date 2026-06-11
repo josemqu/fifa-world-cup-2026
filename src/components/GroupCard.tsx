@@ -461,7 +461,7 @@ export function GroupCard({
                       <FlashScoreInput
                         type="number"
                         min="0"
-                        className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
                         value={match.homeScore ?? ""}
                         onChange={(e) => {
                           const val = e.target.value;
@@ -474,6 +474,7 @@ export function GroupCard({
                           );
                         }}
                         placeholder="-"
+                        disabled={match.finished}
                       />
                       <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
                         :
@@ -481,7 +482,7 @@ export function GroupCard({
                       <FlashScoreInput
                         type="number"
                         min="0"
-                        className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
                         value={match.awayScore ?? ""}
                         onChange={(e) => {
                           const val = e.target.value;
@@ -494,6 +495,7 @@ export function GroupCard({
                           );
                         }}
                         placeholder="-"
+                        disabled={match.finished}
                       />
                     </div>
 

@@ -171,7 +171,8 @@ function MatchCard({
     !isHomePlaceholder &&
     !isAwayPlaceholder &&
     !isHomeProjected &&
-    !isAwayProjected;
+    !isAwayProjected &&
+    !match.finished;
 
   // Check for tie
   const isTied =
