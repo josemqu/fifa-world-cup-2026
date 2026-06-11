@@ -458,45 +458,61 @@ export function GroupCard({
                     </div>
 
                     <div className="flex items-center gap-1.5 mx-2">
-                      <FlashScoreInput
-                        type="number"
-                        min="0"
-                        className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
-                        value={match.homeScore ?? ""}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          const newScore = val === "" ? null : parseInt(val);
-                          onMatchUpdate(
-                            group.name,
-                            match.id,
-                            newScore,
-                            match.awayScore ?? null
-                          );
-                        }}
-                        placeholder="-"
-                        disabled={match.finished}
-                      />
-                      <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
-                        :
-                      </span>
-                      <FlashScoreInput
-                        type="number"
-                        min="0"
-                        className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
-                        value={match.awayScore ?? ""}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          const newScore = val === "" ? null : parseInt(val);
-                          onMatchUpdate(
-                            group.name,
-                            match.id,
-                            match.homeScore ?? null,
-                            newScore
-                          );
-                        }}
-                        placeholder="-"
-                        disabled={match.finished}
-                      />
+                      {match.finished ? (
+                        <>
+                          <span className="w-7 text-center text-xs font-bold text-slate-900 dark:text-slate-100">
+                            {match.homeScore}
+                          </span>
+                          <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
+                            :
+                          </span>
+                          <span className="w-7 text-center text-xs font-bold text-slate-900 dark:text-slate-100">
+                            {match.awayScore}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <FlashScoreInput
+                            type="number"
+                            min="0"
+                            className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
+                            value={match.homeScore ?? ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const newScore = val === "" ? null : parseInt(val);
+                              onMatchUpdate(
+                                group.name,
+                                match.id,
+                                newScore,
+                                match.awayScore ?? null
+                              );
+                            }}
+                            placeholder="-"
+                            disabled={match.finished}
+                          />
+                          <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
+                            :
+                          </span>
+                          <FlashScoreInput
+                            type="number"
+                            min="0"
+                            className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
+                            value={match.awayScore ?? ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const newScore = val === "" ? null : parseInt(val);
+                              onMatchUpdate(
+                                group.name,
+                                match.id,
+                                match.homeScore ?? null,
+                                newScore
+                              );
+                            }}
+                            placeholder="-"
+                            disabled={match.finished}
+                          />
+                        </>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2 flex-1 min-w-0 justify-start">

@@ -597,27 +597,43 @@ function ScheduleMatchCard({ match, highlightMatchId }: { match: NormalizedMatch
 
           {/* Score Inputs */}
           <div className="flex items-center gap-1 shrink-0 mx-2">
-            <FlashScoreInput
-              type="number"
-              min="0"
-              placeholder="-"
-              disabled={isPlaceholder || match.finished}
-              value={match.homeScore ?? ""}
-              onChange={(e) => handleScoreChange("home", e.target.value)}
-              className="w-8 h-8 text-center text-xs font-bold bg-slate-100 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-30 transition-all appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            />
-            <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
-              :
-            </span>
-            <FlashScoreInput
-              type="number"
-              min="0"
-              placeholder="-"
-              disabled={isPlaceholder || match.finished}
-              value={match.awayScore ?? ""}
-              onChange={(e) => handleScoreChange("away", e.target.value)}
-              className="w-8 h-8 text-center text-xs font-bold bg-slate-100 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-30 transition-all appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            />
+            {match.finished ? (
+              <>
+                <span className="w-8 text-center text-xs font-bold text-slate-900 dark:text-slate-100">
+                  {match.homeScore}
+                </span>
+                <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
+                  :
+                </span>
+                <span className="w-8 text-center text-xs font-bold text-slate-900 dark:text-slate-100">
+                  {match.awayScore}
+                </span>
+              </>
+            ) : (
+              <>
+                <FlashScoreInput
+                  type="number"
+                  min="0"
+                  placeholder="-"
+                  disabled={isPlaceholder || match.finished}
+                  value={match.homeScore ?? ""}
+                  onChange={(e) => handleScoreChange("home", e.target.value)}
+                  className="w-8 h-8 text-center text-xs font-bold bg-slate-100 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-30 transition-all appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
+                  :
+                </span>
+                <FlashScoreInput
+                  type="number"
+                  min="0"
+                  placeholder="-"
+                  disabled={isPlaceholder || match.finished}
+                  value={match.awayScore ?? ""}
+                  onChange={(e) => handleScoreChange("away", e.target.value)}
+                  className="w-8 h-8 text-center text-xs font-bold bg-slate-100 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-30 transition-all appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </>
+            )}
           </div>
 
           {/* Away */}

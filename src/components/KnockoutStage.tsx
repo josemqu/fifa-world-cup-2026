@@ -290,51 +290,66 @@ function MatchCard({
                 )}
             </div>
             <div className="flex items-center gap-1 shrink-0">
-              {isTied && (
-                <FlashScoreInput
-                  type="number"
-                  min="0"
-                  className={clsx(
-                    "w-5 h-5 text-center text-[10px] font-medium border rounded focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50",
-                    isPenaltyTied
-                      ? "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800 text-red-600 focus:ring-red-500 focus:border-red-500"
-                      : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:ring-blue-500 focus:border-transparent",
+              {match.finished ? (
+                <>
+                  {isTied && match.homePenalties !== null && match.homePenalties !== undefined && (
+                    <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                      ({match.homePenalties})
+                    </span>
                   )}
-                  value={match.homePenalties ?? ""}
-                  onChange={(e) => {
-                    const val =
-                      e.target.value === "" ? null : parseInt(e.target.value);
-                    onUpdate(
-                      match.id,
-                      match.homeScore ?? null,
-                      match.awayScore ?? null,
-                      val,
-                      match.awayPenalties ?? null,
-                    );
-                  }}
-                  placeholder="P"
-                  disabled={!canEdit}
-                />
+                  <span className="w-7 text-center text-xs font-bold text-slate-900 dark:text-slate-100">
+                    {match.homeScore}
+                  </span>
+                </>
+              ) : (
+                <>
+                  {isTied && (
+                    <FlashScoreInput
+                      type="number"
+                      min="0"
+                      className={clsx(
+                        "w-5 h-5 text-center text-[10px] font-medium border rounded focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50",
+                        isPenaltyTied
+                          ? "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800 text-red-600 focus:ring-red-500 focus:border-red-500"
+                          : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:ring-blue-500 focus:border-transparent",
+                      )}
+                      value={match.homePenalties ?? ""}
+                      onChange={(e) => {
+                        const val =
+                          e.target.value === "" ? null : parseInt(e.target.value);
+                        onUpdate(
+                          match.id,
+                          match.homeScore ?? null,
+                          match.awayScore ?? null,
+                          val,
+                          match.awayPenalties ?? null,
+                        );
+                      }}
+                      placeholder="P"
+                      disabled={!canEdit}
+                    />
+                  )}
+                  <FlashScoreInput
+                    type="number"
+                    min="0"
+                    className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
+                    value={match.homeScore ?? ""}
+                    onChange={(e) => {
+                      const val =
+                        e.target.value === "" ? null : parseInt(e.target.value);
+                      onUpdate(
+                        match.id,
+                        val,
+                        match.awayScore ?? null,
+                        match.homePenalties ?? null,
+                        match.awayPenalties ?? null,
+                      );
+                    }}
+                    placeholder="-"
+                    disabled={!canEdit}
+                  />
+                </>
               )}
-              <FlashScoreInput
-                type="number"
-                min="0"
-                className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
-                value={match.homeScore ?? ""}
-                onChange={(e) => {
-                  const val =
-                    e.target.value === "" ? null : parseInt(e.target.value);
-                  onUpdate(
-                    match.id,
-                    val,
-                    match.awayScore ?? null,
-                    match.homePenalties ?? null,
-                    match.awayPenalties ?? null,
-                  );
-                }}
-                placeholder="-"
-                disabled={!canEdit}
-              />
             </div>
           </div>
 
@@ -400,51 +415,66 @@ function MatchCard({
                 )}
             </div>
             <div className="flex items-center gap-1 shrink-0">
-              {isTied && (
-                <FlashScoreInput
-                  type="number"
-                  min="0"
-                  className={clsx(
-                    "w-5 h-5 text-center text-[10px] font-medium border rounded focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50",
-                    isPenaltyTied
-                      ? "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800 text-red-600 focus:ring-red-500 focus:border-red-500"
-                      : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:ring-blue-500 focus:border-transparent",
+              {match.finished ? (
+                <>
+                  {isTied && match.awayPenalties !== null && match.awayPenalties !== undefined && (
+                    <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                      ({match.awayPenalties})
+                    </span>
                   )}
-                  value={match.awayPenalties ?? ""}
-                  onChange={(e) => {
-                    const val =
-                      e.target.value === "" ? null : parseInt(e.target.value);
-                    onUpdate(
-                      match.id,
-                      match.homeScore ?? null,
-                      match.awayScore ?? null,
-                      match.homePenalties ?? null,
-                      val,
-                    );
-                  }}
-                  placeholder="P"
-                  disabled={!canEdit}
-                />
+                  <span className="w-7 text-center text-xs font-bold text-slate-900 dark:text-slate-100">
+                    {match.awayScore}
+                  </span>
+                </>
+              ) : (
+                <>
+                  {isTied && (
+                    <FlashScoreInput
+                      type="number"
+                      min="0"
+                      className={clsx(
+                        "w-5 h-5 text-center text-[10px] font-medium border rounded focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50",
+                        isPenaltyTied
+                          ? "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800 text-red-600 focus:ring-red-500 focus:border-red-500"
+                          : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:ring-blue-500 focus:border-transparent",
+                      )}
+                      value={match.awayPenalties ?? ""}
+                      onChange={(e) => {
+                        const val =
+                          e.target.value === "" ? null : parseInt(e.target.value);
+                        onUpdate(
+                          match.id,
+                          match.homeScore ?? null,
+                          match.awayScore ?? null,
+                          match.homePenalties ?? null,
+                          val,
+                        );
+                      }}
+                      placeholder="P"
+                      disabled={!canEdit}
+                    />
+                  )}
+                  <FlashScoreInput
+                    type="number"
+                    min="0"
+                    className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
+                    value={match.awayScore ?? ""}
+                    onChange={(e) => {
+                      const val =
+                        e.target.value === "" ? null : parseInt(e.target.value);
+                      onUpdate(
+                        match.id,
+                        match.homeScore ?? null,
+                        val,
+                        match.homePenalties ?? null,
+                        match.awayPenalties ?? null,
+                      );
+                    }}
+                    placeholder="-"
+                    disabled={!canEdit}
+                  />
+                </>
               )}
-              <FlashScoreInput
-                type="number"
-                min="0"
-                className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
-                value={match.awayScore ?? ""}
-                onChange={(e) => {
-                  const val =
-                    e.target.value === "" ? null : parseInt(e.target.value);
-                  onUpdate(
-                    match.id,
-                    match.homeScore ?? null,
-                    val,
-                    match.homePenalties ?? null,
-                    match.awayPenalties ?? null,
-                  );
-                }}
-                placeholder="-"
-                disabled={!canEdit}
-              />
             </div>
           </div>
         </div>
