@@ -1,8 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/scores/sync?action=cron&secret=c58a066d-650d-4a62-a652-bf5d0db76e44",
-      "schedule": "0 0 * * *"
+      "path": "/api/scores/sync?action=cron",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

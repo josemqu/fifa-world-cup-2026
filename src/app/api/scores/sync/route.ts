@@ -304,12 +304,83 @@ export async function GET(request: Request) {
     }
   }
 
-  // ─── Frontend read ─────────────────────────────────────────
+  // ─── Frontend read (with smart auto-sync) ──────────────────
   try {
     await connectDB();
 
     const statusFilter = searchParams.get("status");
 
+    // ── Smart auto-sync: if data is stale and there are live matches,
+    //    fetch fresh data from API-Football before returning results.
+    //    This ensures real-time updates without relying on the cron alone.
+    const STALE_THRESHOLD_MS = 25_000; // 25 seconds
+
+    const latestScore = await LiveScore.findOne()
+      .sort({ lastSyncAt: -1 })
+      .lean();
+
+    const lastSyncTime = latestScore?.lastSyncAt
+      ? new Date(latestScore.lastSyncAt).getTime()
+      : 0;
+    const isStale = Date.now() - lastSyncTime > STALE_THRESHOLD_MS;
+
+    // Check if there are any live/halftime matches or if we have no data at all
+    const liveOrHalftimeCount = await LiveScore.countDocuments({
+      status: { $in: ["live", "halftime"] },
+    });
+    const hasNoData = !latestScore;
+
+    // Auto-sync if: data is stale AND (there are live matches OR we have no data)
+    if (isStale && (liveOrHalftimeCount > 0 || hasNoData)) {
+      try {
+        const today = getTodayUTC();
+        const fixtures = await fetchFixtures(today);
+
+        if (fixtures.length > 0) {
+          const normalized = normalizeFixtures(fixtures);
+
+          for (const score of normalized) {
+            const existing = await LiveScore.findOne({ matchId: score.matchId });
+            const hasChanged =
+              !existing ||
+              existing.homeScore !== score.homeScore ||
+              existing.awayScore !== score.awayScore ||
+              existing.homePenalties !== score.homePenalties ||
+              existing.awayPenalties !== score.awayPenalties ||
+              existing.status !== score.status ||
+              existing.elapsed !== score.elapsed;
+
+            if (hasChanged) {
+              await LiveScore.findOneAndUpdate(
+                { matchId: score.matchId },
+                {
+                  $set: {
+                    externalId: score.externalId,
+                    homeTeamName: score.homeTeamName,
+                    awayTeamName: score.awayTeamName,
+                    homeScore: score.homeScore,
+                    awayScore: score.awayScore,
+                    homePenalties: score.homePenalties,
+                    awayPenalties: score.awayPenalties,
+                    status: score.status,
+                    elapsed: score.elapsed,
+                    stage: score.stage,
+                    groupId: score.groupId,
+                    lastSyncAt: new Date(),
+                  },
+                },
+                { upsert: true, new: true }
+              );
+            }
+          }
+        }
+      } catch (syncError) {
+        // Auto-sync failed — log and continue with stale data
+        console.warn("[scores/sync] Auto-sync from API-Football failed:", syncError);
+      }
+    }
+
+    // ── Now read (potentially freshly updated) scores from MongoDB
     const query: Record<string, any> = {};
 
     if (statusFilter === "live") {
