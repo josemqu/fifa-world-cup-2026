@@ -541,6 +541,7 @@ function ScheduleMatchCard({ match, highlightMatchId }: { match: NormalizedMatch
   };
 
   const isPlaceholder = match.homeTeamName === "Por definir" || match.awayTeamName === "Por definir";
+  const isStarted = match.finished || (new Date() >= new Date(match.utcDate));
 
   return (
     <div
@@ -597,16 +598,16 @@ function ScheduleMatchCard({ match, highlightMatchId }: { match: NormalizedMatch
 
           {/* Score Inputs */}
           <div className="flex items-center gap-1 shrink-0 mx-2">
-            {match.finished ? (
+            {isStarted ? (
               <>
-                <span className="w-8 text-center text-xs font-bold text-slate-900 dark:text-slate-100">
-                  {match.homeScore}
+                <span className="w-8 h-8 flex items-center justify-center text-center text-xs font-bold text-slate-900 dark:text-slate-100">
+                  {match.homeScore ?? 0}
                 </span>
                 <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
                   :
                 </span>
-                <span className="w-8 text-center text-xs font-bold text-slate-900 dark:text-slate-100">
-                  {match.awayScore}
+                <span className="w-8 h-8 flex items-center justify-center text-center text-xs font-bold text-slate-900 dark:text-slate-100">
+                  {match.awayScore ?? 0}
                 </span>
               </>
             ) : (

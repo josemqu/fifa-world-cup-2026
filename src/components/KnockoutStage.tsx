@@ -167,12 +167,13 @@ function MatchCard({
     homeProb !== undefined &&
     awayProb !== undefined &&
     awayProb > homeProb;
+  const isStarted = match.finished || (new Date() >= new Date(match.utcDate));
   const canEdit =
     !isHomePlaceholder &&
     !isAwayPlaceholder &&
     !isHomeProjected &&
     !isAwayProjected &&
-    !match.finished;
+    !isStarted;
 
   // Check for tie
   const isTied =
@@ -290,15 +291,15 @@ function MatchCard({
                 )}
             </div>
             <div className="flex items-center gap-1 shrink-0">
-              {match.finished ? (
+              {isStarted ? (
                 <>
                   {isTied && match.homePenalties !== null && match.homePenalties !== undefined && (
                     <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
                       ({match.homePenalties})
                     </span>
                   )}
-                  <span className="w-7 text-center text-xs font-bold text-slate-900 dark:text-slate-100">
-                    {match.homeScore}
+                  <span className="w-7 h-7 flex items-center justify-center text-center text-xs font-bold text-slate-900 dark:text-slate-100">
+                    {match.homeScore ?? 0}
                   </span>
                 </>
               ) : (
@@ -415,15 +416,15 @@ function MatchCard({
                 )}
             </div>
             <div className="flex items-center gap-1 shrink-0">
-              {match.finished ? (
+              {isStarted ? (
                 <>
                   {isTied && match.awayPenalties !== null && match.awayPenalties !== undefined && (
                     <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
                       ({match.awayPenalties})
                     </span>
                   )}
-                  <span className="w-7 text-center text-xs font-bold text-slate-900 dark:text-slate-100">
-                    {match.awayScore}
+                  <span className="w-7 h-7 flex items-center justify-center text-center text-xs font-bold text-slate-900 dark:text-slate-100">
+                    {match.awayScore ?? 0}
                   </span>
                 </>
               ) : (

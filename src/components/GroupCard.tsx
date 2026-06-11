@@ -418,115 +418,118 @@ export function GroupCard({
               Partidos
             </h4>
             <div className="space-y-1.5">
-              {group.matches.map((match) => (
-                <div
-                  key={match.id}
-                  className="text-xs border border-slate-200 dark:border-slate-700 rounded-md p-1.5 bg-white dark:bg-slate-800 shadow-sm"
-                >
-                  <div className="flex justify-between items-center text-[10px] text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-wide leading-none">
-                    <MatchDateTime 
-                      utcDate={match.utcDate} 
-                    />
-                    {match.location && (
-                      <div className="flex flex-col items-end max-w-[240px] leading-tight">
-                        <span
-                          className="truncate w-full text-right font-medium text-slate-500 dark:text-slate-400"
-                          title={match.location}
-                        >
-                          {match.location.split(" - ")[0]}
-                        </span>
-                        {match.location.includes(" - ") && (
-                          <span
-                            className="text-[9px] text-slate-400 dark:text-slate-500 truncate w-full text-right"
-                            title={match.location.split(" - ")[1]}
-                          >
-                            {match.location.split(" - ")[1]}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-                      <span className="font-medium text-sm truncate max-w-[120px] text-slate-900 dark:text-slate-100">
-                        {getTeamName(match.homeTeamId)}
-                      </span>
-                      <TeamFlag
-                        teamName={getTeamName(match.homeTeamId)}
-                        className="w-5 h-3.5 shrink-0"
+              {group.matches.map((match) => {
+                const isStarted = match.finished || (new Date() >= new Date(match.utcDate));
+                return (
+                  <div
+                    key={match.id}
+                    className="text-xs border border-slate-200 dark:border-slate-700 rounded-md p-1.5 bg-white dark:bg-slate-800 shadow-sm"
+                  >
+                    <div className="flex justify-between items-center text-[10px] text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-wide leading-none">
+                      <MatchDateTime 
+                        utcDate={match.utcDate} 
                       />
-                    </div>
-
-                    <div className="flex items-center gap-1.5 mx-2">
-                      {match.finished ? (
-                        <>
-                          <span className="w-7 text-center text-xs font-bold text-slate-900 dark:text-slate-100">
-                            {match.homeScore}
+                      {match.location && (
+                        <div className="flex flex-col items-end max-w-[240px] leading-tight">
+                          <span
+                            className="truncate w-full text-right font-medium text-slate-500 dark:text-slate-400"
+                            title={match.location}
+                          >
+                            {match.location.split(" - ")[0]}
                           </span>
-                          <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
-                            :
-                          </span>
-                          <span className="w-7 text-center text-xs font-bold text-slate-900 dark:text-slate-100">
-                            {match.awayScore}
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <FlashScoreInput
-                            type="number"
-                            min="0"
-                            className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
-                            value={match.homeScore ?? ""}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              const newScore = val === "" ? null : parseInt(val);
-                              onMatchUpdate(
-                                group.name,
-                                match.id,
-                                newScore,
-                                match.awayScore ?? null
-                              );
-                            }}
-                            placeholder="-"
-                            disabled={match.finished}
-                          />
-                          <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
-                            :
-                          </span>
-                          <FlashScoreInput
-                            type="number"
-                            min="0"
-                            className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
-                            value={match.awayScore ?? ""}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              const newScore = val === "" ? null : parseInt(val);
-                              onMatchUpdate(
-                                group.name,
-                                match.id,
-                                match.homeScore ?? null,
-                                newScore
-                              );
-                            }}
-                            placeholder="-"
-                            disabled={match.finished}
-                          />
-                        </>
+                          {match.location.includes(" - ") && (
+                            <span
+                              className="text-[9px] text-slate-400 dark:text-slate-500 truncate w-full text-right"
+                              title={match.location.split(" - ")[1]}
+                            >
+                              {match.location.split(" - ")[1]}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                        <span className="font-medium text-sm truncate max-w-[120px] text-slate-900 dark:text-slate-100">
+                          {getTeamName(match.homeTeamId)}
+                        </span>
+                        <TeamFlag
+                          teamName={getTeamName(match.homeTeamId)}
+                          className="w-5 h-3.5 shrink-0"
+                        />
+                      </div>
 
-                    <div className="flex items-center gap-2 flex-1 min-w-0 justify-start">
-                      <TeamFlag
-                        teamName={getTeamName(match.awayTeamId)}
-                        className="w-5 h-3.5 shrink-0"
-                      />
-                      <span className="font-medium text-sm truncate max-w-[120px] text-slate-900 dark:text-slate-100">
-                        {getTeamName(match.awayTeamId)}
-                      </span>
+                      <div className="flex items-center gap-1.5 mx-2">
+                        {isStarted ? (
+                          <>
+                            <span className="w-7 h-7 flex items-center justify-center text-center text-xs font-bold text-slate-900 dark:text-slate-100">
+                              {match.homeScore ?? 0}
+                            </span>
+                            <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
+                              :
+                            </span>
+                            <span className="w-7 h-7 flex items-center justify-center text-center text-xs font-bold text-slate-900 dark:text-slate-100">
+                              {match.awayScore ?? 0}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <FlashScoreInput
+                              type="number"
+                              min="0"
+                              className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
+                              value={match.homeScore ?? ""}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const newScore = val === "" ? null : parseInt(val);
+                                onMatchUpdate(
+                                  group.name,
+                                  match.id,
+                                  newScore,
+                                  match.awayScore ?? null
+                                );
+                              }}
+                              placeholder="-"
+                              disabled={match.finished}
+                            />
+                            <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
+                              :
+                            </span>
+                            <FlashScoreInput
+                              type="number"
+                              min="0"
+                              className="w-7 h-7 text-center text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
+                              value={match.awayScore ?? ""}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const newScore = val === "" ? null : parseInt(val);
+                                onMatchUpdate(
+                                  group.name,
+                                  match.id,
+                                  match.homeScore ?? null,
+                                  newScore
+                                );
+                              }}
+                              placeholder="-"
+                              disabled={match.finished}
+                            />
+                          </>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-1 min-w-0 justify-start">
+                        <TeamFlag
+                          teamName={getTeamName(match.awayTeamId)}
+                          className="w-5 h-3.5 shrink-0"
+                        />
+                        <span className="font-medium text-sm truncate max-w-[120px] text-slate-900 dark:text-slate-100">
+                          {getTeamName(match.awayTeamId)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
