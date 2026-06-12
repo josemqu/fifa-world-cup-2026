@@ -541,7 +541,7 @@ function ScheduleMatchCard({ match, highlightMatchId }: { match: NormalizedMatch
   };
 
   const isPlaceholder = match.homeTeamName === "Por definir" || match.awayTeamName === "Por definir";
-  const isStarted = match.finished || (new Date() >= new Date(match.utcDate));
+  const isStarted = new Date() >= new Date(match.utcDate);
 
   return (
     <div
@@ -616,7 +616,7 @@ function ScheduleMatchCard({ match, highlightMatchId }: { match: NormalizedMatch
                   type="number"
                   min="0"
                   placeholder="-"
-                  disabled={isPlaceholder || match.finished}
+                  disabled={isPlaceholder || isStarted}
                   value={match.homeScore ?? ""}
                   onChange={(e) => handleScoreChange("home", e.target.value)}
                   className="w-8 h-8 text-center text-xs font-bold bg-slate-100 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-30 transition-all appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -628,7 +628,7 @@ function ScheduleMatchCard({ match, highlightMatchId }: { match: NormalizedMatch
                   type="number"
                   min="0"
                   placeholder="-"
-                  disabled={isPlaceholder || match.finished}
+                  disabled={isPlaceholder || isStarted}
                   value={match.awayScore ?? ""}
                   onChange={(e) => handleScoreChange("away", e.target.value)}
                   className="w-8 h-8 text-center text-xs font-bold bg-slate-100 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-30 transition-all appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"

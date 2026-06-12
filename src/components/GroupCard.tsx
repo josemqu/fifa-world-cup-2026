@@ -419,7 +419,7 @@ export function GroupCard({
             </h4>
             <div className="space-y-1.5">
               {group.matches.map((match) => {
-                const isStarted = match.finished || (new Date() >= new Date(match.utcDate));
+                const isStarted = new Date() >= new Date(match.utcDate);
                 return (
                   <div
                     key={match.id}
@@ -490,7 +490,7 @@ export function GroupCard({
                                 );
                               }}
                               placeholder="-"
-                              disabled={match.finished}
+                              disabled={isStarted}
                             />
                             <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
                               :
@@ -511,7 +511,7 @@ export function GroupCard({
                                 );
                               }}
                               placeholder="-"
-                              disabled={match.finished}
+                              disabled={isStarted}
                             />
                           </>
                         )}

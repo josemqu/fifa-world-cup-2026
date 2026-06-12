@@ -121,7 +121,7 @@ export const COUNTRIES: Country[] = [
     enName: "Sweden",
   },
   {
-    name: "Chequia",
+    name: "República Checa",
     isoCode: "CZE",
     fifaCode: "CZE",
     enName: "Czech Republic",

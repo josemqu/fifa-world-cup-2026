@@ -188,7 +188,7 @@ export async function GET(request: Request) {
             matchId: "MA2",
             externalId: 999002,
             homeTeamName: "Corea del Sur",
-            awayTeamName: "Chequia",
+            awayTeamName: "República Checa",
             homeScore: 0,
             awayScore: 0,
             status: "live",

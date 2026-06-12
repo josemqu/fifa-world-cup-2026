@@ -167,7 +167,7 @@ function MatchCard({
     homeProb !== undefined &&
     awayProb !== undefined &&
     awayProb > homeProb;
-  const isStarted = match.finished || (new Date() >= new Date(match.utcDate));
+  const isStarted = new Date() >= new Date(match.utcDate);
   const canEdit =
     !isHomePlaceholder &&
     !isAwayPlaceholder &&

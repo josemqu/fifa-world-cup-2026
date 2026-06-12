@@ -96,7 +96,7 @@ export const LOCAL_TEAM_TO_ID: Record<string, string> = {
   México: "A1",
   "Corea del Sur": "A2",
   Sudáfrica: "A3",
-  Chequia: "A4",
+  "República Checa": "A4",
   Canadá: "B1",
   Suiza: "B2",
   Catar: "B3",

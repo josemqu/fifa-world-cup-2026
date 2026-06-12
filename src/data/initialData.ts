@@ -633,7 +633,7 @@ const RAW_GROUPS = [
       createTeam("A1", "México", "A", 15),
       createTeam("A2", "Corea del Sur", "A", 23),
       createTeam("A3", "Sudáfrica", "A", 60),
-      createTeam("A4", "Chequia", "A", 40),
+      createTeam("A4", "República Checa", "A", 40),
     ],
   },
   {
