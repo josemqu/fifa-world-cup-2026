@@ -13,14 +13,13 @@ export interface FifaRankingResponse {
 }
 
 const TEAM_NAME_MAPPING: Record<string, string> = {
-  "Estados Unidos": "EEUU",
+  "Estados Unidos": "EE. UU.",
   "Corea del Sur": "República de Corea",
   Irán: "RI de Irán",
   "Arabia Saudita": "Arabia Saudí",
-  Catar: "Qatar",
-  "República Checa": "República Checa",
-  Chequia: "República Checa",
-  "RD Congo": "RD del Congo",
+  "República Checa": "Chequia",
+  "Cabo Verde": "Islas de Cabo Verde",
+  Iraq: "Irak",
   // Add others if discovered
 };
 
