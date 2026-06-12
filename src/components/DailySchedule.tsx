@@ -600,15 +600,21 @@ function ScheduleMatchCard({ match, highlightMatchId }: { match: NormalizedMatch
           <div className="flex items-center gap-1 shrink-0 mx-2">
             {isStarted ? (
               <>
-                <span className="w-8 h-8 flex items-center justify-center text-center text-xs font-bold text-slate-900 dark:text-slate-100">
-                  {match.homeScore ?? 0}
-                </span>
+                <FlashScoreInput
+                  type="number"
+                  className="w-8 h-8 text-center text-xs font-bold bg-slate-100/50 dark:bg-slate-900/30 rounded border border-slate-200/60 dark:border-slate-800/80 text-slate-500 dark:text-slate-400 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none cursor-default pointer-events-none"
+                  value={match.homeScore ?? 0}
+                  readOnly
+                />
                 <span className="text-slate-400 dark:text-slate-600 font-bold text-[10px]">
                   :
                 </span>
-                <span className="w-8 h-8 flex items-center justify-center text-center text-xs font-bold text-slate-900 dark:text-slate-100">
-                  {match.awayScore ?? 0}
-                </span>
+                <FlashScoreInput
+                  type="number"
+                  className="w-8 h-8 text-center text-xs font-bold bg-slate-100/50 dark:bg-slate-900/30 rounded border border-slate-200/60 dark:border-slate-800/80 text-slate-500 dark:text-slate-400 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none cursor-default pointer-events-none"
+                  value={match.awayScore ?? 0}
+                  readOnly
+                />
               </>
             ) : (
               <>

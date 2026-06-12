@@ -298,9 +298,12 @@ function MatchCard({
                       ({match.homePenalties})
                     </span>
                   )}
-                  <span className="w-7 h-7 flex items-center justify-center text-center text-xs font-bold text-slate-900 dark:text-slate-100">
-                    {match.homeScore ?? 0}
-                  </span>
+                  <FlashScoreInput
+                    type="number"
+                    className="w-7 h-7 text-center text-xs font-bold bg-slate-100/70 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800/80 text-slate-500 dark:text-slate-400 rounded outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none cursor-default pointer-events-none"
+                    value={match.homeScore ?? 0}
+                    readOnly
+                  />
                 </>
               ) : (
                 <>
@@ -423,9 +426,12 @@ function MatchCard({
                       ({match.awayPenalties})
                     </span>
                   )}
-                  <span className="w-7 h-7 flex items-center justify-center text-center text-xs font-bold text-slate-900 dark:text-slate-100">
-                    {match.awayScore ?? 0}
-                  </span>
+                  <FlashScoreInput
+                    type="number"
+                    className="w-7 h-7 text-center text-xs font-bold bg-slate-100/70 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800/80 text-slate-500 dark:text-slate-400 rounded outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none cursor-default pointer-events-none"
+                    value={match.awayScore ?? 0}
+                    readOnly
+                  />
                 </>
               ) : (
                 <>
