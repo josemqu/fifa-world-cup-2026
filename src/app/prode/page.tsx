@@ -18,6 +18,7 @@ import {
 import { KNOCKOUT_DETAILS } from "@/data/knockoutDetails";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { PageTransition } from "@/components/PageTransition";
+import { RivalPredictionsModal } from "@/components/RivalPredictionsModal";
 import { clsx } from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -607,6 +608,12 @@ function PredictionsTab({
   const [savedCount, setSavedCount] = useState(0);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingRef = useRef<Map<string, PredictionEntry>>(new Map());
+  const [selectedMatchForRivals, setSelectedMatchForRivals] = useState<{
+    matchId: string;
+    homeTeamName: string;
+    awayTeamName: string;
+    utcDate: string;
+  } | null>(null);
 
   // Load existing predictions
   useEffect(() => {
@@ -1035,6 +1042,12 @@ function PredictionsTab({
               onPenaltiesWinnerChange={handlePenaltiesWinnerChange}
               onResetMatch={handleResetMatch}
               label={info?.label}
+              onOpenRivalPredictions={() => setSelectedMatchForRivals({
+                matchId,
+                homeTeamName: homeName,
+                awayTeamName: awayName,
+                utcDate
+              })}
             />
           );
         })}
@@ -1044,6 +1057,18 @@ function PredictionsTab({
           </div>
         )}
       </div>
+
+      {selectedMatchForRivals && (
+        <RivalPredictionsModal
+          isOpen={!!selectedMatchForRivals}
+          onClose={() => setSelectedMatchForRivals(null)}
+          matchId={selectedMatchForRivals.matchId}
+          homeTeamName={selectedMatchForRivals.homeTeamName}
+          awayTeamName={selectedMatchForRivals.awayTeamName}
+          utcDate={selectedMatchForRivals.utcDate}
+          currentUserUid={firebaseUid}
+        />
+      )}
     </div>
   );
 }
@@ -1062,6 +1087,7 @@ function ProdeMatchCard({
   onPenaltiesWinnerChange,
   onResetMatch,
   label,
+  onOpenRivalPredictions,
 }: {
   matchId: string;
   homeTeamName: string;
@@ -1076,6 +1102,7 @@ function ProdeMatchCard({
   onPenaltiesWinnerChange: (matchId: string, winnerSide: "home" | "away") => void;
   onResetMatch: (matchId: string) => void;
   label?: string;
+  onOpenRivalPredictions?: () => void;
 }) {
   const matchDate = utcDate ? new Date(utcDate) : null;
   const formattedDate = matchDate
@@ -1259,6 +1286,17 @@ function ProdeMatchCard({
             >
               <RotateCcw className="w-3 h-3" />
               <span>Resetear</span>
+            </button>
+          )}
+          {isLocked && onOpenRivalPredictions && (
+            <button
+              type="button"
+              onClick={onOpenRivalPredictions}
+              className="flex items-center gap-1.5 text-[10px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors cursor-pointer"
+              title="Ver pronósticos de tus rivales de grupo"
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Ver rivales</span>
             </button>
           )}
         </div>
