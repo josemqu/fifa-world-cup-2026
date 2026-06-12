@@ -92,6 +92,27 @@ function getTournamentScoresHash(groups: Group[], knockoutMatches: KnockoutMatch
   return `${groupScores}|${knockoutScores}`;
 }
 
+function getEffectiveNow(): Date {
+  let now = new Date();
+  if (typeof window !== "undefined") {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const querySim = params.get("simulatedTime");
+      const localSim = window.localStorage.getItem("simulatedTime");
+      const simVal = querySim || localSim;
+      if (simVal) {
+        const d = new Date(simVal);
+        if (!isNaN(d.getTime())) {
+          now = d;
+        }
+      }
+    } catch (e) {
+      // Ignore
+    }
+  }
+  return now;
+}
+
 export function TournamentProvider({ children }: { children: ReactNode }) {
   const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
   const [knockoutMatches, setKnockoutMatches] = useState<KnockoutMatch[]>([]);
@@ -560,9 +581,15 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const simulateGroups = () => {
+    const now = getEffectiveNow();
     setGroups((currentGroups) => {
       return currentGroups.map((group) => {
         const updatedMatches = group.matches.map((match) => {
+          const isStartedOrFinished = now >= new Date(match.utcDate);
+          if (isStartedOrFinished) {
+            return match;
+          }
+
           const homeTeam = group.teams.find((t) => t.id === match.homeTeamId);
           const awayTeam = group.teams.find((t) => t.id === match.awayTeamId);
 
@@ -582,50 +609,94 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   };
 
   const simulateKnockout = () => {
+    const now = getEffectiveNow();
     setKnockoutMatches((currentMatches) => {
-      const resetMatches = currentMatches.map((m) => ({
-        ...m,
-        homeScore: null,
-        awayScore: null,
-        homePenalties: null,
-        awayPenalties: null,
-        winner: null,
-      }));
+      const resetMatches = currentMatches.map((m) => {
+        const isStartedOrFinished = now >= new Date(m.utcDate);
+        if (isStartedOrFinished) {
+          return m;
+        }
+        return {
+          ...m,
+          homeScore: null,
+          awayScore: null,
+          homePenalties: null,
+          awayPenalties: null,
+          winner: null,
+          finished: false,
+        };
+      });
       return runKnockoutSimulation(resetMatches);
     });
   };
 
   const simulateAll = () => {
+    const now = getEffectiveNow();
     const resetGroups = groups.map((group) => ({
       ...group,
-      matches: group.matches.map((match) => ({
-        ...match,
-        homeScore: null,
-        awayScore: null,
-        finished: false,
-      })),
+      matches: group.matches.map((match) => {
+        const isStartedOrFinished = now >= new Date(match.utcDate);
+        if (isStartedOrFinished) {
+          return match;
+        }
+        return {
+          ...match,
+          homeScore: null,
+          awayScore: null,
+          finished: false,
+        };
+      }),
     }));
 
-    const result = simulateTournament(resetGroups, []);
+    const preservedKnockouts = knockoutMatches.filter((match) => {
+      return now >= new Date(match.utcDate);
+    });
+
+    const result = simulateTournament(resetGroups, preservedKnockouts);
     setGroups(result.groups);
     setKnockoutMatches(result.knockoutMatches);
   };
 
   const resetTournament = () => {
+    const now = getEffectiveNow();
+
     setGroups((currentGroups) => {
       return currentGroups.map((group) => {
-        // Reset matches
-        const resetMatches = group.matches.map((match) => ({
-          ...match,
-          homeScore: null,
-          awayScore: null,
-          finished: false,
-        }));
-        // Recalculate stats (which will zero them out)
+        // Reset only matches that haven't started or finished
+        const resetMatches = group.matches.map((match) => {
+          const isStartedOrFinished = now >= new Date(match.utcDate);
+          if (isStartedOrFinished) {
+            return match;
+          }
+          return {
+            ...match,
+            homeScore: null,
+            awayScore: null,
+            finished: false,
+          };
+        });
+        // Recalculate stats
         return recalculateGroupStats({ ...group, matches: resetMatches });
       });
     });
-    setKnockoutMatches([]);
+
+    setKnockoutMatches((currentMatches) => {
+      return currentMatches.map((match) => {
+        const isStartedOrFinished = now >= new Date(match.utcDate);
+        if (isStartedOrFinished) {
+          return match;
+        }
+        return {
+          ...match,
+          homeScore: null,
+          awayScore: null,
+          homePenalties: null,
+          awayPenalties: null,
+          winner: null,
+          finished: false,
+        };
+      });
+    });
   };
 
   const exposedKnockoutMatches = useMemo(() => {
