@@ -57,7 +57,8 @@ export function useLiveScores(enabled: boolean = true) {
   // Sync state with localStorage on mount and when event fires
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const active = isUserAuthorized && window.localStorage.getItem("mock_simulation_active") === "true";
+      const isDev = process.env.NODE_ENV === "development";
+      const active = (isUserAuthorized || isDev) && window.localStorage.getItem("mock_simulation_active") === "true";
       const timer = setTimeout(() => {
         setMockActiveState(active);
       }, 0);
@@ -67,7 +68,8 @@ export function useLiveScores(enabled: boolean = true) {
 
   const fetchAndApply = useCallback(async () => {
     try {
-      const isMockActive = isUserAuthorized && typeof window !== "undefined" && window.localStorage.getItem("mock_simulation_active") === "true";
+      const isDev = process.env.NODE_ENV === "development";
+      const isMockActive = (isUserAuthorized || isDev) && typeof window !== "undefined" && window.localStorage.getItem("mock_simulation_active") === "true";
       const url = isMockActive ? "/api/scores/sync?mock=true" : "/api/scores/sync";
 
       const headers: Record<string, string> = {};
@@ -119,7 +121,8 @@ export function useLiveScores(enabled: boolean = true) {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const handleToggle = () => {
-        const active = isUserAuthorized && window.localStorage.getItem("mock_simulation_active") === "true";
+        const isDev = process.env.NODE_ENV === "development";
+        const active = (isUserAuthorized || isDev) && window.localStorage.getItem("mock_simulation_active") === "true";
         setTimeout(() => {
           setMockActiveState(active);
         }, 0);
@@ -134,21 +137,7 @@ export function useLiveScores(enabled: boolean = true) {
   useEffect(() => {
     if (!enabled) return;
 
-    const isMockActive = isUserAuthorized && typeof window !== "undefined" && window.localStorage.getItem("mock_simulation_active") === "true";
-    const isDev = process.env.NODE_ENV === "development";
-    const bypassDateCheck = isDev || isMockActive;
-
-    if (!bypassDateCheck) {
-      // Check if we're in the tournament window
-      const now = new Date();
-      const tournamentStart = new Date("2026-06-11T00:00:00Z");
-      const tournamentEnd = new Date("2026-07-20T00:00:00Z");
-
-      if (now < tournamentStart || now > tournamentEnd) {
-        // Outside tournament dates — no polling
-        return;
-      }
-    }
+    // No date restriction, always fetch when enabled to allow mock/live simulation anytime
 
     // Initial fetch
     const fetchTimer = setTimeout(() => {
@@ -159,14 +148,16 @@ export function useLiveScores(enabled: boolean = true) {
     const startPolling = () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
 
-      const currentMockActive = isUserAuthorized && typeof window !== "undefined" && window.localStorage.getItem("mock_simulation_active") === "true";
+      const isDev = process.env.NODE_ENV === "development";
+      const currentMockActive = (isUserAuthorized || isDev) && typeof window !== "undefined" && window.localStorage.getItem("mock_simulation_active") === "true";
       const interval = currentMockActive ? 3000 : (hasLive ? POLL_LIVE : POLL_IDLE);
 
       intervalRef.current = setInterval(() => {
         fetchAndApply();
         
         // Re-evaluate polling speed after each fetch
-        const nextMockActive = isUserAuthorized && typeof window !== "undefined" && window.localStorage.getItem("mock_simulation_active") === "true";
+        const isDev = process.env.NODE_ENV === "development";
+        const nextMockActive = (isUserAuthorized || isDev) && typeof window !== "undefined" && window.localStorage.getItem("mock_simulation_active") === "true";
         const newInterval = nextMockActive ? 3000 : (hasLive ? POLL_LIVE : POLL_IDLE);
         if (newInterval !== (nextMockActive ? 3000 : (hasLive ? POLL_LIVE : POLL_IDLE))) {
           startPolling(); // Restart with new interval

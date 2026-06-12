@@ -16,7 +16,8 @@ import {
 async function syncScores(date?: string) {
   await connectDB();
 
-  const syncDate = date || getTodayUTC();
+  const isAll = date === "all";
+  const syncDate = isAll ? undefined : (date || getTodayUTC());
 
   // 1. Fetch from API-Football
   const fixtures = await fetchFixtures(syncDate);
@@ -24,8 +25,8 @@ async function syncScores(date?: string) {
   if (fixtures.length === 0) {
     return {
       success: true,
-      message: "No fixtures found for this date",
-      date: syncDate,
+      message: isAll ? "No fixtures found" : "No fixtures found for this date",
+      date: date || getTodayUTC(),
       updated: 0,
       live: false,
     };
@@ -77,7 +78,7 @@ async function syncScores(date?: string) {
 
   return {
     success: true,
-    date: syncDate,
+    date: date || getTodayUTC(),
     total: normalized.length,
     updated: updatedCount,
     live,
@@ -139,10 +140,23 @@ export async function GET(request: Request) {
 
       if (action === "clear") {
         await LiveScore.deleteMany({ matchId: { $in: mockMatchIds } });
+        
+        // Restore actual scores for all matches in the database
+        await syncScores("all");
+        
+        const scores = await LiveScore.find({}).lean();
+        const liveCount = scores.filter(
+          (s) => s.status === "live" || s.status === "halftime"
+        ).length;
+
         return NextResponse.json({
           success: true,
-          scores: [],
-          meta: { total: 0, liveCount: 0, lastSync: null }
+          scores,
+          meta: {
+            total: scores.length,
+            liveCount,
+            lastSync: scores.length > 0 ? scores[0].lastSyncAt : null,
+          }
         });
       }
 
@@ -334,46 +348,7 @@ export async function GET(request: Request) {
     if (isStale && (liveOrHalftimeCount > 0 || hasNoData)) {
       try {
         const today = getTodayUTC();
-        const fixtures = await fetchFixtures(today);
-
-        if (fixtures.length > 0) {
-          const normalized = normalizeFixtures(fixtures);
-
-          for (const score of normalized) {
-            const existing = await LiveScore.findOne({ matchId: score.matchId });
-            const hasChanged =
-              !existing ||
-              existing.homeScore !== score.homeScore ||
-              existing.awayScore !== score.awayScore ||
-              existing.homePenalties !== score.homePenalties ||
-              existing.awayPenalties !== score.awayPenalties ||
-              existing.status !== score.status ||
-              existing.elapsed !== score.elapsed;
-
-            if (hasChanged) {
-              await LiveScore.findOneAndUpdate(
-                { matchId: score.matchId },
-                {
-                  $set: {
-                    externalId: score.externalId,
-                    homeTeamName: score.homeTeamName,
-                    awayTeamName: score.awayTeamName,
-                    homeScore: score.homeScore,
-                    awayScore: score.awayScore,
-                    homePenalties: score.homePenalties,
-                    awayPenalties: score.awayPenalties,
-                    status: score.status,
-                    elapsed: score.elapsed,
-                    stage: score.stage,
-                    groupId: score.groupId,
-                    lastSyncAt: new Date(),
-                  },
-                },
-                { upsert: true, new: true }
-              );
-            }
-          }
-        }
+        await syncScores(hasNoData ? "all" : today);
       } catch (syncError) {
         // Auto-sync failed — log and continue with stale data
         console.warn("[scores/sync] Auto-sync from API-Football failed:", syncError);

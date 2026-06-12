@@ -336,6 +336,51 @@ export function GroupCard({
                       </span>
                     </Tooltip>
 
+                    {(() => {
+                      const liveMatch = group.matches.find((m) => {
+                        const hasStarted = new Date() >= new Date(m.utcDate);
+                        const matchEndDate = new Date(new Date(m.utcDate).getTime() + 120 * 60000);
+                        const isFinished = m.finished || (new Date() >= matchEndDate);
+                        return (
+                          (m.homeTeamId === team.id || m.awayTeamId === team.id) &&
+                          hasStarted &&
+                          !isFinished
+                        );
+                      });
+                      if (!liveMatch) return null;
+
+                      const isHome = liveMatch.homeTeamId === team.id;
+                      const teamScore = isHome ? (liveMatch.homeScore ?? 0) : (liveMatch.awayScore ?? 0);
+                      const oppScore = isHome ? (liveMatch.awayScore ?? 0) : (liveMatch.homeScore ?? 0);
+                      const opponentId = isHome ? liveMatch.awayTeamId : liveMatch.homeTeamId;
+                      const opponentName = getTeamName(opponentId);
+
+                      let bgClass = "";
+                      if (teamScore > oppScore) {
+                        bgClass = "bg-green-50/90 text-green-600 dark:bg-green-500/10 dark:text-green-400 border-green-200/60 dark:border-green-500/25";
+                      } else if (teamScore < oppScore) {
+                        bgClass = "bg-red-50/90 text-red-600 dark:bg-red-500/10 dark:text-red-400 border-red-200/60 dark:border-red-500/25";
+                      } else {
+                        bgClass = "bg-slate-100 text-slate-500 dark:bg-slate-800/80 dark:text-slate-400 border-slate-200/60 dark:border-slate-700/60";
+                      }
+
+                      return (
+                        <Tooltip
+                          content={`Parcial: ${teamScore} - ${oppScore} vs ${opponentName}`}
+                          placement="top"
+                        >
+                          <span
+                            className={clsx(
+                              "px-1 py-0.5 text-[9px] font-black font-mono rounded-md border shrink-0 ml-1.5 leading-none select-none tracking-tight shadow-xs cursor-help animate-pulse",
+                              bgClass
+                            )}
+                          >
+                            {teamScore}-{oppScore}
+                          </span>
+                        </Tooltip>
+                      );
+                    })()}
+
                     {/* Qualification/Lock Indicators */}
                     <div className="flex gap-0.5 ml-1 shrink-0">
                       {analysis[team.id]?.isQualified && (

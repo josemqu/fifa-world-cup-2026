@@ -138,12 +138,17 @@ export const recalculateGroupStats = (group: Group): Group => {
 
   // Process matches
   group.matches.forEach((match) => {
-    if (
+    const hasStarted = new Date() >= new Date(match.utcDate);
+    const hasScore =
       match.homeScore !== undefined &&
       match.homeScore !== null &&
       match.awayScore !== undefined &&
-      match.awayScore !== null
-    ) {
+      match.awayScore !== null;
+
+    if (hasScore || hasStarted) {
+      const homeScore = match.homeScore ?? 0;
+      const awayScore = match.awayScore ?? 0;
+
       const homeTeam = teamMap.get(match.homeTeamId);
       const awayTeam = teamMap.get(match.awayTeamId);
 
@@ -153,17 +158,17 @@ export const recalculateGroupStats = (group: Group): Group => {
         awayTeam.played += 1;
 
         // Update Goals
-        homeTeam.gf += match.homeScore;
-        homeTeam.ga += match.awayScore;
-        awayTeam.gf += match.awayScore;
-        awayTeam.ga += match.homeScore;
+        homeTeam.gf += homeScore;
+        homeTeam.ga += awayScore;
+        awayTeam.gf += awayScore;
+        awayTeam.ga += homeScore;
 
         // Update W/D/L and Points
-        if (match.homeScore > match.awayScore) {
+        if (homeScore > awayScore) {
           homeTeam.won += 1;
           homeTeam.pts += 3;
           awayTeam.lost += 1;
-        } else if (match.homeScore < match.awayScore) {
+        } else if (homeScore < awayScore) {
           awayTeam.won += 1;
           awayTeam.pts += 3;
           homeTeam.lost += 1;

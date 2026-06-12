@@ -153,6 +153,8 @@ export function getGroupFromTeamId(teamId: string): string {
  * Uses case-insensitive matching with multiple fallbacks.
  */
 export function resolveTeamId(apiTeamName: string): string | null {
+  if (!apiTeamName) return null;
+
   // 1. Direct match
   if (API_TEAM_TO_ID[apiTeamName]) return API_TEAM_TO_ID[apiTeamName];
 
