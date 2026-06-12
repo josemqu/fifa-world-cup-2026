@@ -84,7 +84,13 @@ export function RivalPredictionsModal({
           setGroups(json.groups || []);
           setActualScore(json.actualScore || null);
           if (json.groups && json.groups.length > 0) {
-            setActiveGroupId(json.groups[0]._id);
+            const savedGroupId = typeof window !== "undefined" ? localStorage.getItem("prode_rival_active_group_id") : null;
+            const exists = json.groups.some((g: any) => g._id === savedGroupId);
+            if (savedGroupId && exists) {
+              setActiveGroupId(savedGroupId);
+            } else {
+              setActiveGroupId(json.groups[0]._id);
+            }
           }
         } else {
           setError(json.error || "No se pudieron cargar los pronósticos de los rivales.");
@@ -220,7 +226,13 @@ export function RivalPredictionsModal({
                       <select
                         id="group-select"
                         value={activeGroupId || ""}
-                        onChange={(e) => setActiveGroupId(e.target.value)}
+                        onChange={(e) => {
+                          const newGroupId = e.target.value;
+                          setActiveGroupId(newGroupId);
+                          if (typeof window !== "undefined") {
+                            localStorage.setItem("prode_rival_active_group_id", newGroupId);
+                          }
+                        }}
                         className="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100/50 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all appearance-none cursor-pointer"
                       >
                         {groups.map((group) => (
