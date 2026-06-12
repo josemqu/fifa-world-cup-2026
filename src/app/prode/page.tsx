@@ -1529,8 +1529,20 @@ function GroupsTab({
                       if (index > 0 && entry.totalPoints < groupDetail.leaderboard[index - 1].totalPoints) {
                         currentRank = index + 1;
                       }
+                      const isCurrentUser = firebaseUid === entry.firebaseUid;
                       return (
-                        <div key={entry.firebaseUid} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <div
+                          key={entry.firebaseUid}
+                          className={clsx(
+                            "relative flex items-center gap-3 px-5 py-3 transition-colors",
+                            isCurrentUser
+                              ? "bg-blue-50/40 dark:bg-blue-950/20"
+                              : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                          )}
+                        >
+                          {isCurrentUser && (
+                            <div className="absolute left-0 top-2 bottom-2 w-1 bg-blue-500 rounded-r-md" />
+                          )}
                           <div className="w-8 flex justify-center">
                             {currentRank === 1 ? <Crown className="w-5 h-5 text-yellow-500" /> :
                              currentRank === 2 ? <Medal className="w-5 h-5 text-slate-400" /> :
@@ -1538,8 +1550,12 @@ function GroupsTab({
                              <span className="text-sm font-mono text-slate-400">{currentRank}</span>}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                            <p className={clsx(
+                              "text-sm font-medium truncate",
+                              isCurrentUser ? "text-blue-700 dark:text-blue-300 font-bold" : "text-slate-900 dark:text-slate-100"
+                            )}>
                               {entry.nickname || entry.displayName}
+                              {isCurrentUser && <span className="ml-2 text-[10px] text-blue-500 font-normal">(Vos)</span>}
                             </p>
                             <div className="flex gap-3 text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                               <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{entry.exactCount} exactos</span>
@@ -1812,12 +1828,15 @@ function LeaderboardTab() {
               <div
                 key={entry.firebaseUid}
                 className={clsx(
-                  "flex items-center gap-3 px-5 py-3 transition-colors",
+                  "relative flex items-center gap-3 px-5 py-3 transition-colors",
                   isCurrentUser
-                    ? "bg-blue-50/50 dark:bg-blue-950/20 border-l-2 border-blue-500"
+                    ? "bg-blue-50/40 dark:bg-blue-950/20"
                     : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
                 )}
               >
+                {isCurrentUser && (
+                  <div className="absolute left-0 top-2 bottom-2 w-1 bg-blue-500 rounded-r-md" />
+                )}
                 <div className="w-8 flex justify-center">
                   {currentRank === 1 ? <Crown className="w-5 h-5 text-yellow-500" /> :
                    currentRank === 2 ? <Medal className="w-5 h-5 text-slate-400" /> :
