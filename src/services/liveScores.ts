@@ -254,10 +254,20 @@ export function normalizeFixtures(
     const awayTeamId = resolveTeamId(game.away_team_name_en);
 
     if (!homeTeamId || !awayTeamId) {
-      console.warn(
-        `[liveScores] Skipping fixture ${game.id}: could not resolve teams ` +
-          `"${game.home_team_name_en}" → ${homeTeamId}, "${game.away_team_name_en}" → ${awayTeamId}`
-      );
+      const isPlaceholder =
+        !game.home_team_name_en ||
+        !game.away_team_name_en ||
+        game.home_team_name_en === "undefined" ||
+        game.away_team_name_en === "undefined" ||
+        game.home_team_name_en === "null" ||
+        game.away_team_name_en === "null";
+
+      if (!isPlaceholder) {
+        console.warn(
+          `[liveScores] Skipping fixture ${game.id}: could not resolve teams ` +
+            `"${game.home_team_name_en}" → ${homeTeamId}, "${game.away_team_name_en}" → ${awayTeamId}`
+        );
+      }
       continue;
     }
 

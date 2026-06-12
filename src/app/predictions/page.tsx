@@ -507,29 +507,29 @@ function PredictionsPageContent() {
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* ─── Unified Control & Info Header ─── */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 md:p-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800/60 pb-5 mb-5">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 md:p-5">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800/60 pb-4 mb-4">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-amber-500 animate-pulse" />
                 El Oráculo del Mundial 2026
               </h1>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 max-w-xl">
+              <p className="text-slate-500 dark:text-slate-400 text-xs mt-1 max-w-2xl">
                 Proyectá miles de escenarios del torneo en tiempo real. Utilizando rankings FIFA, el rendimiento actual de cada selección y los resultados actuales, estimamos las probabilidades matemáticas de salir campeón y los cruces más probables en cada etapa.
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 shrink-0">
               <Link
                 href="/predictions/metodologia"
-                className="px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/40 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-slate-700/80"
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/40 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-slate-700/80"
               >
                 <Info className="w-3.5 h-3.5" />
                 Cómo funciona
               </Link>
               <button
                 onClick={handleVerify}
-                className="px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/40 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-slate-700/80 cursor-pointer"
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/40 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-slate-700/80 cursor-pointer"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 Verificar
@@ -537,8 +537,8 @@ function PredictionsPageContent() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 w-full sm:w-auto">
               <label className="text-xs text-slate-500 dark:text-slate-400 font-bold shrink-0">Configuración:</label>
               <select
                 value={iterations}
@@ -550,7 +550,7 @@ function PredictionsPageContent() {
                   }
                 }}
                 disabled={isRunning || !canRunSimulation}
-                className="bg-slate-100 dark:bg-slate-800 border-none rounded-lg px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-auto"
+                className="bg-slate-100 dark:bg-slate-800 border-none rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-auto"
               >
                 <option value={100}>100 simulaciones</option>
                 <option value={1000}>1.000 simulaciones</option>
@@ -565,7 +565,7 @@ function PredictionsPageContent() {
               {predictions.length > 0 && !isRunning && (
                 <button
                   onClick={clearSimulationResults}
-                  className="px-3.5 py-2 rounded-lg text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-1.5 shrink-0"
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-1.5 shrink-0"
                 >
                   <X className="w-3.5 h-3.5" />
                   Limpiar
@@ -576,7 +576,7 @@ function PredictionsPageContent() {
                   onClick={() => handleRun()}
                   disabled={isRunning || !canRunSimulation}
                   className={clsx(
-                    "w-full sm:w-auto min-w-[170px] px-5 py-2 rounded-lg text-xs font-bold text-white transition-all shadow-md active:scale-95 flex justify-center items-center gap-1.5",
+                    "w-full sm:w-auto min-w-[150px] px-4 py-1.5 rounded-lg text-xs font-bold text-white transition-all shadow-md active:scale-95 flex justify-center items-center gap-1.5",
                     isRunning || !canRunSimulation
                       ? "bg-slate-400 cursor-not-allowed"
                       : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25",
@@ -595,20 +595,20 @@ function PredictionsPageContent() {
                   )}
                 </button>
               ) : (
-                <div className="w-full sm:w-auto min-w-[170px] h-9" />
+                <div className="w-full sm:w-auto min-w-[150px] h-8" />
               )}
             </div>
           </div>
 
           {!authLoading && !user && (
-            <div className="text-xs text-slate-500 dark:text-slate-400 mt-3 text-right">
+            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 text-right">
               Para correr la simulación debés registrarte e iniciar sesión.
             </div>
           )}
 
           <div
             className={clsx(
-              "flex items-center justify-end gap-2 text-[10px] text-slate-400 dark:text-slate-500 font-mono transition-opacity duration-300 mt-2",
+              "flex items-center justify-end gap-2 text-[10px] text-slate-400 dark:text-slate-500 font-mono transition-opacity duration-300 mt-1",
               simulationTime > 0 ? "opacity-100" : "opacity-0 select-none",
             )}
           >
