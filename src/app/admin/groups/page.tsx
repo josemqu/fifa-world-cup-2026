@@ -19,6 +19,8 @@ import {
   RefreshCw,
   X,
   MapPin,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
@@ -71,6 +73,10 @@ export default function AdminGroupsPage() {
 
   const [selectedGroup, setSelectedGroup] = useState<EnrichedGroup | null>(null);
   const [selectedCompareUser, setSelectedCompareUser] = useState<Member | null>(null);
+  const [groupToDelete, setGroupToDelete] = useState<EnrichedGroup | null>(null);
+  const [deleteConfirmCode, setDeleteConfirmCode] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Reset page to 1 when search changes
   useEffect(() => {
@@ -228,6 +234,43 @@ export default function AdminGroupsPage() {
       });
     } catch {
       return "-";
+    }
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!groupToDelete || !dbUser?.email) return;
+    if (deleteConfirmCode.trim().toUpperCase() !== groupToDelete.code.toUpperCase()) {
+      setDeleteError("El código del grupo no coincide.");
+      return;
+    }
+
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      const res = await fetch(`/api/admin/groups?groupId=${groupToDelete._id}`, {
+        method: "DELETE",
+        headers: { "x-admin-email": dbUser.email },
+      });
+      const json = await res.json();
+      if (json.success) {
+        setAllGroups((prev) => prev.filter((g) => g._id !== groupToDelete._id));
+        if (kpis) {
+          setKpis({
+            ...kpis,
+            totalGroups: Math.max(0, kpis.totalGroups - 1),
+          });
+        }
+        setGroupToDelete(null);
+        setDeleteConfirmCode("");
+      } else {
+        setDeleteError(json.error || "Error al eliminar el grupo.");
+      }
+    } catch (e) {
+      console.error("Error deleting group:", e);
+      setDeleteError("Ocurrió un error inesperado al intentar eliminar el grupo.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -412,13 +455,26 @@ export default function AdminGroupsPage() {
 
                     {/* Actions */}
                     <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => setSelectedGroup(g)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all bg-indigo-600/10 hover:bg-indigo-600 text-indigo-600 dark:text-indigo-400 hover:text-white border border-indigo-500/20 cursor-pointer"
-                      >
-                        <Users className="w-3.5 h-3.5" />
-                        <span>Ver Miembros</span>
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => setSelectedGroup(g)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all bg-indigo-600/10 hover:bg-indigo-600 text-indigo-600 dark:text-indigo-400 hover:text-white border border-indigo-500/20 cursor-pointer"
+                        >
+                          <Users className="w-3.5 h-3.5" />
+                          <span>Ver Miembros</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setGroupToDelete(g);
+                            setDeleteConfirmCode("");
+                            setDeleteError(null);
+                          }}
+                          className="inline-flex items-center justify-center p-1.5 text-xs font-bold rounded-lg transition-all bg-rose-600/10 hover:bg-rose-600 text-rose-650 dark:text-rose-450 hover:text-white border border-rose-500/20 cursor-pointer"
+                          title="Eliminar Grupo"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -613,6 +669,115 @@ export default function AdminGroupsPage() {
           adminUid={dbUser.firebaseUid}
         />
       )}
+
+      {/* Delete Group Confirmation Modal */}
+      <AnimatePresence>
+        {groupToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="bg-white dark:bg-slate-900 border border-rose-500/25 dark:border-rose-900/35 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden"
+            >
+              {/* Header */}
+              <div className="p-6 pb-4 flex flex-col items-center text-center">
+                <div className="w-12 h-12 rounded-2xl bg-rose-500/10 dark:bg-rose-500/20 flex items-center justify-center border border-rose-500/20 text-rose-600 dark:text-rose-400 mb-4">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">
+                  ¿Eliminar grupo del Prode?
+                </h3>
+                <p className="text-xs text-slate-550 dark:text-slate-400 mt-2 px-2">
+                  Esta acción eliminará de forma permanente el grupo y retirará a todos sus miembros. No se puede revertir.
+                </p>
+              </div>
+
+              {/* Group Details Container */}
+              <div className="px-6 py-4 mx-6 rounded-2xl bg-slate-50 dark:bg-slate-950/45 border border-slate-100 dark:border-slate-800/60 text-sm space-y-2.5">
+                <div className="flex justify-between">
+                  <span className="text-slate-550 dark:text-slate-400">Grupo:</span>
+                  <span className="font-semibold text-slate-900 dark:text-white max-w-[200px] truncate">{groupToDelete.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-550 dark:text-slate-400">Código:</span>
+                  <span className="font-mono text-xs bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-800 dark:text-slate-300">{groupToDelete.code}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-550 dark:text-slate-400">Creador:</span>
+                  <span className="font-medium text-slate-800 dark:text-slate-200 max-w-[200px] truncate">{groupToDelete.owner?.displayName || "Desconocido"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-550 dark:text-slate-400">Miembros:</span>
+                  <span className="font-bold text-indigo-650 dark:text-indigo-400">{groupToDelete.membersCount}</span>
+                </div>
+              </div>
+
+              {/* Input for Confirmation */}
+              <div className="p-6 space-y-4">
+                <div>
+                  <label htmlFor="confirmCodeInput" className="block text-xs font-semibold text-slate-650 dark:text-slate-350 mb-2">
+                    Para confirmar, escribe el código del grupo (<span className="font-mono text-rose-505 select-all font-bold">{groupToDelete.code}</span>):
+                  </label>
+                  <input
+                    id="confirmCodeInput"
+                    type="text"
+                    value={deleteConfirmCode}
+                    onChange={(e) => {
+                      setDeleteConfirmCode(e.target.value);
+                      if (deleteError) setDeleteError(null);
+                    }}
+                    placeholder="Código del grupo"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-semibold text-slate-905 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-550/20 focus:border-rose-500 transition-all text-center uppercase tracking-wider"
+                    disabled={isDeleting}
+                  />
+                </div>
+
+                {deleteError && (
+                  <p className="text-xs font-medium text-rose-650 dark:text-rose-400 text-center bg-rose-500/10 py-2 rounded-xl">
+                    {deleteError}
+                  </p>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGroupToDelete(null);
+                      setDeleteConfirmCode("");
+                      setDeleteError(null);
+                    }}
+                    disabled={isDeleting}
+                    className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-transparent bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-705 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white text-sm font-bold transition-all disabled:opacity-50 cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteGroup}
+                    disabled={isDeleting || deleteConfirmCode.trim().toUpperCase() !== groupToDelete.code.toUpperCase()}
+                    className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-rose-600/10"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Eliminando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Eliminar Grupo</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

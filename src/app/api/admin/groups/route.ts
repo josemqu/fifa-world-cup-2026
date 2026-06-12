@@ -145,3 +145,37 @@ export async function GET(request: Request) {
     );
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const adminEmail = request.headers.get("x-admin-email");
+
+    if (!isAdminEmail(adminEmail)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const groupId = searchParams.get("groupId");
+
+    if (!groupId) {
+      return NextResponse.json({ error: "groupId is required" }, { status: 400 });
+    }
+
+    await connectDB();
+
+    const deletedGroup = await ProdeGroup.findByIdAndDelete(groupId);
+    if (!deletedGroup) {
+      return NextResponse.json({ error: "Group not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Internal Server Error";
+    console.error("Error deleting prode group as admin:", error);
+    return NextResponse.json(
+      { error: errorMessage },
+      { status: 500 }
+    );
+  }
+}
+
