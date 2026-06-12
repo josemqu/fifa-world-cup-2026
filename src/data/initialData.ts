@@ -42,7 +42,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "A4",
       awayTeamId: "A3",
       finished: false,
-      utcDate: "2026-06-18T17:00:00Z",
+      utcDate: "2026-06-18T16:00:00Z",
       location: "Atlanta Stadium - Atlanta, USA",
     },
     {
@@ -50,7 +50,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "A1",
       awayTeamId: "A2",
       finished: false,
-      utcDate: "2026-06-19T03:00:00Z",
+      utcDate: "2026-06-19T01:00:00Z",
       location: "Estadio Guadalajara - Zapopan, México",
     },
     {
@@ -58,7 +58,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "A3",
       awayTeamId: "A2",
       finished: false,
-      utcDate: "2026-06-25T03:00:00Z",
+      utcDate: "2026-06-25T01:00:00Z",
       location: "Estadio Monterrey - Guadalupe, México",
     },
     {
@@ -66,7 +66,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "A4",
       awayTeamId: "A1",
       finished: false,
-      utcDate: "2026-06-25T03:00:00Z",
+      utcDate: "2026-06-25T01:00:00Z",
       location: "Mexico City Stadium - Ciudad de México, México",
     },
   ],
@@ -93,7 +93,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "B2",
       awayTeamId: "B4",
       finished: false,
-      utcDate: "2026-06-18T23:00:00Z",
+      utcDate: "2026-06-18T19:00:00Z",
       location: "Los Angeles Stadium - Los Ángeles, USA",
     },
     {
@@ -101,7 +101,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "B1",
       awayTeamId: "B3",
       finished: false,
-      utcDate: "2026-06-19T02:00:00Z",
+      utcDate: "2026-06-18T22:00:00Z",
       location: "BC Place - Vancouver, Canadá",
     },
     {
@@ -109,7 +109,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "B4",
       awayTeamId: "B3",
       finished: false,
-      utcDate: "2026-06-24T23:00:00Z",
+      utcDate: "2026-06-24T19:00:00Z",
       location: "Seattle Stadium - Seattle, USA",
     },
     {
@@ -117,7 +117,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "B2",
       awayTeamId: "B1",
       finished: false,
-      utcDate: "2026-06-24T23:00:00Z",
+      utcDate: "2026-06-24T19:00:00Z",
       location: "BC Place - Vancouver, Canadá",
     },
   ],
@@ -127,7 +127,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "C1",
       awayTeamId: "C2",
       finished: false,
-      utcDate: "2026-06-13T23:00:00Z",
+      utcDate: "2026-06-13T22:00:00Z",
       location: "New York New Jersey Stadium - East Rutherford, USA",
     },
     {
@@ -143,7 +143,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "C3",
       awayTeamId: "C2",
       finished: false,
-      utcDate: "2026-06-19T23:00:00Z",
+      utcDate: "2026-06-19T22:00:00Z",
       location: "Boston Stadium - Boston, USA",
     },
     {
@@ -151,7 +151,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "C1",
       awayTeamId: "C4",
       finished: false,
-      utcDate: "2026-06-20T02:00:00Z",
+      utcDate: "2026-06-20T01:00:00Z",
       location: "Philadelphia Stadium - Filadelfia, USA",
     },
     {
@@ -159,7 +159,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "C2",
       awayTeamId: "C4",
       finished: false,
-      utcDate: "2026-06-24T23:00:00Z",
+      utcDate: "2026-06-24T22:00:00Z",
       location: "Atlanta Stadium - Atlanta, USA",
     },
     {
@@ -167,7 +167,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "C3",
       awayTeamId: "C1",
       finished: false,
-      utcDate: "2026-06-24T23:00:00Z",
+      utcDate: "2026-06-24T22:00:00Z",
       location: "Miami Stadium - Miami, USA",
     },
   ],
@@ -193,7 +193,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "D1",
       awayTeamId: "D2",
       finished: false,
-      utcDate: "2026-06-19T23:00:00Z",
+      utcDate: "2026-06-19T19:00:00Z",
       location: "Seattle Stadium - Seattle, USA",
     },
     {
@@ -201,7 +201,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "D4",
       awayTeamId: "D3",
       finished: false,
-      utcDate: "2026-06-20T08:00:00Z",
+      utcDate: "2026-06-20T03:00:00Z",
       location:
         "Estadio de la Bahía de San Francisco - Área de la Bahía de San Francisco",
     },
@@ -210,7 +210,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "D3",
       awayTeamId: "D2",
       finished: false,
-      utcDate: "2026-06-26T06:00:00Z",
+      utcDate: "2026-06-26T02:00:00Z",
       location:
         "Estadio de la Bahía de San Francisco - Área de la Bahía de San Francisco",
     },
@@ -219,7 +219,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "D4",
       awayTeamId: "D1",
       finished: false,
-      utcDate: "2026-06-26T06:00:00Z",
+      utcDate: "2026-06-26T02:00:00Z",
       location: "Los Angeles Stadium - Los Ángeles, USA",
     },
   ],
@@ -229,7 +229,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "E1",
       awayTeamId: "E4",
       finished: false,
-      utcDate: "2026-06-14T18:00:00Z",
+      utcDate: "2026-06-14T17:00:00Z",
       location: "Houston Stadium - Houston, USA",
     },
     {
@@ -237,7 +237,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "E3",
       awayTeamId: "E2",
       finished: false,
-      utcDate: "2026-06-15T00:00:00Z",
+      utcDate: "2026-06-14T23:00:00Z",
       location: "Philadelphia Stadium - Filadelfia, USA",
     },
     {
@@ -245,7 +245,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "E1",
       awayTeamId: "E3",
       finished: false,
-      utcDate: "2026-06-20T21:00:00Z",
+      utcDate: "2026-06-20T20:00:00Z",
       location: "Toronto Stadium - Toronto, Canadá",
     },
     {
@@ -253,7 +253,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "E2",
       awayTeamId: "E4",
       finished: false,
-      utcDate: "2026-06-21T04:00:00Z",
+      utcDate: "2026-06-21T00:00:00Z",
       location: "Kansas City Stadium - Kansas City, USA",
     },
     {
@@ -261,7 +261,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "E4",
       awayTeamId: "E3",
       finished: false,
-      utcDate: "2026-06-25T21:00:00Z",
+      utcDate: "2026-06-25T20:00:00Z",
       location: "Philadelphia Stadium - Filadelfia, USA",
     },
     {
@@ -269,7 +269,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "E2",
       awayTeamId: "E1",
       finished: false,
-      utcDate: "2026-06-25T21:00:00Z",
+      utcDate: "2026-06-25T20:00:00Z",
       location: "New York New Jersey Stadium - East Rutherford, USA",
     },
   ],
@@ -279,7 +279,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "F1",
       awayTeamId: "F2",
       finished: false,
-      utcDate: "2026-06-14T21:00:00Z",
+      utcDate: "2026-06-14T20:00:00Z",
       location: "Dallas Stadium - Dallas, USA",
     },
     {
@@ -287,7 +287,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "F4",
       awayTeamId: "F3",
       finished: false,
-      utcDate: "2026-06-15T04:00:00Z",
+      utcDate: "2026-06-15T02:00:00Z",
       location: "Estadio Monterrey - Guadalupe, México",
     },
     {
@@ -295,7 +295,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "F1",
       awayTeamId: "F4",
       finished: false,
-      utcDate: "2026-06-20T19:00:00Z",
+      utcDate: "2026-06-20T17:00:00Z",
       location: "Houston Stadium - Houston, USA",
     },
     {
@@ -303,7 +303,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "F3",
       awayTeamId: "F2",
       finished: false,
-      utcDate: "2026-06-21T06:00:00Z",
+      utcDate: "2026-06-21T04:00:00Z",
       location: "Estadio Monterrey - Guadalupe, México",
     },
     {
@@ -311,7 +311,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "F3",
       awayTeamId: "F1",
       finished: false,
-      utcDate: "2026-06-26T01:00:00Z",
+      utcDate: "2026-06-25T23:00:00Z",
       location: "Kansas City Stadium - Kansas City, USA",
     },
     {
@@ -319,7 +319,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "F2",
       awayTeamId: "F4",
       finished: false,
-      utcDate: "2026-06-26T01:00:00Z",
+      utcDate: "2026-06-25T23:00:00Z",
       location: "Dallas Stadium - Dallas, USA",
     },
   ],
@@ -329,7 +329,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "G1",
       awayTeamId: "G2",
       finished: false,
-      utcDate: "2026-06-15T23:00:00Z",
+      utcDate: "2026-06-15T19:00:00Z",
       location: "BC Place - Vancouver, Canadá",
     },
     {
@@ -337,7 +337,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "G3",
       awayTeamId: "G4",
       finished: false,
-      utcDate: "2026-06-16T05:00:00Z",
+      utcDate: "2026-06-16T01:00:00Z",
       location: "Los Angeles Stadium - Los Ángeles, USA",
     },
     {
@@ -345,7 +345,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "G1",
       awayTeamId: "G3",
       finished: false,
-      utcDate: "2026-06-21T23:00:00Z",
+      utcDate: "2026-06-21T19:00:00Z",
       location: "Los Angeles Stadium - Los Ángeles, USA",
     },
     {
@@ -353,7 +353,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "G4",
       awayTeamId: "G2",
       finished: false,
-      utcDate: "2026-06-22T05:00:00Z",
+      utcDate: "2026-06-22T01:00:00Z",
       location: "BC Place - Vancouver, Canadá",
     },
     {
@@ -361,7 +361,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "G4",
       awayTeamId: "G1",
       finished: false,
-      utcDate: "2026-06-27T07:00:00Z",
+      utcDate: "2026-06-27T03:00:00Z",
       location: "BC Place - Vancouver, Canadá",
     },
     {
@@ -369,7 +369,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "G2",
       awayTeamId: "G3",
       finished: false,
-      utcDate: "2026-06-27T07:00:00Z",
+      utcDate: "2026-06-27T03:00:00Z",
       location: "Seattle Stadium - Seattle, USA",
     },
   ],
@@ -379,7 +379,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "H1",
       awayTeamId: "H4",
       finished: false,
-      utcDate: "2026-06-15T17:00:00Z",
+      utcDate: "2026-06-15T16:00:00Z",
       location: "Atlanta Stadium - Atlanta, USA",
     },
     {
@@ -387,7 +387,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "H3",
       awayTeamId: "H2",
       finished: false,
-      utcDate: "2026-06-15T23:00:00Z",
+      utcDate: "2026-06-15T22:00:00Z",
       location: "Miami Stadium - Miami, USA",
     },
     {
@@ -395,7 +395,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "H1",
       awayTeamId: "H3",
       finished: false,
-      utcDate: "2026-06-21T17:00:00Z",
+      utcDate: "2026-06-21T16:00:00Z",
       location: "Atlanta Stadium - Atlanta, USA",
     },
     {
@@ -403,7 +403,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "H2",
       awayTeamId: "H4",
       finished: false,
-      utcDate: "2026-06-21T23:00:00Z",
+      utcDate: "2026-06-21T22:00:00Z",
       location: "Miami Stadium - Miami, USA",
     },
     {
@@ -411,7 +411,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "H2",
       awayTeamId: "H1",
       finished: false,
-      utcDate: "2026-06-27T02:00:00Z",
+      utcDate: "2026-06-27T00:00:00Z",
       location: "Estadio Guadalajara - Zapopan, México",
     },
     {
@@ -419,7 +419,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "H4",
       awayTeamId: "H3",
       finished: false,
-      utcDate: "2026-06-27T02:00:00Z",
+      utcDate: "2026-06-27T00:00:00Z",
       location: "Houston Stadium - Houston, USA",
     },
   ],
@@ -429,7 +429,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "I1",
       awayTeamId: "I2",
       finished: false,
-      utcDate: "2026-06-16T20:00:00Z",
+      utcDate: "2026-06-16T19:00:00Z",
       location: "New York New Jersey Stadium - East Rutherford, USA",
     },
     {
@@ -437,7 +437,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "I4",
       awayTeamId: "I3",
       finished: false,
-      utcDate: "2026-06-16T23:00:00Z",
+      utcDate: "2026-06-16T22:00:00Z",
       location: "Boston Stadium - Boston, USA",
     },
     {
@@ -445,7 +445,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "I1",
       awayTeamId: "I4",
       finished: false,
-      utcDate: "2026-06-22T22:00:00Z",
+      utcDate: "2026-06-22T21:00:00Z",
       location: "Philadelphia Stadium - Filadelfia, USA",
     },
     {
@@ -453,7 +453,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "I3",
       awayTeamId: "I2",
       finished: false,
-      utcDate: "2026-06-23T01:00:00Z",
+      utcDate: "2026-06-23T00:00:00Z",
       location: "New York New Jersey Stadium - East Rutherford, USA",
     },
     {
@@ -461,7 +461,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "I2",
       awayTeamId: "I4",
       finished: false,
-      utcDate: "2026-06-26T20:00:00Z",
+      utcDate: "2026-06-26T19:00:00Z",
       location: "Toronto Stadium - Toronto, Canadá",
     },
     {
@@ -469,7 +469,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "I3",
       awayTeamId: "I1",
       finished: false,
-      utcDate: "2026-06-26T20:00:00Z",
+      utcDate: "2026-06-26T19:00:00Z",
       location: "Boston Stadium - Boston, USA",
     },
   ],
@@ -479,7 +479,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "J1",
       awayTeamId: "J3",
       finished: false,
-      utcDate: "2026-06-17T03:00:00Z",
+      utcDate: "2026-06-17T01:00:00Z",
       location: "Kansas City Stadium - Kansas City, USA",
     },
     {
@@ -487,7 +487,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "J2",
       awayTeamId: "J4",
       finished: false,
-      utcDate: "2026-06-17T08:00:00Z",
+      utcDate: "2026-06-17T04:00:00Z",
       location:
         "Estadio de la Bahía de San Francisco - Área de la Bahía de San Francisco",
     },
@@ -496,7 +496,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "J1",
       awayTeamId: "J2",
       finished: false,
-      utcDate: "2026-06-22T19:00:00Z",
+      utcDate: "2026-06-22T17:00:00Z",
       location: "Dallas Stadium - Dallas, USA",
     },
     {
@@ -504,7 +504,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "J4",
       awayTeamId: "J3",
       finished: false,
-      utcDate: "2026-06-23T07:00:00Z",
+      utcDate: "2026-06-23T03:00:00Z",
       location:
         "Estadio de la Bahía de San Francisco - Área de la Bahía de San Francisco",
     },
@@ -513,7 +513,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "J3",
       awayTeamId: "J2",
       finished: false,
-      utcDate: "2026-06-28T04:00:00Z",
+      utcDate: "2026-06-28T02:00:00Z",
       location: "Kansas City Stadium - Kansas City, USA",
     },
     {
@@ -521,7 +521,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "J4",
       awayTeamId: "J1",
       finished: false,
-      utcDate: "2026-06-28T04:00:00Z",
+      utcDate: "2026-06-28T02:00:00Z",
       location: "Dallas Stadium - Dallas, USA",
     },
   ],
@@ -531,7 +531,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "K1",
       awayTeamId: "K4",
       finished: false,
-      utcDate: "2026-06-17T19:00:00Z",
+      utcDate: "2026-06-17T17:00:00Z",
       location: "Houston Stadium - Houston, USA",
     },
     {
@@ -539,7 +539,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "K3",
       awayTeamId: "K2",
       finished: false,
-      utcDate: "2026-06-18T04:00:00Z",
+      utcDate: "2026-06-18T02:00:00Z",
       location: "Mexico City Stadium - Ciudad de México, México",
     },
     {
@@ -547,7 +547,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "K1",
       awayTeamId: "K3",
       finished: false,
-      utcDate: "2026-06-23T19:00:00Z",
+      utcDate: "2026-06-23T17:00:00Z",
       location: "Houston Stadium - Houston, USA",
     },
     {
@@ -555,7 +555,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "K2",
       awayTeamId: "K4",
       finished: false,
-      utcDate: "2026-06-24T04:00:00Z",
+      utcDate: "2026-06-24T02:00:00Z",
       location: "Estadio Guadalajara - Zapopan, México",
     },
     {
@@ -563,7 +563,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "K4",
       awayTeamId: "K3",
       finished: false,
-      utcDate: "2026-06-28T02:30:00Z",
+      utcDate: "2026-06-27T23:30:00Z",
       location: "Atlanta Stadium - Atlanta, USA",
     },
     {
@@ -571,7 +571,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "K2",
       awayTeamId: "K1",
       finished: false,
-      utcDate: "2026-06-28T02:30:00Z",
+      utcDate: "2026-06-27T23:30:00Z",
       location: "Miami Stadium - Miami, USA",
     },
   ],
@@ -581,7 +581,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "L1",
       awayTeamId: "L2",
       finished: false,
-      utcDate: "2026-06-17T22:00:00Z",
+      utcDate: "2026-06-17T20:00:00Z",
       location: "Dallas Stadium - Dallas, USA",
     },
     {
@@ -589,7 +589,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "L3",
       awayTeamId: "L4",
       finished: false,
-      utcDate: "2026-06-18T00:00:00Z",
+      utcDate: "2026-06-17T23:00:00Z",
       location: "Toronto Stadium - Toronto, Canadá",
     },
     {
@@ -597,7 +597,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "L1",
       awayTeamId: "L3",
       finished: false,
-      utcDate: "2026-06-23T21:00:00Z",
+      utcDate: "2026-06-23T20:00:00Z",
       location: "Boston Stadium - Boston, USA",
     },
     {
@@ -605,7 +605,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "L4",
       awayTeamId: "L2",
       finished: false,
-      utcDate: "2026-06-24T00:00:00Z",
+      utcDate: "2026-06-23T23:00:00Z",
       location: "Toronto Stadium - Toronto, Canadá",
     },
     {
@@ -613,7 +613,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "L4",
       awayTeamId: "L1",
       finished: false,
-      utcDate: "2026-06-27T22:00:00Z",
+      utcDate: "2026-06-27T21:00:00Z",
       location: "New York New Jersey Stadium - East Rutherford, USA",
     },
     {
@@ -621,7 +621,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "L2",
       awayTeamId: "L3",
       finished: false,
-      utcDate: "2026-06-27T22:00:00Z",
+      utcDate: "2026-06-27T21:00:00Z",
       location: "Philadelphia Stadium - Filadelfia, USA",
     },
   ],
