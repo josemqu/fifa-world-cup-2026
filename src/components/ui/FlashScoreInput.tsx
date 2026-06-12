@@ -11,7 +11,8 @@ export function FlashScoreInput({ className, value, ...props }: FlashScoreInputP
 
   useEffect(() => {
     // Only flash when the score value changes after the component has mounted
-    if (value !== prevValueRef.current) {
+    // and only if the input is read-only (which represents a live score display)
+    if (props.readOnly && value !== prevValueRef.current) {
       setIsFlashing(true);
       const timer = setTimeout(() => {
         setIsFlashing(false);
@@ -19,8 +20,10 @@ export function FlashScoreInput({ className, value, ...props }: FlashScoreInputP
 
       prevValueRef.current = value;
       return () => clearTimeout(timer);
+    } else {
+      prevValueRef.current = value;
     }
-  }, [value]);
+  }, [value, props.readOnly]);
 
   return (
     <input
