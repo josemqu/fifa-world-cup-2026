@@ -8,10 +8,12 @@ import { TeamFlag } from "@/components/ui/TeamFlag";
 import { MatchDateTime } from "@/components/ui/MatchDateTime";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { useTournament } from "@/context/TournamentContext";
-import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { ChevronLeft, ChevronRight, Calendar, Edit2, X } from "lucide-react";
 import { clsx } from "clsx";
 import { FlashScoreInput } from "@/components/ui/FlashScoreInput";
 import { getPlaceholderExplanation } from "@/utils/knockoutUtils";
+import { MatchOverrideModal } from "@/components/MatchOverrideModal";
 
 
 interface DailyScheduleProps {
@@ -189,6 +191,71 @@ export function DailySchedule({
   useEffect(() => {
     currentDayIndexRef.current = currentDayIndex;
   }, [currentDayIndex]);
+
+  // Admin and Manual Override State
+  const { dbUser, user } = useAuth();
+  const { updateMatch, updateKnockoutMatch } = useTournament();
+  const [dbScores, setDbScores] = useState<any[]>([]);
+  const [editingMatch, setEditingMatch] = useState<NormalizedMatch | null>(null);
+
+  const isAdmin = useMemo(() => {
+    return dbUser?.role === "admin" ||
+      !!user?.email?.toLowerCase().includes("mailjmq") ||
+      !!dbUser?.email?.toLowerCase().includes("mailjmq");
+  }, [dbUser, user]);
+
+  const fetchDbScores = useCallback(async () => {
+    try {
+      const response = await fetch("/api/scores/sync");
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.scores) {
+          setDbScores(data.scores);
+        }
+      }
+    } catch (e) {
+      console.error("[DailySchedule] Error fetching DB scores:", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (mounted) {
+      fetchDbScores();
+    }
+  }, [mounted, fetchDbScores]);
+
+  const handleSaveOverride = useCallback((updatedScore: any) => {
+    setDbScores((prev) => {
+      const existingIdx = prev.findIndex((s) => s.matchId === updatedScore.matchId);
+      if (existingIdx !== -1) {
+        const copy = [...prev];
+        copy[existingIdx] = updatedScore;
+        return copy;
+      } else {
+        return [...prev, updatedScore];
+      }
+    });
+
+    if (updatedScore.stage === "group" && updatedScore.groupId) {
+      updateMatch(
+        updatedScore.groupId,
+        updatedScore.matchId,
+        updatedScore.homeScore,
+        updatedScore.awayScore,
+        updatedScore.status === "finished"
+      );
+    } else if (updatedScore.stage === "knockout") {
+      updateKnockoutMatch(
+        updatedScore.matchId,
+        updatedScore.homeScore,
+        updatedScore.awayScore,
+        updatedScore.homePenalties,
+        updatedScore.awayPenalties,
+        updatedScore.status === "finished"
+      );
+    }
+    setEditingMatch(null);
+  }, [updateMatch, updateKnockoutMatch]);
 
   // Initial load sync
   useEffect(() => {
@@ -475,7 +542,13 @@ export function DailySchedule({
                     {/* Match Cards */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {hourMatches.map((match) => (
-                        <ScheduleMatchCard key={match.id} match={match} highlightMatchId={activeHighlightId} />
+                        <ScheduleMatchCard 
+                          key={match.id} 
+                          match={match} 
+                          highlightMatchId={activeHighlightId}
+                          isAdmin={isAdmin}
+                          onEdit={setEditingMatch}
+                        />
                       ))}
                     </div>
                   </div>
@@ -500,11 +573,41 @@ export function DailySchedule({
         {/* Bottom Gradient Fade */}
         <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white dark:from-[#0a0a0a] to-transparent pointer-events-none z-20 transition-opacity duration-300" />
       </div>
+
+      {/* Override Modal */}
+      {editingMatch && (
+        <MatchOverrideModal
+          matchId={editingMatch.id}
+          homeTeamName={editingMatch.homeTeamName}
+          awayTeamName={editingMatch.awayTeamName}
+          homeScore={editingMatch.homeScore ?? null}
+          awayScore={editingMatch.awayScore ?? null}
+          finished={!!editingMatch.finished}
+          stageLabel={editingMatch.stage}
+          isKnockout={editingMatch.isKnockout}
+          groupId={editingMatch.groupId}
+          dbScores={dbScores}
+          onClose={() => setEditingMatch(null)}
+          onSave={handleSaveOverride}
+          dbUser={dbUser}
+          user={user}
+        />
+      )}
     </div>
   );
 }
 
-function ScheduleMatchCard({ match, highlightMatchId }: { match: NormalizedMatch; highlightMatchId?: string | null }) {
+function ScheduleMatchCard({ 
+  match, 
+  highlightMatchId,
+  isAdmin,
+  onEdit,
+}: { 
+  match: NormalizedMatch; 
+  highlightMatchId?: string | null;
+  isAdmin: boolean;
+  onEdit: (match: NormalizedMatch) => void;
+}) {
   const { updateMatch, updateKnockoutMatch } = useTournament();
   const cardRef = useRef<HTMLDivElement>(null);
   const isHighlighted = highlightMatchId === match.id;
@@ -562,11 +665,22 @@ function ScheduleMatchCard({ match, highlightMatchId }: { match: NormalizedMatch
             {match.stage}
           </span>
         </div>
-        <MatchDateTime
-          utcDate={match.utcDate}
-          dateClassName="text-[10px] font-medium text-slate-400 dark:text-slate-500"
-          timeClassName="text-[10px] font-bold text-slate-600 dark:text-slate-300"
-        />
+        <div className="flex items-center gap-2">
+          <MatchDateTime
+            utcDate={match.utcDate}
+            dateClassName="text-[10px] font-medium text-slate-400 dark:text-slate-500"
+            timeClassName="text-[10px] font-bold text-slate-600 dark:text-slate-300"
+          />
+          {isAdmin && (
+            <button
+              onClick={() => onEdit(match)}
+              className="p-1 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all cursor-pointer inline-flex items-center justify-center border border-slate-300/40 dark:border-slate-600/40"
+              title="Corregir score manualmente"
+            >
+              <Edit2 size={10} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Teams */}
@@ -690,3 +804,5 @@ function ScheduleMatchCard({ match, highlightMatchId }: { match: NormalizedMatch
     </div>
   );
 }
+
+

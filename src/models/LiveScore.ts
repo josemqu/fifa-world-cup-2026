@@ -13,6 +13,7 @@ export interface ILiveScore extends Document {
   elapsed: number | null; // Minuto del partido
   stage: "group" | "knockout";
   groupId?: string; // "A", "B", ... para fase de grupos
+  manualOverride?: boolean;
   lastSyncAt: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -40,6 +41,7 @@ const LiveScoreSchema: Schema = new Schema(
       required: true,
     },
     groupId: { type: String },
+    manualOverride: { type: Boolean, default: false },
     lastSyncAt: { type: Date, default: Date.now },
   },
   {

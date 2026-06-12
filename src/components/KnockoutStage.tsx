@@ -8,12 +8,13 @@ import { predictMatchScore } from "@/utils/simulationUtils";
 import { clsx } from "clsx";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { TeamFlag } from "@/components/ui/TeamFlag";
-import { Info, Trash2, Play, RotateCcw } from "lucide-react";
+import { Info, Trash2, Play, RotateCcw, Edit2 } from "lucide-react";
 import { useTournament } from "@/context/TournamentContext";
 import { useAuth } from "@/context/AuthContext";
 import { useMatchTime } from "@/hooks/useMatchTime";
 import confetti from "canvas-confetti";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { MatchOverrideModal } from "@/components/MatchOverrideModal";
 import {
   FloatingContainer,
   FloatingButton,
@@ -31,6 +32,7 @@ interface KnockoutStageProps {
     awayScore: number | null,
     homePenalties?: number | null,
     awayPenalties?: number | null,
+    finished?: boolean,
   ) => void;
 }
 
@@ -117,11 +119,42 @@ function MatchCard({
     a: number | null,
     hp?: number | null,
     ap?: number | null,
+    finished?: boolean,
   ) => void;
   onSimulate?: (match: KnockoutMatch) => void;
   onReset?: (match: KnockoutMatch) => void;
   tooltipPlacement?: "top" | "right" | "bottom" | "left";
 }) {
+  const { dbUser, user } = useAuth();
+  const [dbScores, setDbScores] = useState<any[]>([]);
+  const [showOverrideModal, setShowOverrideModal] = useState<boolean>(false);
+
+  const isAdmin = useMemo(() => {
+    return dbUser?.role === "admin" ||
+      !!user?.email?.toLowerCase().includes("mailjmq") ||
+      !!dbUser?.email?.toLowerCase().includes("mailjmq");
+  }, [dbUser, user]);
+
+  const fetchDbScores = useCallback(async () => {
+    try {
+      const response = await fetch("/api/scores/sync");
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.scores) {
+          setDbScores(data.scores);
+        }
+      }
+    } catch (e) {
+      console.error("[MatchCard] Error fetching DB scores:", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (showOverrideModal) {
+      fetchDbScores();
+    }
+  }, [showOverrideModal, fetchDbScores]);
+
   const homeTeam = match.homeTeam;
   const awayTeam = match.awayTeam;
   const prob = match.probabilisticData;
@@ -211,6 +244,16 @@ function MatchCard({
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
             #{match.id}
           </span>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setShowOverrideModal(true)}
+              className="p-0.5 rounded bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-650 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all cursor-pointer inline-flex items-center justify-center border border-slate-300/40 dark:border-slate-600/35"
+              title="Corregir score manualmente"
+            >
+              <Edit2 size={8} />
+            </button>
+          )}
         </div>
         <MatchDateTime
           utcDate={match.utcDate}
@@ -535,6 +578,43 @@ function MatchCard({
           </div>
         )}
       </div>
+      {showOverrideModal && (
+        <MatchOverrideModal
+          matchId={match.id}
+          homeTeamName={homeName || "Por definir"}
+          awayTeamName={awayName || "Por definir"}
+          homeScore={match.homeScore ?? null}
+          awayScore={match.awayScore ?? null}
+          finished={!!match.finished}
+          stageLabel={roundName}
+          isKnockout={true}
+          dbScores={dbScores}
+          onClose={() => setShowOverrideModal(false)}
+          onSave={(updatedScore: any) => {
+            setDbScores((prev) => {
+              const existingIdx = prev.findIndex((s) => s.matchId === updatedScore.matchId);
+              if (existingIdx !== -1) {
+                const copy = [...prev];
+                copy[existingIdx] = updatedScore;
+                return copy;
+              } else {
+                return [...prev, updatedScore];
+              }
+            });
+            onUpdate(
+              updatedScore.matchId,
+              updatedScore.homeScore,
+              updatedScore.awayScore,
+              updatedScore.homePenalties,
+              updatedScore.awayPenalties,
+              updatedScore.status === "finished"
+            );
+            setShowOverrideModal(false);
+          }}
+          dbUser={dbUser}
+          user={user}
+        />
+      )}
     </div>
   );
 }
@@ -558,6 +638,7 @@ function MatchPair({
     a: number | null,
     hp?: number | null,
     ap?: number | null,
+    finished?: boolean,
   ) => void;
   onSimulate?: (match: KnockoutMatch) => void;
   onReset?: (match: KnockoutMatch) => void;

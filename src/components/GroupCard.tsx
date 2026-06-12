@@ -3,12 +3,14 @@ import { clsx } from "clsx";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { getTeamAbbreviation } from "@/utils/teamAbbreviations";
-import { ChevronDown, ChevronUp, CheckCircle2, Lock, Info } from "lucide-react";
+import { ChevronDown, ChevronUp, CheckCircle2, Lock, Info, Edit2 } from "lucide-react";
 import { analyzeGroup } from "@/utils/groupAnalysis";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { MatchDateTime } from "@/components/ui/MatchDateTime";
 import { FlashScoreInput } from "@/components/ui/FlashScoreInput";
 import { GroupPositionProbMap } from "@/utils/groupPositionMonteCarlo";
+import { useAuth } from "@/context/AuthContext";
+import { MatchOverrideModal } from "@/components/MatchOverrideModal";
 
 
 interface GroupCardProps {
@@ -17,7 +19,8 @@ interface GroupCardProps {
     groupId: string,
     matchId: string,
     homeScore: number | null,
-    awayScore: number | null
+    awayScore: number | null,
+    finished?: boolean
   ) => void;
   showMatches?: boolean;
   onToggleMatches?: () => void;
@@ -35,6 +38,34 @@ export function GroupCard({
   positionProbabilities,
   showPositionProbabilitiesIcon = true,
 }: GroupCardProps) {
+  const { dbUser, user } = useAuth();
+  const [dbScores, setDbScores] = useState<any[]>([]);
+  const [editingMatch, setEditingMatch] = useState<Match | null>(null);
+
+  const isAdmin = useMemo(() => {
+    return dbUser?.role === "admin" ||
+      !!user?.email?.toLowerCase().includes("mailjmq") ||
+      !!dbUser?.email?.toLowerCase().includes("mailjmq");
+  }, [dbUser, user]);
+
+  const fetchDbScores = useCallback(async () => {
+    try {
+      const response = await fetch("/api/scores/sync");
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.scores) {
+          setDbScores(data.scores);
+        }
+      }
+    } catch (e) {
+      console.error("[GroupCard] Error fetching DB scores:", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDbScores();
+  }, [fetchDbScores]);
+
   const sortedTeams = useMemo(() => {
     return [...group.teams].sort((a, b) => {
       if (b.pts !== a.pts) return b.pts - a.pts;
@@ -471,9 +502,21 @@ export function GroupCard({
                     className="text-xs border border-slate-200 dark:border-slate-700 rounded-md p-1.5 bg-white dark:bg-slate-800 shadow-sm"
                   >
                     <div className="flex justify-between items-center text-[10px] text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-wide leading-none">
-                      <MatchDateTime 
-                        utcDate={match.utcDate} 
-                      />
+                      <div className="flex items-center gap-1.5">
+                        <MatchDateTime 
+                          utcDate={match.utcDate} 
+                        />
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            onClick={() => setEditingMatch(match)}
+                            className="p-0.5 rounded bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-650 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all cursor-pointer inline-flex items-center justify-center border border-slate-300/40 dark:border-slate-600/35"
+                            title="Corregir score manualmente"
+                          >
+                            <Edit2 size={8} />
+                          </button>
+                        )}
+                      </div>
                       {match.location && (
                         <div className="flex flex-col items-end max-w-[240px] leading-tight">
                           <span
@@ -584,6 +627,45 @@ export function GroupCard({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Override Modal */}
+      {editingMatch && (
+        <MatchOverrideModal
+          matchId={editingMatch.id}
+          homeTeamName={getTeamName(editingMatch.homeTeamId)}
+          awayTeamName={getTeamName(editingMatch.awayTeamId)}
+          homeScore={editingMatch.homeScore ?? null}
+          awayScore={editingMatch.awayScore ?? null}
+          finished={editingMatch.finished}
+          stageLabel={`Grupo ${group.name}`}
+          isKnockout={false}
+          groupId={group.name}
+          dbScores={dbScores}
+          onClose={() => setEditingMatch(null)}
+          onSave={(updatedScore: any) => {
+            setDbScores((prev) => {
+              const existingIdx = prev.findIndex((s) => s.matchId === updatedScore.matchId);
+              if (existingIdx !== -1) {
+                const copy = [...prev];
+                copy[existingIdx] = updatedScore;
+                return copy;
+              } else {
+                return [...prev, updatedScore];
+              }
+            });
+            onMatchUpdate(
+              group.name,
+              updatedScore.matchId,
+              updatedScore.homeScore,
+              updatedScore.awayScore,
+              updatedScore.status === "finished"
+            );
+            setEditingMatch(null);
+          }}
+          dbUser={dbUser}
+          user={user}
+        />
       )}
     </div>
   );

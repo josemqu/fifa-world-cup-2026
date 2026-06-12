@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useTournament } from "@/context/TournamentContext";
 import { useAuth } from "@/context/AuthContext";
 import { TeamFlag } from "@/components/ui/TeamFlag";
@@ -69,7 +69,7 @@ interface RealLiveSimulationPanelProps {
 }
 
 function RealLiveSimulationPanel({ dbUser, user }: RealLiveSimulationPanelProps) {
-  const { resetTournament } = useTournament();
+  const { resetTournament, groups, knockoutMatches, updateMatch, updateKnockoutMatch } = useTournament();
   const [isActive, setIsActive] = useState(false);
   const [isOpen, setIsOpen] = useState(false); // Sidebar drawer open state
   const [liveMatches, setLiveMatches] = useState<LiveMatch[]>([]);
@@ -81,6 +81,158 @@ function RealLiveSimulationPanel({ dbUser, user }: RealLiveSimulationPanelProps)
 
   const prevMatchesRef = useRef<LiveMatch[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Manual Overrides State
+  const [dbScores, setDbScores] = useState<any[]>([]);
+  const [selectedMatchId, setSelectedMatchId] = useState("");
+  const [overrideHomeScore, setOverrideHomeScore] = useState<string>("");
+  const [overrideAwayScore, setOverrideAwayScore] = useState<string>("");
+  const [overrideStatus, setOverrideStatus] = useState<string>("scheduled");
+  const [overrideElapsed, setOverrideElapsed] = useState<string>("");
+  const [isManualOverridden, setIsManualOverridden] = useState(false);
+  const [overrideLoading, setOverrideLoading] = useState(false);
+  const [overrideSuccessMsg, setOverrideSuccessMsg] = useState("");
+
+  const allTournamentMatches = useMemo(() => {
+    const list: Array<{ id: string; homeTeamName: string; awayTeamName: string; stage: string }> = [];
+    
+    // Group stage matches
+    for (const group of groups) {
+      for (const match of group.matches) {
+        const homeTeam = group.teams.find(t => t.id === match.homeTeamId);
+        const awayTeam = group.teams.find(t => t.id === match.awayTeamId);
+        list.push({
+          id: match.id,
+          homeTeamName: homeTeam?.name || match.homeTeamId,
+          awayTeamName: awayTeam?.name || match.awayTeamId,
+          stage: `Grupo ${group.name}`,
+        });
+      }
+    }
+    
+    // Knockout matches
+    for (const match of knockoutMatches) {
+      const homeName = match.homeTeam && "placeholder" in match.homeTeam ? match.homeTeam.placeholder : (match.homeTeam?.name || "Por definir");
+      const awayName = match.awayTeam && "placeholder" in match.awayTeam ? match.awayTeam.placeholder : (match.awayTeam?.name || "Por definir");
+      list.push({
+        id: match.id,
+        homeTeamName: homeName,
+        awayTeamName: awayName,
+        stage: match.stage,
+      });
+    }
+    
+    return list;
+  }, [groups, knockoutMatches]);
+
+  const fetchDbScores = useCallback(async () => {
+    try {
+      const response = await fetch("/api/scores/sync");
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.scores) {
+          setDbScores(data.scores);
+        }
+      }
+    } catch (e) {
+      console.error("[LiveSimulationPanel] Error fetching DB scores:", e);
+    }
+  }, []);
+
+  // Fetch DB scores when sidebar is opened
+  useEffect(() => {
+    if (isOpen) {
+      fetchDbScores();
+    }
+  }, [isOpen, fetchDbScores]);
+
+  // When selectedMatchId changes, populate override form
+  useEffect(() => {
+    if (selectedMatchId) {
+      const match = dbScores.find(s => s.matchId === selectedMatchId);
+      if (match) {
+        setOverrideHomeScore(match.homeScore !== null ? String(match.homeScore) : "");
+        setOverrideAwayScore(match.awayScore !== null ? String(match.awayScore) : "");
+        setOverrideStatus(match.status || "scheduled");
+        setOverrideElapsed(match.elapsed !== null ? String(match.elapsed) : "");
+        setIsManualOverridden(!!match.manualOverride);
+      } else {
+        setOverrideHomeScore("");
+        setOverrideAwayScore("");
+        setOverrideStatus("scheduled");
+        setOverrideElapsed("");
+        setIsManualOverridden(false);
+      }
+    }
+  }, [selectedMatchId, dbScores]);
+
+  const handleSaveOverride = async () => {
+    if (!selectedMatchId) return;
+    setOverrideLoading(true);
+    setOverrideSuccessMsg("");
+    try {
+      const email = dbUser?.email || user?.email;
+      const response = await fetch("/api/scores/override", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-email": email || "",
+        },
+        body: JSON.stringify({
+          matchId: selectedMatchId,
+          homeScore: overrideHomeScore === "" ? null : Number(overrideHomeScore),
+          awayScore: overrideAwayScore === "" ? null : Number(overrideAwayScore),
+          status: overrideStatus,
+          elapsed: overrideElapsed === "" ? null : Number(overrideElapsed),
+          manualOverride: isManualOverridden,
+        }),
+      });
+
+      if (response.ok) {
+        const resData = await response.json();
+        if (resData.success && resData.score) {
+          setOverrideSuccessMsg("¡Partido guardado con éxito!");
+          await fetchDbScores(); // Refresh local DB scores
+          
+          // Propagate change directly to the tournament context in memory
+          const match = resData.score;
+          if (match.stage === "group" && match.groupId) {
+            updateMatch(
+              match.groupId,
+              match.matchId,
+              match.homeScore,
+              match.awayScore,
+              match.status === "finished"
+            );
+          } else if (match.stage === "knockout") {
+            updateKnockoutMatch(
+              match.matchId,
+              match.homeScore,
+              match.awayScore,
+              match.homePenalties,
+              match.awayPenalties,
+              match.status === "finished"
+            );
+          }
+          
+          // Clear message after 3 seconds
+          setTimeout(() => {
+            setOverrideSuccessMsg("");
+          }, 3000);
+        } else {
+          alert(resData.error || "Error al guardar override");
+        }
+      } else {
+        const err = await response.json();
+        alert(err.error || "Error de red al guardar override");
+      }
+    } catch (e: any) {
+      console.error(e);
+      alert("Error: " + e.message);
+    } finally {
+      setOverrideLoading(false);
+    }
+  };
 
   // Sync initial state with localStorage
   useEffect(() => {
@@ -395,6 +547,137 @@ function RealLiveSimulationPanel({ dbUser, user }: RealLiveSimulationPanelProps)
                         </button>
                       )}
                     </div>
+                  </div>
+                </div>
+
+                {/* MANUAL SCORE OVERRIDES */}
+                <div className="bg-slate-50 dark:bg-slate-950/40 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800/30 space-y-3">
+                  <div>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                      Corrección Manual de Scores
+                    </span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                      Modificá cualquier resultado real y fijalo para que la API externa no lo pise.
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 text-xs">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-450 dark:text-slate-500 block mb-1">
+                        Seleccionar Partido
+                      </label>
+                      <select
+                        value={selectedMatchId}
+                        onChange={(e) => setSelectedMatchId(e.target.value)}
+                        className="w-full bg-white dark:bg-slate-800 text-xs px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-slate-900 dark:text-white"
+                      >
+                        <option value="">-- Seleccionar --</option>
+                        {allTournamentMatches.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            [{m.stage}] {m.homeTeamName} vs {m.awayTeamName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {selectedMatchId && (
+                      <div className="space-y-2.5 bg-white dark:bg-slate-900/40 p-2.5 rounded-lg border border-slate-150 dark:border-slate-800/50 animate-fade-in-up">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 block mb-0.5">
+                              Goles Local
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={overrideHomeScore}
+                              onChange={(e) => setOverrideHomeScore(e.target.value)}
+                              placeholder="-"
+                              className="w-full bg-slate-50 dark:bg-slate-800 px-2 py-1.5 rounded border border-slate-200 dark:border-slate-700 focus:ring-1 focus:ring-blue-500 text-slate-900 dark:text-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 block mb-0.5">
+                              Goles Visitante
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={overrideAwayScore}
+                              onChange={(e) => setOverrideAwayScore(e.target.value)}
+                              placeholder="-"
+                              className="w-full bg-slate-50 dark:bg-slate-800 px-2 py-1.5 rounded border border-slate-200 dark:border-slate-700 focus:ring-1 focus:ring-blue-500 text-slate-900 dark:text-white"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 block mb-0.5">
+                              Estado
+                            </label>
+                            <select
+                              value={overrideStatus}
+                              onChange={(e) => setOverrideStatus(e.target.value)}
+                              className="w-full bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
+                            >
+                              <option value="scheduled">Programado</option>
+                              <option value="live">En vivo</option>
+                              <option value="halftime">Entretiempo</option>
+                              <option value="finished">Finalizado</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 block mb-0.5">
+                              Minuto
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              max="120"
+                              value={overrideElapsed}
+                              onChange={(e) => setOverrideElapsed(e.target.value)}
+                              placeholder="-"
+                              className="w-full bg-slate-50 dark:bg-slate-800 px-2 py-1.5 rounded border border-slate-200 dark:border-slate-700 focus:ring-1 focus:ring-blue-500 text-slate-900 dark:text-white"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                            Fijar resultado (Bypass API)
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setIsManualOverridden(!isManualOverridden)}
+                            className={`relative inline-flex h-4 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                              isManualOverridden ? "bg-amber-500" : "bg-slate-200 dark:bg-slate-700"
+                            }`}
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                isManualOverridden ? "translate-x-5" : "translate-x-0"
+                              }`}
+                            />
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleSaveOverride}
+                          disabled={overrideLoading}
+                          className="w-full bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-extrabold text-[10px] py-2 rounded-lg shadow-sm transition-colors mt-2 cursor-pointer disabled:opacity-50"
+                        >
+                          {overrideLoading ? "Guardando..." : "Guardar Corrección"}
+                        </button>
+
+                        {overrideSuccessMsg && (
+                          <div className="text-[10px] text-green-600 dark:text-green-400 font-bold text-center mt-1 animate-pulse">
+                            {overrideSuccessMsg}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 

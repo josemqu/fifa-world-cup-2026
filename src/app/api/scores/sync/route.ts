@@ -16,8 +16,8 @@ import {
 async function syncScores(date?: string) {
   await connectDB();
 
-  const isAll = date === "all";
-  const syncDate = isAll ? undefined : (date || getTodayUTC());
+  const isAll = !date || date === "all";
+  const syncDate = isAll ? undefined : date;
 
   // 1. Fetch from API-Football
   const fixtures = await fetchFixtures(syncDate);
@@ -35,10 +35,18 @@ async function syncScores(date?: string) {
   // 2. Normalize
   const normalized = normalizeFixtures(fixtures);
 
-  // 3. Smart upsert — only update if scores changed
+  // 3. Smart upsert — fetch all existing to optimize database reads
   let updatedCount = 0;
+  const existingScores = await LiveScore.find({}).lean();
+  const existingMap = new Map(existingScores.map((s) => [s.matchId, s]));
+
   for (const score of normalized) {
-    const existing = await LiveScore.findOne({ matchId: score.matchId });
+    const existing = existingMap.get(score.matchId);
+
+    // Skip sync if match score has been manually overridden by an admin
+    if (existing?.manualOverride) {
+      continue;
+    }
 
     const hasChanged =
       !existing ||
@@ -78,7 +86,7 @@ async function syncScores(date?: string) {
 
   return {
     success: true,
-    date: date || getTodayUTC(),
+    date: date || "all",
     total: normalized.length,
     updated: updatedCount,
     live,
@@ -344,11 +352,13 @@ export async function GET(request: Request) {
     });
     const hasNoData = !latestScore;
 
-    // Auto-sync if: data is stale AND (there are live matches OR we have no data)
-    if (isStale && (liveOrHalftimeCount > 0 || hasNoData)) {
+    const today = getTodayUTC();
+    const isDuringTournament = today >= "2026-06-10" && today <= "2026-07-20";
+
+    // Auto-sync if: data is stale AND (there are live matches OR we have no data OR we are during the tournament dates)
+    if (isStale && (liveOrHalftimeCount > 0 || hasNoData || isDuringTournament)) {
       try {
-        const today = getTodayUTC();
-        await syncScores(hasNoData ? "all" : today);
+        await syncScores();
       } catch (syncError) {
         // Auto-sync failed — log and continue with stale data
         console.warn("[scores/sync] Auto-sync from API-Football failed:", syncError);
