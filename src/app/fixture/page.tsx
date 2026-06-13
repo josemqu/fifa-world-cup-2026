@@ -1,11 +1,13 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useTournament } from "@/context/TournamentContext";
+import { useAuth } from "@/context/AuthContext";
 import { PageTransition } from "@/components/PageTransition";
 import { GroupStage } from "@/components/GroupStage";
 import { KnockoutStage } from "@/components/KnockoutStage";
+import { TournamentStatsCard } from "@/components/TournamentStatsCard";
 import { Trophy, GitFork, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
@@ -17,6 +19,13 @@ function FixturePageContent() {
     updateMatch,
     updateKnockoutMatch,
   } = useTournament();
+
+  const { dbUser, user } = useAuth();
+  const isAdmin = useMemo(() => {
+    return dbUser?.role === "admin" ||
+      !!user?.email?.toLowerCase().includes("mailjmq") ||
+      !!dbUser?.email?.toLowerCase().includes("mailjmq");
+  }, [dbUser, user]);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -121,6 +130,14 @@ function FixturePageContent() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Tournament Stats — Admin only */}
+        {isAdmin && (
+          <TournamentStatsCard
+            groups={groups}
+            knockoutMatches={knockoutMatches}
+          />
+        )}
       </div>
     </PageTransition>
   );
