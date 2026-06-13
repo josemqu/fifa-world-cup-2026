@@ -14,7 +14,7 @@ import {
   Swords,
   Shield,
   Percent,
-  Scale,
+  Zap,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
@@ -324,6 +324,7 @@ export function TournamentStatsCard({
     let awayWins = 0;
     let cleanSheets = 0;
     let highestScore = { home: "", away: "", homeGoals: 0, awayGoals: 0, total: 0 };
+    let biggestWin = { home: "", away: "", homeGoals: 0, awayGoals: 0, diff: 0 };
 
     for (const group of groups) {
       for (const match of group.matches) {
@@ -354,6 +355,39 @@ export function TournamentStatsCard({
               awayGoals: ag,
               total: hg + ag,
             };
+          }
+
+          const diff = Math.abs(hg - ag);
+          if (diff > biggestWin.diff) {
+            const homeTeam = group.teams.find(
+              (t) => t.id === match.homeTeamId
+            );
+            const awayTeam = group.teams.find(
+              (t) => t.id === match.awayTeamId
+            );
+            biggestWin = {
+              home: homeTeam?.name || match.homeTeamId,
+              away: awayTeam?.name || match.awayTeamId,
+              homeGoals: hg,
+              awayGoals: ag,
+              diff,
+            };
+          } else if (diff === biggestWin.diff && diff > 0) {
+            if (hg + ag > biggestWin.homeGoals + biggestWin.awayGoals) {
+              const homeTeam = group.teams.find(
+                (t) => t.id === match.homeTeamId
+              );
+              const awayTeam = group.teams.find(
+                (t) => t.id === match.awayTeamId
+              );
+              biggestWin = {
+                home: homeTeam?.name || match.homeTeamId,
+                away: awayTeam?.name || match.awayTeamId,
+                homeGoals: hg,
+                awayGoals: ag,
+                diff,
+              };
+            }
           }
         }
       }
@@ -401,6 +435,27 @@ export function TournamentStatsCard({
           };
         }
 
+        const diff = Math.abs(match.homeScore - match.awayScore);
+        if (diff > biggestWin.diff) {
+          biggestWin = {
+            home: homeTeam.name,
+            away: awayTeam.name,
+            homeGoals: match.homeScore,
+            awayGoals: match.awayScore,
+            diff,
+          };
+        } else if (diff === biggestWin.diff && diff > 0) {
+          if (match.homeScore + match.awayScore > biggestWin.homeGoals + biggestWin.awayGoals) {
+            biggestWin = {
+              home: homeTeam.name,
+              away: awayTeam.name,
+              homeGoals: match.homeScore,
+              awayGoals: match.awayScore,
+              diff,
+            };
+          }
+        }
+
         if (match.homeScore === match.awayScore) draws++;
         else if (match.homeScore > match.awayScore) homeWins++;
         else awayWins++;
@@ -446,6 +501,7 @@ export function TournamentStatsCard({
       awayWins,
       cleanSheets,
       highestScore,
+      biggestWin,
       penaltyShootouts,
       topScoringTeam,
       bestDefense,
@@ -730,11 +786,6 @@ export function TournamentStatsCard({
               jugados ({stats.decidedPct.toFixed(0)}%)
             </p>
           </div>
-          <div className="ml-auto">
-            <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40">
-              Solo Admin
-            </span>
-          </div>
         </div>
         {/* Progress bar */}
         <div className="mt-2 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -763,7 +814,7 @@ export function TournamentStatsCard({
         />
         <StatKPI
           icon={Swords}
-          label="Mayor goleada"
+          label="Partido con más goles"
           value={
             stats.highestScore.total > 0
               ? `${stats.highestScore.homeGoals}-${stats.highestScore.awayGoals}`
@@ -777,6 +828,21 @@ export function TournamentStatsCard({
           color="amber"
         />
         <StatKPI
+          icon={Zap}
+          label="Mayor goleada"
+          value={
+            stats.biggestWin.diff > 0
+              ? `${stats.biggestWin.homeGoals}-${stats.biggestWin.awayGoals}`
+              : "—"
+          }
+          subtext={
+            stats.biggestWin.diff > 0
+              ? `${getTeamAbbreviation(stats.biggestWin.home)} vs ${getTeamAbbreviation(stats.biggestWin.away)}`
+              : undefined
+          }
+          color="rose"
+        />
+        <StatKPI
           icon={Shield}
           label="Vallas invictas"
           value={stats.cleanSheets}
@@ -788,13 +854,6 @@ export function TournamentStatsCard({
           color="cyan"
         />
         <StatKPI
-          icon={Scale}
-          label="Victorias local/visitante"
-          value={`${stats.homeWins}/${stats.awayWins}`}
-          subtext={`Empates: ${stats.draws}`}
-          color="purple"
-        />
-        <StatKPI
           icon={Percent}
           label="Partidos con penales"
           value={stats.penaltyShootouts}
@@ -803,7 +862,7 @@ export function TournamentStatsCard({
               ? `de ${stats.knockoutMatchesPlayed} partidos de llaves`
               : "Aún sin llaves jugadas"
           }
-          color="rose"
+          color="purple"
         />
         {stats.topScoringTeam && (
           <StatKPI

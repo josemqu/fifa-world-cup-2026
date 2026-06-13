@@ -131,13 +131,11 @@ function FixturePageContent() {
           )}
         </AnimatePresence>
 
-        {/* Tournament Stats — Admin only */}
-        {isAdmin && (
-          <TournamentStatsCard
-            groups={groups}
-            knockoutMatches={knockoutMatches}
-          />
-        )}
+        {/* Tournament Stats */}
+        <TournamentStatsCard
+          groups={groups}
+          knockoutMatches={knockoutMatches}
+        />
       </div>
     </PageTransition>
   );
