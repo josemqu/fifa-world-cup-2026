@@ -25,6 +25,9 @@ export type Match = {
   utcDate: string; // ISO 8601 UTC string
   location?: string; // Stadium - City
   finished: boolean;
+  status?: "scheduled" | "live" | "halftime" | "finished";
+  elapsed?: number | null;
+  lastSyncAt?: string;
 };
 
 export type Group = {
@@ -54,6 +57,9 @@ export type KnockoutMatch = {
   utcDate: string; // ISO 8601 UTC string
   location?: string;
   finished?: boolean;
+  status?: "scheduled" | "live" | "halftime" | "finished";
+  elapsed?: number | null;
+  lastSyncAt?: string;
   probabilisticData?: {
     homeTeamProb: number; // 0-1
     awayTeamProb: number; // 0-1

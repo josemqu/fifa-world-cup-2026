@@ -159,7 +159,7 @@ export async function PATCH(request: Request) {
     const user = await User.findOneAndUpdate(
       { firebaseUid },
       { $set: { excludeFromStats: !!excludeFromStats } },
-      { new: true }
+      { returnDocument: 'after' }
     ).lean();
 
     if (!user) {

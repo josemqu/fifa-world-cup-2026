@@ -59,7 +59,7 @@ async function syncScores(date?: string) {
               lastSyncAt: new Date(),
             },
           },
-          { new: true }
+          { returnDocument: 'after' }
         );
         updatedCount++;
       }
@@ -94,7 +94,7 @@ async function syncScores(date?: string) {
             lastSyncAt: new Date(),
           },
         },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: 'after' }
       );
       updatedCount++;
     }

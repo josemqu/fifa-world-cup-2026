@@ -58,6 +58,8 @@ interface TournamentContextType {
     homeScore: number | null,
     awayScore: number | null,
     finished?: boolean,
+    status?: "scheduled" | "live" | "halftime" | "finished",
+    elapsed?: number | null,
   ) => void;
   updateKnockoutMatch: (
     matchId: string,
@@ -66,6 +68,8 @@ interface TournamentContextType {
     homePenalties?: number | null,
     awayPenalties?: number | null,
     finished?: boolean,
+    status?: "scheduled" | "live" | "halftime" | "finished",
+    elapsed?: number | null,
   ) => void;
   simulateGroups: () => void;
   simulateKnockout: () => void;
@@ -372,6 +376,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     homeScore: number | null,
     awayScore: number | null,
     finished?: boolean,
+    status?: "scheduled" | "live" | "halftime" | "finished",
+    elapsed?: number | null,
   ) => {
     setGroups((currentGroups) => {
       return currentGroups.map((group) => {
@@ -385,6 +391,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
             homeScore: homeScore,
             awayScore: awayScore,
             finished: finished !== undefined ? finished : (homeScore !== null && awayScore !== null),
+            status: status || match.status,
+            elapsed: elapsed !== undefined ? elapsed : match.elapsed,
+            lastSyncAt: new Date().toISOString(),
           };
         });
 
@@ -401,6 +410,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     homePenalties: number | null = null,
     awayPenalties: number | null = null,
     finished?: boolean,
+    status?: "scheduled" | "live" | "halftime" | "finished",
+    elapsed?: number | null,
   ) => {
     setKnockoutMatches((currentMatches) => {
       let newMatches = [...currentMatches];
@@ -413,6 +424,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       match.homePenalties = homePenalties;
       match.awayPenalties = awayPenalties;
       match.finished = finished !== undefined ? finished : (homeScore !== null && awayScore !== null);
+      match.status = status || match.status;
+      match.elapsed = elapsed !== undefined ? elapsed : match.elapsed;
+      match.lastSyncAt = new Date().toISOString();
 
       // Determine winner
       let winner: Team | null = null;

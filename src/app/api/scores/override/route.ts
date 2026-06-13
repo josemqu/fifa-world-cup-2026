@@ -71,7 +71,7 @@ export async function POST(request: Request) {
     const updated = await LiveScore.findOneAndUpdate(
       { matchId },
       { $set: updateFields },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     return NextResponse.json({

@@ -99,7 +99,9 @@ export function useLiveScores(enabled: boolean = true) {
             score.matchId,
             score.homeScore,
             score.awayScore,
-            score.status === "finished"
+            score.status === "finished",
+            score.status,
+            score.elapsed
           );
         } else if (score.stage === "knockout") {
           updateKnockoutMatch(
@@ -108,7 +110,9 @@ export function useLiveScores(enabled: boolean = true) {
             score.awayScore,
             score.homePenalties,
             score.awayPenalties,
-            score.status === "finished"
+            score.status === "finished",
+            score.status,
+            score.elapsed
           );
         }
       }

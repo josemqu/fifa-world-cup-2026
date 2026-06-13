@@ -71,7 +71,7 @@ export async function POST(request: Request) {
     const user = await User.findOneAndUpdate(
       { firebaseUid },
       updateOp,
-      { upsert: true, new: true, setDefaultsOnInsert: true, strict: false }
+      { upsert: true, returnDocument: "after", setDefaultsOnInsert: true, strict: false }
     ).lean();
 
     // user update successful

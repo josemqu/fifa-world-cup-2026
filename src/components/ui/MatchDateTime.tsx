@@ -4,6 +4,7 @@ import { useMatchTime } from "@/hooks/useMatchTime";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { clsx } from "clsx";
 import { useCurrentTime } from "@/hooks/useCurrentTime";
+import { useTournament } from "@/context/TournamentContext";
 
 interface MatchDateTimeProps {
   utcDate: string;
@@ -40,16 +41,6 @@ function getRelativeTime(matchDate: Date, now: Date): string | null {
   return "Comienza ahora";
 }
 
-function getLiveMinuteText(matchDate: Date, now: Date): string {
-  const elapsed = Math.floor((now.getTime() - matchDate.getTime()) / 60000);
-  if (elapsed < 0) return "0'";
-  if (elapsed <= 45) return `${elapsed}'`;
-  if (elapsed < 50) return `45+${elapsed - 45}'`;
-  if (elapsed < 65) return "ET";
-  if (elapsed <= 110) return `${elapsed - 20}'`;
-  return `90+${elapsed - 110}'`;
-}
-
 export function MatchDateTime({
   utcDate,
   matchId,
@@ -59,14 +50,73 @@ export function MatchDateTime({
 }: MatchDateTimeProps) {
   const { date: localDate, time: localTime } = useMatchTime(utcDate);
   const now = useCurrentTime(true);
+  const { groups, knockoutMatches } = useTournament();
+
+  // Find match live state in TournamentContext
+  let matchStatus: string | undefined;
+  let matchElapsed: number | null | undefined;
+  let matchLastSync: string | undefined;
+
+  if (matchId) {
+    // Check group stage matches
+    for (const group of groups) {
+      const m = group.matches.find((x) => x.id === matchId);
+      if (m) {
+        matchStatus = m.status;
+        matchElapsed = m.elapsed;
+        matchLastSync = m.lastSyncAt;
+        break;
+      }
+    }
+    // Check knockout matches
+    if (!matchStatus) {
+      const m = knockoutMatches.find((x) => x.id === matchId);
+      if (m) {
+        matchStatus = m.status;
+        matchElapsed = m.elapsed;
+        matchLastSync = m.lastSyncAt;
+      }
+    }
+  }
 
   const matchDate = new Date(utcDate);
   // Asumimos 120 minutos de duración de partido (90m + 15m entretiempo + descuentos)
   const matchEndDate = new Date(matchDate.getTime() + 120 * 60000);
 
-  const isPlaying = now ? now >= matchDate && now < matchEndDate : false;
-  const isFinished = now ? now >= matchEndDate : false;
+  const isPlaying = matchStatus
+    ? (matchStatus === "live" || matchStatus === "halftime")
+    : (now ? now >= matchDate && now < matchEndDate : false);
+
+  const isFinished = matchStatus
+    ? matchStatus === "finished"
+    : (now ? now >= matchEndDate : false);
+
   const remainingTime = now && !isPlaying && !isFinished ? getRelativeTime(matchDate, now) : null;
+
+  const getLiveMinuteText = () => {
+    if (!now) return "0'";
+    if (matchStatus === "halftime") return "ET";
+
+    if (matchElapsed !== undefined && matchElapsed !== null) {
+      const timeSinceSync = matchLastSync
+        ? Math.floor((now.getTime() - new Date(matchLastSync).getTime()) / 60000)
+        : 0;
+      const currentElapsed = Math.min(120, (matchElapsed || 0) + Math.max(0, timeSinceSync));
+      if (currentElapsed <= 45) return `${currentElapsed}'`;
+      if (currentElapsed < 50) return `45+${currentElapsed - 45}'`;
+      if (currentElapsed < 65) return "ET";
+      if (currentElapsed <= 110) return `${currentElapsed - 20}'`;
+      return `90+${currentElapsed - 110}'`;
+    }
+
+    const elapsed = Math.floor((now.getTime() - matchDate.getTime()) / 60000);
+    if (elapsed < 0) return "0'";
+    if (elapsed <= 45) return `${elapsed}'`;
+    if (elapsed < 50) return `45+${elapsed - 45}'`;
+    if (elapsed < 65) return "ET";
+    if (elapsed <= 110) return `${elapsed - 20}'`;
+    return `90+${elapsed - 110}'`;
+  };
 
   const dateTimeContent = (
     <div className="flex items-center gap-1.5">
@@ -109,7 +159,7 @@ export function MatchDateTime({
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
             </span>
-            {getLiveMinuteText(matchDate, now)}
+            {getLiveMinuteText()}
           </div>
         </Tooltip>
       )}

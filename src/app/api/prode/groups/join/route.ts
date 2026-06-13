@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     const group = await ProdeGroup.findOneAndUpdate(
       { code: code.toUpperCase() },
       { $addToSet: { members: firebaseUid } },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!group) {

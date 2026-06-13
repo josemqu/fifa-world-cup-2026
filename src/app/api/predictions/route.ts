@@ -30,7 +30,7 @@ export async function POST(request: Request) {
           updatedAt: new Date(),
         },
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: "after", setDefaultsOnInsert: true }
     );
 
     return NextResponse.json({ success: true, data: prediction });

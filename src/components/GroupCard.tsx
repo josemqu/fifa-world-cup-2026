@@ -505,6 +505,7 @@ export function GroupCard({
                       <div className="flex items-center gap-1.5">
                         <MatchDateTime 
                           utcDate={match.utcDate} 
+                          matchId={match.id}
                         />
                         {isAdmin && (
                           <button

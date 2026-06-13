@@ -83,6 +83,7 @@ export const API_TEAM_TO_ID: Record<string, string> = {
   Uzbekistan: "K3",
   "DR Congo": "K4",
   "Congo DR": "K4",
+  "Democratic Republic of the Congo": "K4",
 
   // Group L
   England: "L1",

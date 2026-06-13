@@ -668,6 +668,7 @@ function ScheduleMatchCard({
         <div className="flex items-center gap-2">
           <MatchDateTime
             utcDate={match.utcDate}
+            matchId={match.id}
             dateClassName="text-[10px] font-medium text-slate-400 dark:text-slate-500"
             timeClassName="text-[10px] font-bold text-slate-600 dark:text-slate-300"
           />
