@@ -43,8 +43,26 @@ async function syncScores(date?: string) {
   for (const score of normalized) {
     const existing = existingMap.get(score.matchId);
 
-    // Skip sync if match score has been manually overridden by an admin
+    // If manualOverride is active, only sync status and elapsed time, preserving the overridden score.
     if (existing?.manualOverride) {
+      const hasChanged =
+        existing.status !== score.status ||
+        existing.elapsed !== score.elapsed;
+
+      if (hasChanged) {
+        await LiveScore.findOneAndUpdate(
+          { matchId: score.matchId },
+          {
+            $set: {
+              status: score.status,
+              elapsed: score.elapsed,
+              lastSyncAt: new Date(),
+            },
+          },
+          { new: true }
+        );
+        updatedCount++;
+      }
       continue;
     }
 
