@@ -433,9 +433,15 @@ export function DailySchedule({
     month: "long",
     year: "numeric",
   });
+  const formattedDayShort = dayDate.toLocaleDateString("es-ES", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  }).replace(/\./g, '');
 
   // Capitalize first letter
   const displayDay = formattedDay.charAt(0).toUpperCase() + formattedDay.slice(1);
+  const displayDayShort = formattedDayShort.charAt(0).toUpperCase() + formattedDayShort.slice(1);
 
 
   return (
@@ -464,8 +470,9 @@ export function DailySchedule({
                 {relativeLabel}
               </span>
             )}
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white text-center min-w-[200px]">
-              {displayDay}
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white text-center md:min-w-[200px]">
+              <span className="md:hidden">{displayDayShort}</span>
+              <span className="hidden md:inline">{displayDay}</span>
             </h2>
             
             <div className="w-8 flex justify-center">
