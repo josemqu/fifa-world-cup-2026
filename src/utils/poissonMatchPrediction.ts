@@ -4,6 +4,11 @@ export type MatchPredictionInput = {
   es_anfitrionA?: boolean;
   es_anfitrionB?: boolean;
   es_eliminacion_directa?: boolean;
+  // Tournament form factors (1.0 = neutral, > 1 = above average)
+  formOfensivaA?: number;
+  formDefensivaA?: number;
+  formOfensivaB?: number;
+  formDefensivaB?: number;
 };
 
 export type MatchPredictionResult = {
@@ -22,6 +27,17 @@ export type MatchPredictionResult = {
 const GOLES_BASE = 2.6;
 const HOST_BONUS = 0.35;
 const MAX_GOALS = 6;
+
+/**
+ * How much the tournament form adjusts the lambdas.
+ * 0 = form ignored, 1 = full form impact.
+ * 0.25 means form can shift lambdas by up to ~±20% in extreme cases.
+ */
+const FORM_WEIGHT = 0.25;
+
+/** Weighted interpolation towards a factor: lerp(1, factor, weight). */
+const formLerp = (factor: number, weight: number): number =>
+  1 + (factor - 1) * weight;
 
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
@@ -52,6 +68,10 @@ export const predictWorldCupMatch = (
     es_anfitrionA = false,
     es_anfitrionB = false,
     es_eliminacion_directa = false,
+    formOfensivaA = 1,
+    formDefensivaA = 1,
+    formOfensivaB = 1,
+    formDefensivaB = 1,
   } = input;
 
   // Cálculo de Expectativa de Victoria (estilo Elo)
@@ -65,6 +85,12 @@ export const predictWorldCupMatch = (
   // Excepción: solo si es anfitrión del torneo
   if (es_anfitrionA) lambdaA += HOST_BONUS;
   if (es_anfitrionB) lambdaB += HOST_BONUS;
+
+  // Ajuste por forma actual en el torneo:
+  // λA se multiplica por la forma ofensiva de A y la forma defensiva de B
+  // (si B recibe muchos goles, A tiene más chances de anotar)
+  lambdaA *= formLerp(formOfensivaA, FORM_WEIGHT) * formLerp(formDefensivaB, FORM_WEIGHT);
+  lambdaB *= formLerp(formOfensivaB, FORM_WEIGHT) * formLerp(formDefensivaA, FORM_WEIGHT);
 
   // Distribuciones de goles 0..6 (normalizadas para asegurar suma exacta 1 dentro del rango)
   const goalsA = normalize(

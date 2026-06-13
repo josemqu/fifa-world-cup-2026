@@ -1,6 +1,7 @@
 import { Group, Team, KnockoutMatch } from "@/data/types";
 import { generateR32Matches } from "@/utils/knockoutUtils";
 import { predictWorldCupMatch } from "@/utils/poissonMatchPrediction";
+import { computeTournamentForm, TournamentFormMap } from "@/utils/tournamentForm";
 import {
   R16_MATCHES,
   QF_MATCHES,
@@ -97,12 +98,17 @@ const generatePenaltyShootout = (homeWins: boolean) => {
 };
 
 export const predictMatchScore = (
-  home: { ranking?: number; fifaPoints?: number } = {},
-  away: { ranking?: number; fifaPoints?: number } = {},
-  _upsetFactor: number = 0.35
+  home: { id?: string; ranking?: number; fifaPoints?: number } = {},
+  away: { id?: string; ranking?: number; fifaPoints?: number } = {},
+  _upsetFactor: number = 0.35,
+  formMap?: TournamentFormMap
 ): { home: number; away: number } => {
   const puntosA = getTeamFifaPoints(home);
   const puntosB = getTeamFifaPoints(away);
+
+  // Look up form factors (default to neutral if not available)
+  const formA = (home as any)?.id && formMap?.get((home as any).id);
+  const formB = (away as any)?.id && formMap?.get((away as any).id);
 
   const prediction = predictWorldCupMatch({
     puntosA,
@@ -110,6 +116,10 @@ export const predictMatchScore = (
     es_anfitrionA: getIsHost(home),
     es_anfitrionB: getIsHost(away),
     es_eliminacion_directa: false,
+    formOfensivaA: formA ? formA.formOfensiva : undefined,
+    formDefensivaA: formA ? formA.formDefensiva : undefined,
+    formOfensivaB: formB ? formB.formOfensiva : undefined,
+    formDefensivaB: formB ? formB.formDefensiva : undefined,
   });
 
   return {
@@ -255,7 +265,8 @@ export const getInitialKnockoutMatches = (): KnockoutMatch[] => {
 };
 
 export const runKnockoutSimulation = (
-  matches: KnockoutMatch[]
+  matches: KnockoutMatch[],
+  formMap?: TournamentFormMap
 ): KnockoutMatch[] => {
   const allStaticMatches = [
     ...R16_MATCHES,
@@ -302,7 +313,7 @@ export const runKnockoutSimulation = (
         const hTeam = match.homeTeam as Team;
         const aTeam = match.awayTeam as Team;
 
-        const { home, away } = predictMatchScore(hTeam, aTeam);
+        const { home, away } = predictMatchScore(hTeam, aTeam, 0.35, formMap);
 
         match.homeScore = home;
         match.awayScore = away;
@@ -484,6 +495,10 @@ export const simulateTournament = (
   initialGroups: Group[],
   currentKnockoutMatches: KnockoutMatch[] = []
 ): { groups: Group[]; knockoutMatches: KnockoutMatch[] } => {
+  // Compute tournament form ONCE from real (already-played) match data.
+  // This is shared across all simulated matches within this iteration.
+  const formMap = computeTournamentForm(initialGroups);
+
   // 1. Simulate Groups locally (respecting existing results)
   // Deep clone to avoid mutating input
   const simulatedGroups = initialGroups.map((group) => {
@@ -493,7 +508,7 @@ export const simulateTournament = (
       const homeTeam = group.teams.find((t) => t.id === match.homeTeamId);
       const awayTeam = group.teams.find((t) => t.id === match.awayTeamId);
 
-      const { home, away } = predictMatchScore(homeTeam, awayTeam);
+      const { home, away } = predictMatchScore(homeTeam, awayTeam, 0.35, formMap);
 
       return {
         ...match,
@@ -561,7 +576,7 @@ export const simulateTournament = (
   });
 
   // 5. Run Knockout Simulation
-  const simulatedKnockoutMatches = runKnockoutSimulation(mergedMatches);
+  const simulatedKnockoutMatches = runKnockoutSimulation(mergedMatches, formMap);
 
   return {
     groups: simulatedGroups,

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Info, Trophy, Target, Dices, Scale } from "lucide-react";
+import { ArrowLeft, Info, Trophy, Target, Dices, Scale, TrendingUp } from "lucide-react";
 import { clsx } from "clsx";
 import { PageTransition } from "@/components/PageTransition";
 import { predictWorldCupMatch } from "@/utils/poissonMatchPrediction";
@@ -144,14 +144,16 @@ export default function PredictionsMethodologyPage() {
           </h1>
           <p className="mt-2 text-slate-600 dark:text-slate-400 leading-relaxed">
             Este simulador estima probabilidades y marcadores usando una mezcla
-            de fuerza relativa (tipo Elo a partir de Puntos FIFA) y un modelo de
-            goles basado en Distribución de Poisson. En un Mundial, asumimos
+            de fuerza relativa (tipo Elo a partir de Puntos FIFA), un modelo de
+            goles basado en Distribución de Poisson, y un{" "}
+            <span className="font-semibold">ajuste por forma actual</span>{" "}
+            del equipo en el torneo. En un Mundial, asumimos
             <span className="font-semibold"> campo neutral</span> por defecto, y
             tratamos al <span className="font-semibold">anfitrión</span> como
             una excepción.
           </p>
 
-          <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
                 <Scale className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -209,6 +211,39 @@ export default function PredictionsMethodologyPage() {
               </div>
               <div className="mt-3 text-xs text-slate-500 dark:text-slate-400">
                 Excepción anfitrión: +0.35 a su λ.
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4">
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+                <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                Paso 2.5: Forma del torneo
+              </div>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                Ajustamos los λ según cómo viene rindiendo cada equipo en los
+                partidos ya jugados del Mundial. Se calcula un factor ofensivo
+                (goles a favor vs promedio) y defensivo (goles en contra vs promedio).
+              </p>
+              <div className="mt-3 grid grid-cols-1 gap-2">
+                <div className="rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 text-slate-700 dark:text-slate-200 overflow-hidden flex justify-center">
+                  <div className="scale-[0.88] origin-center">
+                    <BlockMath
+                      math={String.raw`f_{\text{of}} = \frac{\text{GF}/\text{PJ}}{\overline{\text{goles}}} \quad f_{\text{def}} = \frac{\text{GC}/\text{PJ}}{\overline{\text{goles}}}`}
+                      settings={KATEX_SETTINGS}
+                    />
+                  </div>
+                </div>
+                <div className="rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 text-slate-700 dark:text-slate-200 overflow-hidden flex justify-center">
+                  <div className="scale-[0.82] origin-center">
+                    <BlockMath
+                      math={String.raw`\lambda_A^{\prime} = \lambda_A \cdot \text{lerp}(1,\, f_{\text{of}}^A,\, w) \cdot \text{lerp}(1,\, f_{\text{def}}^B,\, w)`}
+                      settings={KATEX_SETTINGS}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                Peso <span className="font-mono">w = 0.25</span>. Factores clampeados a [0.5, 2.0]. Si no hay partidos jugados, factor = 1 (sin ajuste).
               </div>
             </div>
 
@@ -442,14 +477,29 @@ export default function PredictionsMethodologyPage() {
               </p>
             </div>
 
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50 dark:bg-slate-950">
+              <div className="text-sm font-semibold text-slate-900 dark:text-white">
+                Forma del torneo
+              </div>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                A medida que se juegan partidos, el modelo ajusta las
+                predicciones según el rendimiento real. Un equipo que viene
+                goleando (ej: 7 goles en 3 partidos) recibe un boost ofensivo,
+                mientras que uno que recibe muchos goles ve aumentar el λ del
+                rival. El ajuste es moderado (peso 0.25) para no sobreponderar
+                partidos puntuales.
+              </p>
+            </div>
+
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4">
               <div className="text-sm font-semibold text-slate-900 dark:text-white">
                 Nota
               </div>
               <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
                 Esto es un modelo estadístico simplificado (no considera
-                tácticas, lesiones, ni estilos). Es ideal para simulación y
-                comparación.
+                tácticas, lesiones, ni estilos). Incorpora datos del torneo en
+                curso para mejorar las estimaciones a medida que avanza la
+                competencia. Es ideal para simulación y comparación.
               </p>
             </div>
           </div>
