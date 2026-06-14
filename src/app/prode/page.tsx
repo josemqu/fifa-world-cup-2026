@@ -8,6 +8,7 @@ import { INITIAL_GROUPS } from "@/data/initialData";
 import { Group, KnockoutMatch, Team } from "@/data/types";
 import { generateR32Matches } from "@/utils/knockoutUtils";
 import { recalculateGroupStats } from "@/utils/simulationUtils";
+import { calculatePoints } from "@/utils/prodeUtils";
 import {
   R32_MATCHES,
   R16_MATCHES,
@@ -1026,6 +1027,44 @@ function PredictionsTab({
           const isLocked = utcDate ? new Date() >= new Date(utcDate) : false;
           const pred = predictions.get(matchId);
 
+          let actualMatch = null;
+          for (const g of tournamentGroups) {
+            const found = g.matches.find((m: any) => m.id === matchId);
+            if (found) {
+              actualMatch = found;
+              break;
+            }
+          }
+          if (!actualMatch) {
+            actualMatch = knockoutMatches.find((m: any) => m.id === matchId);
+          }
+
+          const actualFinished = actualMatch?.finished || false;
+          const actualHomeScore = actualMatch?.homeScore ?? null;
+          const actualAwayScore = actualMatch?.awayScore ?? null;
+          const actualHomePenalties = actualMatch?.homePenalties ?? null;
+          const actualAwayPenalties = actualMatch?.awayPenalties ?? null;
+
+          const hasPrediction = pred && pred.homeScore !== "" && pred.awayScore !== "";
+          let pointsEarned: number | null = null;
+
+          if (actualFinished) {
+            if (hasPrediction) {
+              pointsEarned = calculatePoints(
+                Number(pred.homeScore),
+                Number(pred.awayScore),
+                actualHomeScore ?? 0,
+                actualAwayScore ?? 0,
+                pred.homePenalties !== undefined && pred.homePenalties !== "" ? Number(pred.homePenalties) : undefined,
+                pred.awayPenalties !== undefined && pred.awayPenalties !== "" ? Number(pred.awayPenalties) : undefined,
+                actualHomePenalties ?? undefined,
+                actualAwayPenalties ?? undefined
+              );
+            } else {
+              pointsEarned = 0;
+            }
+          }
+
           return (
             <ProdeMatchCard
               key={matchId}
@@ -1048,6 +1087,13 @@ function PredictionsTab({
                 awayTeamName: awayName,
                 utcDate
               })}
+              actualFinished={actualFinished}
+              actualHomeScore={actualHomeScore}
+              actualAwayScore={actualAwayScore}
+              actualHomePenalties={actualHomePenalties}
+              actualAwayPenalties={actualAwayPenalties}
+              pointsEarned={pointsEarned}
+              hasPrediction={hasPrediction}
             />
           );
         })}
@@ -1088,6 +1134,13 @@ function ProdeMatchCard({
   onResetMatch,
   label,
   onOpenRivalPredictions,
+  actualFinished,
+  actualHomeScore,
+  actualAwayScore,
+  actualHomePenalties,
+  actualAwayPenalties,
+  pointsEarned,
+  hasPrediction,
 }: {
   matchId: string;
   homeTeamName: string;
@@ -1103,6 +1156,13 @@ function ProdeMatchCard({
   onResetMatch: (matchId: string) => void;
   label?: string;
   onOpenRivalPredictions?: () => void;
+  actualFinished?: boolean;
+  actualHomeScore?: number | null;
+  actualAwayScore?: number | null;
+  actualHomePenalties?: number | null;
+  actualAwayPenalties?: number | null;
+  pointsEarned?: number | null;
+  hasPrediction?: boolean;
 }) {
   const matchDate = utcDate ? new Date(utcDate) : null;
   const formattedDate = matchDate
@@ -1123,6 +1183,37 @@ function ProdeMatchCard({
   const isKnockout = /^\d+$/.test(matchId);
   const isTie = homeScore !== "" && awayScore !== "" && homeScore === awayScore;
   const showPenaltiesSelector = isKnockout && isTie;
+
+  const renderPointsBadge = () => {
+    if (pointsEarned === null || pointsEarned === undefined) return null;
+
+    if (pointsEarned === 3) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+          <Zap className="w-3 h-3 fill-current" />
+          <span>+3 pts (Exacto)</span>
+        </span>
+      );
+    }
+
+    if (pointsEarned === 1) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+          <ShieldCheck className="w-3 h-3" />
+          <span>+1 pt (Acierto)</span>
+        </span>
+      );
+    }
+
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+        <span>0 pts</span>
+        {!hasPrediction && (
+          <span className="text-[10px] opacity-75 font-normal ml-0.5">(Sin pronóstico)</span>
+        )}
+      </span>
+    );
+  };
 
   return (
     <div
@@ -1263,6 +1354,23 @@ function ProdeMatchCard({
                 {awayTeamName}
               </button>
             </div>
+          </div>
+        )}
+
+        {actualFinished && (
+          <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+              <span className="font-medium">Resultado real:</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200">
+                {actualHomeScore} - {actualAwayScore}
+                {actualHomePenalties !== null && actualAwayPenalties !== null && (
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-normal ml-1">
+                    ({actualHomePenalties} - {actualAwayPenalties} pen)
+                  </span>
+                )}
+              </span>
+            </div>
+            {renderPointsBadge()}
           </div>
         )}
 
