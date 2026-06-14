@@ -44,7 +44,9 @@ const getTeamFifaPoints = (
 };
 
 const getIsHost = (team: any): boolean => {
-  return Boolean(team?.es_anfitrion ?? team?.isHost ?? team?.host);
+  if (!team) return false;
+  const name = team.name || "";
+  return name === "México" || name === "Canadá" || name === "Estados Unidos" || Boolean(team.es_anfitrion || team.isHost || team.host);
 };
 
 const decidePenaltyWinnerIsHome = (we: number): boolean => {

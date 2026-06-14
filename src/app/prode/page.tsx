@@ -5,8 +5,11 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useTournament } from "@/context/TournamentContext";
 import { INITIAL_GROUPS } from "@/data/initialData";
-import { Group, KnockoutMatch, Team } from "@/data/types";
+import { Group, KnockoutMatch, Team, Match } from "@/data/types";
 import { generateR32Matches } from "@/utils/knockoutUtils";
+import { predictWorldCupMatch, MatchPredictionResult } from "@/utils/poissonMatchPrediction";
+import { computeTournamentForm } from "@/utils/tournamentForm";
+import { ModelPredictionModal } from "@/components/ModelPredictionModal";
 import { recalculateGroupStats } from "@/utils/simulationUtils";
 import { calculatePoints } from "@/utils/prodeUtils";
 import {
@@ -24,6 +27,7 @@ import { clsx } from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Trophy,
+  TrendingUp,
   Users,
   Globe,
   Check,
@@ -534,7 +538,7 @@ function ProdePageContent() {
                       <strong className="text-slate-800 dark:text-slate-200">Fase Eliminatoria:</strong> Si ingresás un empate en el marcador, se habilitará una opción para que elijas qué equipo clasifica por penales. Si pronosticás que un equipo gana, no es necesario elegir los penales.
                     </li>
                     <li>
-                      <strong className="text-slate-800 dark:text-slate-200">Guardado Automático:</strong> A medida que modificás los números de goles, verás un indicador arriba que dice "Guardado". No hace falta apretar ningún botón de guardar.
+                      <strong className="text-slate-800 dark:text-slate-200">Guardado Automático:</strong> A medida que modificás los números de goles, verás un indicador arriba que dice &quot;Guardado&quot;. No hace falta apretar ningún botón de guardar.
                     </li>
                   </ul>
                 </div>
@@ -590,6 +594,106 @@ function formatPlaceholder(ph: string): string {
   return ph;
 }
 
+interface ExtendedTeam extends Team {
+  es_anfitrion?: boolean;
+  isHost?: boolean;
+  host?: boolean;
+}
+
+// Helper to get user predicted outcome probability from Poisson model
+function getPredictionChance(
+  homeTeam: ExtendedTeam | undefined,
+  awayTeam: ExtendedTeam | undefined,
+  isKnockout: boolean,
+  userHomeScore: number | "",
+  userAwayScore: number | "",
+  userHomePenalties?: number | "",
+  userAwayPenalties?: number | "",
+  formMap?: Map<string, { formOfensiva: number; formDefensiva: number }>
+) {
+  if (!homeTeam || !awayTeam || userHomeScore === "" || userAwayScore === "") return null;
+
+  const puntosA = homeTeam.fifaPoints ?? (2000 - (homeTeam.ranking ?? 50) * 10);
+  const puntosB = awayTeam.fifaPoints ?? (2000 - (awayTeam.ranking ?? 50) * 10);
+
+  const es_anfitrionA = homeTeam.name === "México" || homeTeam.name === "Canadá" || homeTeam.name === "Estados Unidos" || !!(homeTeam.es_anfitrion || homeTeam.isHost || homeTeam.host);
+  const es_anfitrionB = awayTeam.name === "México" || awayTeam.name === "Canadá" || awayTeam.name === "Estados Unidos" || !!(awayTeam.es_anfitrion || awayTeam.isHost || awayTeam.host);
+
+  const formA = homeTeam.id ? formMap?.get(homeTeam.id) : undefined;
+  const formB = awayTeam.id ? formMap?.get(awayTeam.id) : undefined;
+
+  const res = predictWorldCupMatch({
+    puntosA,
+    puntosB,
+    es_anfitrionA,
+    es_anfitrionB,
+    es_eliminacion_directa: isKnockout,
+    formOfensivaA: formA ? formA.formOfensiva : undefined,
+    formDefensivaA: formA ? formA.formDefensiva : undefined,
+    formOfensivaB: formB ? formB.formOfensiva : undefined,
+    formDefensivaB: formB ? formB.formDefensiva : undefined,
+  });
+
+  // Calculate user chosen outcome chance
+  let chance = 0;
+  if (userHomeScore > userAwayScore) {
+    chance = isKnockout ? (res.probAvanzaA ?? res.probA) : res.probA;
+  } else if (userAwayScore > userHomeScore) {
+    chance = isKnockout ? (res.probAvanzaB ?? res.probB) : res.probB;
+  } else {
+    // Draw
+    if (isKnockout) {
+      const userHomeAdvances = userHomePenalties === 1 && userAwayPenalties === 0;
+      const userAwayAdvances = userAwayPenalties === 1 && userHomePenalties === 0;
+      if (userHomeAdvances) {
+        chance = res.probAvanzaA ?? (res.probA + res.probX * res.we);
+      } else if (userAwayAdvances) {
+        chance = res.probAvanzaB ?? (res.probB + res.probX * (1 - res.we));
+      } else {
+        chance = res.probX; // Tie chosen, but penalties winner not selected yet. Show tie probability.
+      }
+    } else {
+      chance = res.probX;
+    }
+  }
+
+  // Calculate match closeness metrics
+  const factorial = (n: number): number => {
+    let output = 1;
+    for (let i = 2; i <= n; i++) output *= i;
+    return output;
+  };
+
+  const poissonPMF = (k: number, lambda: number): number => {
+    if (k < 0) return 0;
+    if (lambda <= 0) return k === 0 ? 1 : 0;
+    return (Math.pow(lambda, k) * Math.exp(-lambda)) / factorial(k);
+  };
+
+  const userHome = Number(userHomeScore);
+  const userAway = Number(userAwayScore);
+  const userPMF = poissonPMF(userHome, res.lambdaA) * poissonPMF(userAway, res.lambdaB);
+
+  const modalHome = res.marcadorMasProbable.golesA;
+  const modalAway = res.marcadorMasProbable.golesB;
+  const modalPMF = poissonPMF(modalHome, res.lambdaA) * poissonPMF(modalAway, res.lambdaB);
+
+  const ratio = modalPMF > 0 ? userPMF / modalPMF : 0;
+  const isExactMatch = userHome === modalHome && userAway === modalAway;
+
+  const userOutcome = userHome > userAway ? "A" : userHome < userAway ? "B" : "X";
+  const modalOutcome = modalHome > modalAway ? "A" : modalHome < modalAway ? "B" : "X";
+  const isOutcomeMatch = userOutcome === modalOutcome;
+
+  return {
+    chance: Math.round(chance * 100),
+    ratio,
+    isExactMatch,
+    isOutcomeMatch,
+    predictionDetails: res,
+  };
+}
+
 function PredictionsTab({
   firebaseUid,
   tournamentGroups,
@@ -598,11 +702,18 @@ function PredictionsTab({
   setActiveStage,
 }: {
   firebaseUid: string;
-  tournamentGroups: any[];
-  knockoutMatches: any[];
+  tournamentGroups: Group[];
+  knockoutMatches: KnockoutMatch[];
   activeStage: string;
   setActiveStage: (stage: string) => void;
 }) {
+  const { dbUser } = useAuth();
+  const isAdmin = useMemo(() => {
+    return dbUser?.role === "admin" || !!dbUser?.email?.toLowerCase().includes("mailjmq");
+  }, [dbUser]);
+
+  const formMap = useMemo(() => computeTournamentForm(tournamentGroups), [tournamentGroups]);
+
   const [predictions, setPredictions] = useState<Map<string, PredictionEntry>>(new Map());
   const [loadingPredictions, setLoadingPredictions] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -614,6 +725,22 @@ function PredictionsTab({
     homeTeamName: string;
     awayTeamName: string;
     utcDate: string;
+  } | null>(null);
+
+  const [selectedModelPred, setSelectedModelPred] = useState<{
+    matchId: string;
+    homeTeamName: string;
+    awayTeamName: string;
+    homeTeamObj: ExtendedTeam | undefined;
+    awayTeamObj: ExtendedTeam | undefined;
+    isKnockout: boolean;
+    predictionDetails: MatchPredictionResult;
+    modelPrediction: {
+      chance: number;
+      ratio: number;
+      isExactMatch: boolean;
+      isOutcomeMatch: boolean;
+    };
   } | null>(null);
 
   // Load existing predictions
@@ -1029,21 +1156,21 @@ function PredictionsTab({
 
           let actualMatch = null;
           for (const g of tournamentGroups) {
-            const found = g.matches.find((m: any) => m.id === matchId);
+            const found = g.matches.find((m: Match) => m.id === matchId);
             if (found) {
               actualMatch = found;
               break;
             }
           }
           if (!actualMatch) {
-            actualMatch = knockoutMatches.find((m: any) => m.id === matchId);
+            actualMatch = knockoutMatches.find((m: KnockoutMatch) => m.id === matchId);
           }
 
           const actualFinished = actualMatch?.finished || false;
           const actualHomeScore = actualMatch?.homeScore ?? null;
           const actualAwayScore = actualMatch?.awayScore ?? null;
-          const actualHomePenalties = actualMatch?.homePenalties ?? null;
-          const actualAwayPenalties = actualMatch?.awayPenalties ?? null;
+          const actualHomePenalties = (actualMatch as KnockoutMatch)?.homePenalties ?? null;
+          const actualAwayPenalties = (actualMatch as KnockoutMatch)?.awayPenalties ?? null;
 
           const hasPrediction = pred && pred.homeScore !== "" && pred.awayScore !== "";
           let pointsEarned: number | null = null;
@@ -1064,6 +1191,21 @@ function PredictionsTab({
               pointsEarned = 0;
             }
           }
+
+          const homeTeamObj = tournamentGroups.flatMap((g: Group) => g.teams).find((t: Team) => t.name === homeName);
+          const awayTeamObj = tournamentGroups.flatMap((g: Group) => g.teams).find((t: Team) => t.name === awayName);
+          const isKnockout = /^\d+$/.test(matchId);
+
+          const modelPrediction = getPredictionChance(
+            homeTeamObj,
+            awayTeamObj,
+            isKnockout,
+            pred?.homeScore ?? "",
+            pred?.awayScore ?? "",
+            pred?.homePenalties ?? "",
+            pred?.awayPenalties ?? "",
+            formMap
+          );
 
           return (
             <ProdeMatchCard
@@ -1094,6 +1236,23 @@ function PredictionsTab({
               actualAwayPenalties={actualAwayPenalties}
               pointsEarned={pointsEarned}
               hasPrediction={hasPrediction}
+              isAdmin={isAdmin}
+              modelPrediction={modelPrediction}
+              onOpenModelPrediction={modelPrediction ? () => setSelectedModelPred({
+                matchId,
+                homeTeamName: homeName,
+                awayTeamName: awayName,
+                homeTeamObj,
+                awayTeamObj,
+                isKnockout,
+                predictionDetails: modelPrediction.predictionDetails,
+                modelPrediction: {
+                  chance: modelPrediction.chance,
+                  ratio: modelPrediction.ratio,
+                  isExactMatch: modelPrediction.isExactMatch,
+                  isOutcomeMatch: modelPrediction.isOutcomeMatch
+                }
+              }) : undefined}
             />
           );
         })}
@@ -1113,6 +1272,24 @@ function PredictionsTab({
           awayTeamName={selectedMatchForRivals.awayTeamName}
           utcDate={selectedMatchForRivals.utcDate}
           currentUserUid={firebaseUid}
+        />
+      )}
+
+      {selectedModelPred && (
+        <ModelPredictionModal
+          isOpen={!!selectedModelPred}
+          onClose={() => setSelectedModelPred(null)}
+          homeTeamName={selectedModelPred.homeTeamName}
+          awayTeamName={selectedModelPred.awayTeamName}
+          homeTeamObj={selectedModelPred.homeTeamObj}
+          awayTeamObj={selectedModelPred.awayTeamObj}
+          isKnockout={selectedModelPred.isKnockout}
+          predictionDetails={selectedModelPred.predictionDetails}
+          userHomeScore={predictions.get(selectedModelPred.matchId)?.homeScore ?? ""}
+          userAwayScore={predictions.get(selectedModelPred.matchId)?.awayScore ?? ""}
+          userHomePenalties={predictions.get(selectedModelPred.matchId)?.homePenalties ?? ""}
+          userAwayPenalties={predictions.get(selectedModelPred.matchId)?.awayPenalties ?? ""}
+          modelPrediction={selectedModelPred.modelPrediction}
         />
       )}
     </div>
@@ -1141,6 +1318,9 @@ function ProdeMatchCard({
   actualAwayPenalties,
   pointsEarned,
   hasPrediction,
+  isAdmin = false,
+  modelPrediction,
+  onOpenModelPrediction,
 }: {
   matchId: string;
   homeTeamName: string;
@@ -1163,6 +1343,15 @@ function ProdeMatchCard({
   actualAwayPenalties?: number | null;
   pointsEarned?: number | null;
   hasPrediction?: boolean;
+  isAdmin?: boolean;
+  modelPrediction?: {
+    chance: number;
+    ratio: number;
+    isExactMatch: boolean;
+    isOutcomeMatch: boolean;
+    predictionDetails: MatchPredictionResult;
+  } | null;
+  onOpenModelPrediction?: () => void;
 }) {
   const matchDate = utcDate ? new Date(utcDate) : null;
   const formattedDate = matchDate
@@ -1171,6 +1360,57 @@ function ProdeMatchCard({
   const formattedTime = matchDate
     ? matchDate.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false })
     : "";
+
+  const chipStyle = useMemo(() => {
+    if (!modelPrediction) return null;
+    const { isExactMatch, ratio } = modelPrediction;
+
+    // Level 1: Exact Match (Emerald Green)
+    if (isExactMatch) {
+      return {
+        className: "bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-400 dark:bg-emerald-500/20 border-emerald-500/30 font-extrabold shadow-xs",
+        title: "¡Predicción exacta! Coincide perfectamente con el resultado más probable del modelo (100% de cercanía)",
+      };
+    }
+
+    // Level 2: Very Close (Teal) - ratio >= 0.75
+    if (ratio >= 0.75) {
+      return {
+        className: "bg-teal-500/10 hover:bg-teal-500/25 text-teal-700 dark:text-teal-400 dark:bg-teal-500/20 border-teal-500/30",
+        title: `Predicción muy cercana al resultado más probable (${Math.round(ratio * 100)}% de cercanía)`,
+      };
+    }
+
+    // Level 3: Moderately Close (Blue) - ratio >= 0.45
+    if (ratio >= 0.45) {
+      return {
+        className: "bg-blue-500/10 hover:bg-blue-500/25 text-blue-700 dark:text-blue-400 dark:bg-blue-500/20 border-blue-500/30",
+        title: `Predicción con probabilidad media-alta (${Math.round(ratio * 100)}% de cercanía)`,
+      };
+    }
+
+    // Level 4: Medium Closeness (Amber) - ratio >= 0.20
+    if (ratio >= 0.20) {
+      return {
+        className: "bg-amber-500/10 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 dark:bg-amber-500/20 border-amber-500/30",
+        title: `Predicción con probabilidad moderada (${Math.round(ratio * 100)}% de cercanía)`,
+      };
+    }
+
+    // Level 5: Low Closeness (Orange) - ratio >= 0.08
+    if (ratio >= 0.08) {
+      return {
+        className: "bg-orange-500/10 hover:bg-orange-500/25 text-orange-700 dark:text-orange-400 dark:bg-orange-500/20 border-orange-500/30",
+        title: `Predicción poco probable comparada con el resultado modal (${Math.round(ratio * 100)}% de cercanía)`,
+      };
+    }
+
+    // Level 6: Very Low Closeness (Rose/Red) - ratio < 0.08
+    return {
+      className: "bg-rose-500/10 hover:bg-rose-500/25 text-rose-700 dark:text-rose-400 dark:bg-rose-500/20 border-rose-500/30",
+      title: `Predicción muy alejada del resultado esperado por el modelo (${Math.round(ratio * 100)}% de cercanía)`,
+    };
+  }, [modelPrediction]);
 
   const adjustScore = (side: "home" | "away", delta: number) => {
     if (isLocked) return;
@@ -1230,6 +1470,42 @@ function ProdeMatchCard({
             </span>
           </div>
         )}
+
+        {/* Match Header Info (Date, Time, #, Reset/Rivals) */}
+        <div className="mb-3 pb-2 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500">
+          <div className="flex items-center gap-2">
+            {matchDate && (
+              <>
+                <span>{formattedDate}</span>
+                <span className="font-bold text-slate-500 dark:text-slate-400">{formattedTime}</span>
+              </>
+            )}
+            <span className="font-mono text-[9px] text-slate-350 dark:text-slate-650">#{matchId}</span>
+          </div>
+          {!isLocked && (homeScore !== "" || awayScore !== "") && (
+            <button
+              type="button"
+              onClick={() => onResetMatch(matchId)}
+              className="flex items-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
+              title="Resetear pronóstico"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Resetear</span>
+            </button>
+          )}
+          {isLocked && onOpenRivalPredictions && (
+            <button
+              type="button"
+              onClick={onOpenRivalPredictions}
+              className="flex items-center gap-1.5 text-[10px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors cursor-pointer"
+              title="Ver pronósticos de tus rivales de grupo"
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Ver rivales</span>
+            </button>
+          )}
+        </div>
+
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           {/* Home Team */}
           <div className="flex items-center gap-2.5 min-w-0">
@@ -1374,40 +1650,59 @@ function ProdeMatchCard({
           </div>
         )}
 
-        {/* Match Date & Time / Reset Button */}
-        <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500">
-          <div className="flex items-center gap-2">
-            {matchDate && (
-              <>
-                <span>{formattedDate}</span>
-                <span className="font-bold text-slate-500 dark:text-slate-400">{formattedTime}</span>
-              </>
-            )}
-            <span className="font-mono text-[9px] text-slate-350 dark:text-slate-650">#{matchId}</span>
+        {/* Model prediction tricolor bar (Matches modal style) & % chip on the far right */}
+        {isAdmin && modelPrediction && chipStyle && (
+          <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-between gap-3 w-full">
+            {/* Left Spacer to match the right % chip width and keep the bar centered */}
+            <div className="w-[38px] shrink-0" />
+
+            {/* Probability distribution bar (same as modal but compact h-5) */}
+            <div 
+              className="flex-1 flex h-5 rounded-md overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[9px] font-bold text-white shadow-xs cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={onOpenModelPrediction}
+              title={`Probabilidades: Local: ${Math.round(modelPrediction.predictionDetails.probA * 100)}% | Empate: ${Math.round(modelPrediction.predictionDetails.probX * 100)}% | Visitante: ${Math.round(modelPrediction.predictionDetails.probB * 100)}%`}
+            >
+              {modelPrediction.predictionDetails.probA > 0 && (
+                <div 
+                  style={{ width: `${modelPrediction.predictionDetails.probA * 100}%` }}
+                  className="bg-emerald-500 flex items-center justify-center min-w-[20px]"
+                >
+                  {Math.round(modelPrediction.predictionDetails.probA * 100)}%
+                </div>
+              )}
+              {modelPrediction.predictionDetails.probX > 0 && (
+                <div 
+                  style={{ width: `${modelPrediction.predictionDetails.probX * 100}%` }}
+                  className="bg-slate-400 dark:bg-slate-500 flex items-center justify-center min-w-[20px]"
+                >
+                  {Math.round(modelPrediction.predictionDetails.probX * 100)}%
+                </div>
+              )}
+              {modelPrediction.predictionDetails.probB > 0 && (
+                <div 
+                  style={{ width: `${modelPrediction.predictionDetails.probB * 100}%` }}
+                  className="bg-indigo-500 flex items-center justify-center min-w-[20px]"
+                >
+                  {Math.round(modelPrediction.predictionDetails.probB * 100)}%
+                </div>
+              )}
+            </div>
+
+            {/* % chip on the far right */}
+            <button
+              type="button"
+              onClick={onOpenModelPrediction}
+              className={clsx(
+                "w-[38px] h-5 inline-flex items-center justify-center rounded-md text-[9px] font-extrabold border transition-all cursor-pointer active:scale-95 shrink-0",
+                chipStyle.className
+              )}
+              title={chipStyle.title}
+            >
+              <span>{modelPrediction.chance}%</span>
+            </button>
           </div>
-          {!isLocked && (homeScore !== "" || awayScore !== "") && (
-            <button
-              type="button"
-              onClick={() => onResetMatch(matchId)}
-              className="flex items-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
-              title="Resetear pronóstico"
-            >
-              <RotateCcw className="w-3 h-3" />
-              <span>Resetear</span>
-            </button>
-          )}
-          {isLocked && onOpenRivalPredictions && (
-            <button
-              type="button"
-              onClick={onOpenRivalPredictions}
-              className="flex items-center gap-1.5 text-[10px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors cursor-pointer"
-              title="Ver pronósticos de tus rivales de grupo"
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span>Ver rivales</span>
-            </button>
-          )}
-        </div>
+        )}
+
       </div>
     </div>
   );
