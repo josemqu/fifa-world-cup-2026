@@ -304,11 +304,11 @@ async function handleDailyWinners() {
     const medal = medals[i] || "🏆";
     const name = nameMap[uid] || "Jugador";
 
-    const title = `${medal} ¡Felicitaciones, ${name}!`;
+    const title = `${medal} ¡Top Global del día, ${name}!`;
     const body =
       i === 0
-        ? `¡Fuiste el/la mejor del día con ${data.total} puntos! (${data.exact} exactos)`
-        : `Terminaste ${i + 1}° hoy con ${data.total} puntos. ¡Seguí así!`;
+        ? `¡Fuiste el/la mejor del día a nivel global con ${data.total} puntos! (${data.exact} exactos)`
+        : `Terminaste ${i + 1}° en el ranking global de hoy con ${data.total} puntos. ¡Seguí así!`;
 
     await NotificationModel.create({
       firebaseUid: uid,
@@ -342,8 +342,8 @@ async function handleDailyWinners() {
     const bulkNotifs = nonWinnerUids.map((uid) => ({
       firebaseUid: uid,
       type: "daily_winner" as const,
-      title: "🏆 Ganadores del día",
-      body: `Top del día: ${winnerNames}`,
+      title: "🏆 Ganadores globales del día",
+      body: `Top global de hoy: ${winnerNames}`,
       icon: "🏆",
       link: "/prode?tab=leaderboard",
       metadata: { informational: true },
@@ -354,8 +354,8 @@ async function handleDailyWinners() {
     // Send push notifications to non-winners in batches
     for (const uid of nonWinnerUids) {
       await sendPushToUser(uid, {
-        title: "🏆 Ganadores del día",
-        body: `Top del día: ${winnerNames}`,
+        title: "🏆 Ganadores globales del día",
+        body: `Top global de hoy: ${winnerNames}`,
         icon: "/icon.svg",
         url: "/prode?tab=leaderboard",
       });
