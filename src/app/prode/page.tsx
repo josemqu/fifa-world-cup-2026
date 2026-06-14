@@ -973,26 +973,30 @@ function PredictionsTab({
 
   // Resolve team names from our local dynamically-propagated prode matches
   const prodeMatches = useMemo(() => {
-    // 1. Deep clone INITIAL_GROUPS
-    const clonedGroups = JSON.parse(JSON.stringify(INITIAL_GROUPS)) as Group[];
+    // 1. Deep clone tournamentGroups if finished, otherwise INITIAL_GROUPS
+    const clonedGroups = JSON.parse(
+      JSON.stringify(isGroupStageFinished ? tournamentGroups : INITIAL_GROUPS)
+    ) as Group[];
 
-    // 2. Overlay user predictions on clonedGroups
-    for (const group of clonedGroups) {
-      for (const match of group.matches) {
-        const pred = predictions.get(match.id);
-        if (pred && pred.homeScore !== "" && pred.awayScore !== "") {
-          match.homeScore = Number(pred.homeScore);
-          match.awayScore = Number(pred.awayScore);
-          match.finished = true;
-        } else {
-          match.homeScore = null;
-          match.awayScore = null;
-          match.finished = false;
+    // 2. Overlay user predictions on clonedGroups ONLY if isGroupStageFinished is true
+    if (isGroupStageFinished) {
+      for (const group of clonedGroups) {
+        for (const match of group.matches) {
+          const pred = predictions.get(match.id);
+          if (pred && pred.homeScore !== "" && pred.awayScore !== "") {
+            match.homeScore = Number(pred.homeScore);
+            match.awayScore = Number(pred.awayScore);
+            match.finished = true;
+          } else {
+            match.homeScore = null;
+            match.awayScore = null;
+            match.finished = false;
+          }
         }
+        // Recalculate standings for this group
+        const updated = recalculateGroupStats(group);
+        group.teams = updated.teams;
       }
-      // Recalculate standings for this group
-      const updated = recalculateGroupStats(group);
-      group.teams = updated.teams;
     }
 
     // 3. Generate R32 matches based on group standings predictions
@@ -1117,7 +1121,7 @@ function PredictionsTab({
     }
 
     return allKnockouts;
-  }, [predictions]);
+  }, [predictions, isGroupStageFinished, tournamentGroups]);
 
   // Resolve team names from tournament context for knockout matches
   const resolvedTeamNames = useMemo(() => {
