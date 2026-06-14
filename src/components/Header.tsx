@@ -10,6 +10,7 @@ import { useState, useRef, useEffect, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NextMatchCountdown } from "@/components/NextMatchCountdown";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { NotificationBell } from "@/components/NotificationBell";
 import { useTheme } from "next-themes";
 import { Sun, Moon, Monitor } from "lucide-react";
 
@@ -202,6 +203,7 @@ export function Header() {
           {/* User Section */}
           <div className="flex items-center justify-end gap-2 shrink-0 md:w-[200px] lg:w-[300px]">
             <ThemeToggle />
+            {user && <NotificationBell />}
             {!mounted ? (
               // Neutral loading state during SSR/hydration to prevent mismatches
               <div className="w-[88px] h-9 bg-slate-200 dark:bg-slate-700 rounded-lg animate-pulse" />

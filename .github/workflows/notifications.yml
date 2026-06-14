@@ -1,0 +1,51 @@
+name: Prode Notifications
+
+on:
+  schedule:
+    # Every hour: check for upcoming matches without predictions
+    - cron: '0 * * * *'
+    # 02:00 UTC daily (23:00 Argentina): daily winners
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      type:
+        description: 'Notification type'
+        required: true
+        type: choice
+        options:
+          - missing_predictions
+          - daily_winners
+
+jobs:
+  send-notifications:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine notification type
+        id: notif_type
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "type=${{ github.event.inputs.type }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.schedule }}" = "0 2 * * *" ]; then
+            echo "type=daily_winners" >> $GITHUB_OUTPUT
+          else
+            echo "type=missing_predictions" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send notifications
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
+            "${{ secrets.APP_URL }}/api/notifications/send?type=${{ steps.notif_type.outputs.type }}" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $BODY"
+          
+          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+            echo "::error::API request failed with status $HTTP_CODE"
+            exit 1
+          fi
