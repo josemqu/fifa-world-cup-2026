@@ -6,6 +6,7 @@ import NotificationModel from "@/models/Notification";
 import ProdePrediction from "@/models/ProdePrediction";
 import LiveScore from "@/models/LiveScore";
 import User from "@/models/User";
+import ProdeGroup from "@/models/ProdeGroup";
 import { INITIAL_GROUPS } from "@/data/initialData";
 import { KNOCKOUT_DETAILS } from "@/data/knockoutDetails";
 import {
@@ -200,30 +201,32 @@ async function handleMissingPredictions() {
 }
 
 // ─── DAILY WINNERS ──────────────────────────────────────────────
-async function handleDailyWinners() {
+async function handleDailyWinners(force = false) {
   const now = new Date();
   const todayStart = new Date(now);
   todayStart.setHours(0, 0, 0, 0);
   const todayEnd = new Date(now);
   todayEnd.setHours(23, 59, 59, 999);
 
-  // Find matches that finished today
+  // Find matches that finished today to check if we should run the daily update
   const todayFinished = await LiveScore.find({
     status: "finished",
     updatedAt: { $gte: todayStart, $lte: todayEnd },
   });
 
-  if (todayFinished.length === 0) {
-    return { sent: 0, message: "No matches finished today" };
+  if (todayFinished.length === 0 && !force) {
+    return { sent: 0, message: "No matches finished today (use force=true to bypass)" };
   }
 
-  const finishedMatchIds = todayFinished.map((m) => m.matchId);
+  // Calculate accumulated points for all users globally using ALL finished matches up to now
+  const finishedMatches = await LiveScore.find({ status: "finished" });
+  const finishedMatchIds = finishedMatches.map((m) => m.matchId);
 
   const scoreMap: Record<
     string,
     { homeScore: number; awayScore: number; homePenalties: number | null; awayPenalties: number | null }
   > = {};
-  for (const match of todayFinished) {
+  for (const match of finishedMatches) {
     if (match.homeScore !== null && match.awayScore !== null) {
       scoreMap[match.matchId] = {
         homeScore: match.homeScore,
@@ -234,15 +237,14 @@ async function handleDailyWinners() {
     }
   }
 
-  // Get all predictions for today's finished matches
-  const predictions = await ProdePrediction.find({
+  // Load all predictions for finished matches
+  const allPredictions = await ProdePrediction.find({
     matchId: { $in: finishedMatchIds },
   });
 
-  // Calculate points per user for today
-  const pointsByUser: Record<string, { total: number; exact: number }> = {};
-
-  for (const pred of predictions) {
+  // Calculate accumulated points per user
+  const userPointsMap: Record<string, { totalPoints: number; exactCount: number }> = {};
+  for (const pred of allPredictions) {
     const actual = scoreMap[pred.matchId];
     if (!actual) continue;
 
@@ -257,69 +259,199 @@ async function handleDailyWinners() {
       actual.awayPenalties ?? undefined
     );
 
-    if (!pointsByUser[pred.firebaseUid]) {
-      pointsByUser[pred.firebaseUid] = { total: 0, exact: 0 };
+    if (!userPointsMap[pred.firebaseUid]) {
+      userPointsMap[pred.firebaseUid] = { totalPoints: 0, exactCount: 0 };
     }
-    pointsByUser[pred.firebaseUid].total += pts;
-    if (pts === 3) pointsByUser[pred.firebaseUid].exact++;
+    userPointsMap[pred.firebaseUid].totalPoints += pts;
+    if (pts === 3) userPointsMap[pred.firebaseUid].exactCount++;
   }
 
-  // Sort and get top 3
-  const sorted = Object.entries(pointsByUser)
-    .filter(([, v]) => v.total > 0)
-    .sort((a, b) => b[1].total - a[1].total || b[1].exact - a[1].exact);
-
-  if (sorted.length === 0) {
-    return { sent: 0, message: "No users scored points today" };
-  }
-
-  const top3 = sorted.slice(0, 3);
-  const topUids = top3.map(([uid]) => uid);
-
-  // Get user names
-  const users = await User.find(
-    { firebaseUid: { $in: topUids } },
-    { firebaseUid: 1, displayName: 1, nickname: 1 }
-  );
-  const nameMap: Record<string, string> = {};
+  // Get user display names/nicknames
+  const users = await User.find({}, { firebaseUid: 1, displayName: 1, nickname: 1 });
+  const userMap: Record<string, string> = {};
   for (const u of users) {
-    nameMap[u.firebaseUid] = u.nickname || u.displayName || u.firebaseUid;
+    userMap[u.firebaseUid] = u.nickname || u.displayName || u.firebaseUid;
   }
 
-  // Check for existing daily_winner notifications today
+  // Check which notifications were already sent today to avoid duplicates
   const existingWinnerNotifs = await NotificationModel.find({
     type: "daily_winner",
     sentAt: { $gte: todayStart },
   });
 
-  if (existingWinnerNotifs.length > 0) {
-    return { sent: 0, message: "Daily winner notifications already sent today" };
+  const alreadyNotifiedKeys = new Set(
+    existingWinnerNotifs
+      .map((n) => {
+        const meta = n.metadata as Record<string, any>;
+        if (meta?.groupId) {
+          return `${n.firebaseUid}:${meta.groupId}`;
+        }
+        if (meta?.global) {
+          return `${n.firebaseUid}:global`;
+        }
+        return "";
+      })
+      .filter(Boolean)
+  );
+
+  // Load all prode groups
+  const groups = await ProdeGroup.find({});
+  let sent = 0;
+  const notifiedUsersThisRun = new Set<string>();
+
+  // 1. Process Private Groups
+  for (const group of groups) {
+    const totalMembers = group.members.length;
+    if (totalMembers <= 1) continue; // Skip groups with 1 or 0 members
+
+    // Build the group leaderboard
+    const groupLeaderboard = group.members.map((uid) => {
+      const pointsData = userPointsMap[uid] || { totalPoints: 0, exactCount: 0 };
+      return {
+        firebaseUid: uid,
+        totalPoints: pointsData.totalPoints,
+        exactCount: pointsData.exactCount,
+      };
+    });
+
+    // Sort by totalPoints desc, exactCount desc
+    groupLeaderboard.sort((a, b) => b.totalPoints - a.totalPoints || b.exactCount - a.exactCount);
+
+    const leaderPoints = groupLeaderboard[0]?.totalPoints || 0;
+
+    for (let index = 0; index < groupLeaderboard.length; index++) {
+      const member = groupLeaderboard[index];
+      const uid = member.firebaseUid;
+      const rank = index + 1;
+      const points = member.totalPoints;
+
+      // Skip if already notified for this group today
+      const duplicateKey = `${uid}:${group._id}`;
+      if (alreadyNotifiedKeys.has(duplicateKey)) {
+        notifiedUsersThisRun.add(uid);
+        continue;
+      }
+
+      let title = "";
+      let body = "";
+      let icon = "⚽";
+
+      const name = userMap[uid] || "Jugador";
+
+      if (rank === 1) {
+        title = `🥇 Líder de ${group.name}`;
+        body = `¡Felicitaciones, ${name}! Seguís en la punta del grupo con ${points} pts.`;
+        icon = "🥇";
+      } else if (rank <= 3) {
+        const medal = rank === 2 ? "🥈" : "🥉";
+        title = `${medal} Podio en ${group.name}`;
+        body = `Estás ${rank}° con ${points} pts. ¡El líder tiene ${leaderPoints} pts, estás cerca!`;
+        icon = medal;
+      } else if (rank === totalMembers && totalMembers > 2) {
+        title = `💪 ¡Fuerza en ${group.name}!`;
+        body = `Estás último con ${points} pts. ¡No te desanimes, queda torneo para recuperarte!`;
+        icon = "💪";
+      } else if (rank >= totalMembers * 0.75 || (leaderPoints - points >= 8)) {
+        title = `🔥 ¡A sumar en ${group.name}!`;
+        body = `Estás ${rank}° de ${totalMembers} con ${points} pts. ¡Cargá tus predicciones para recortar distancia!`;
+        icon = "🔥";
+      } else {
+        title = `⚽ En carrera en ${group.name}`;
+        body = `Estás en el puesto ${rank}° de ${totalMembers} con ${points} pts. ¡Seguí así!`;
+        icon = "⚽";
+      }
+
+      // Create in-app notification
+      await NotificationModel.create({
+        firebaseUid: uid,
+        type: "daily_winner",
+        title,
+        body,
+        icon,
+        link: `/prode?tab=groups&groupId=${group._id}`,
+        metadata: { groupId: group._id.toString(), rank, points, totalMembers },
+      });
+
+      // Send push
+      await sendPushToUser(uid, {
+        title,
+        body,
+        icon: "/icon.svg",
+        url: `/prode?tab=groups&groupId=${group._id}`,
+      });
+
+      sent++;
+      notifiedUsersThisRun.add(uid);
+    }
   }
 
-  let sent = 0;
-  const medals = ["🥇", "🥈", "🥉"];
+  // 2. Process Global Standings (for active users not in any private group)
+  const activeUserUids = await ProdePrediction.distinct("firebaseUid");
+  
+  const globalLeaderboard = activeUserUids.map((uid) => {
+    const pointsData = userPointsMap[uid] || { totalPoints: 0, exactCount: 0 };
+    return {
+      firebaseUid: uid,
+      totalPoints: pointsData.totalPoints,
+      exactCount: pointsData.exactCount,
+    };
+  });
 
-  for (let i = 0; i < top3.length; i++) {
-    const [uid, data] = top3[i];
-    const medal = medals[i] || "🏆";
-    const name = nameMap[uid] || "Jugador";
+  // Sort global standings
+  globalLeaderboard.sort((a, b) => b.totalPoints - a.totalPoints || b.exactCount - a.exactCount);
 
-    const title = `${medal} ¡Top Global del día, ${name}!`;
-    const body =
-      i === 0
-        ? `¡Fuiste el/la mejor del día a nivel global con ${data.total} puntos! (${data.exact} exactos)`
-        : `Terminaste ${i + 1}° en el ranking global de hoy con ${data.total} puntos. ¡Seguí así!`;
+  const totalGlobalUsers = globalLeaderboard.length;
 
+  for (let index = 0; index < globalLeaderboard.length; index++) {
+    const member = globalLeaderboard[index];
+    const uid = member.firebaseUid;
+    const rank = index + 1;
+    const points = member.totalPoints;
+
+    // Skip if they already received a group notification in this run
+    if (notifiedUsersThisRun.has(uid)) continue;
+
+    // Skip if already notified globally today
+    const duplicateKey = `${uid}:global`;
+    if (alreadyNotifiedKeys.has(duplicateKey)) continue;
+
+    let title = "";
+    let body = "";
+    let icon = "⚽";
+
+    const name = userMap[uid] || "Jugador";
+
+    if (rank === 1) {
+      title = `🥇 Líder Global del Prode`;
+      body = `¡Felicitaciones, ${name}! Seguís en la punta del Ranking Global con ${points} pts.`;
+      icon = "🥇";
+    } else if (rank <= 3) {
+      const medal = rank === 2 ? "🥈" : "🥉";
+      title = `${medal} Podio Global del Prode`;
+      body = `¡Excelente! Estás ${rank}° en el Ranking Global con ${points} pts.`;
+      icon = medal;
+    } else if (rank >= totalGlobalUsers * 0.75) {
+      title = `💪 ¡A sumar en el Ranking Global!`;
+      body = `Estás ${rank}° de ${totalGlobalUsers} con ${points} pts. ¡Queda mucho por jugar, a meterle garra!`;
+      icon = "💪";
+    } else {
+      title = `⚽ Posición Global`;
+      body = `Estás en el puesto ${rank}° de ${totalGlobalUsers} con ${points} pts. ¡Seguí sumando!`;
+      icon = "⚽";
+    }
+
+    // Create in-app notification
     await NotificationModel.create({
       firebaseUid: uid,
       type: "daily_winner",
       title,
       body,
-      icon: medal,
+      icon,
       link: "/prode?tab=leaderboard",
-      metadata: { rank: i + 1, points: data.total, exactCount: data.exact },
+      metadata: { global: true, rank, points, totalGlobalUsers },
     });
 
+    // Send push
     await sendPushToUser(uid, {
       title,
       body,
@@ -330,40 +462,7 @@ async function handleDailyWinners() {
     sent++;
   }
 
-  // Also notify all participants about who won today
-  const allParticipantUids = [...new Set(predictions.map((p) => p.firebaseUid))];
-  const nonWinnerUids = allParticipantUids.filter((uid) => !topUids.includes(uid));
-
-  const winnerNames = top3
-    .map(([uid, data], i) => `${medals[i]} ${nameMap[uid] || "?"} (${data.total}pts)`)
-    .join("  ");
-
-  if (nonWinnerUids.length > 0) {
-    const bulkNotifs = nonWinnerUids.map((uid) => ({
-      firebaseUid: uid,
-      type: "daily_winner" as const,
-      title: "🏆 Ganadores globales del día",
-      body: `Top global de hoy: ${winnerNames}`,
-      icon: "🏆",
-      link: "/prode?tab=leaderboard",
-      metadata: { informational: true },
-    }));
-
-    await NotificationModel.insertMany(bulkNotifs);
-
-    // Send push notifications to non-winners in batches
-    for (const uid of nonWinnerUids) {
-      await sendPushToUser(uid, {
-        title: "🏆 Ganadores globales del día",
-        body: `Top global de hoy: ${winnerNames}`,
-        icon: "/icon.svg",
-        url: "/prode?tab=leaderboard",
-      });
-      sent++;
-    }
-  }
-
-  return { sent, message: `Sent daily winner notifications to ${sent} users` };
+  return { sent, message: `Sent leaderboard standings notifications to ${sent} users` };
 }
 
 // ─── MAIN HANDLER ───────────────────────────────────────────────
@@ -396,13 +495,14 @@ export async function POST(request: Request) {
     await connectDB();
 
     let result;
+    const force = searchParams.get("force") === "true";
 
     switch (type) {
       case "missing_predictions":
         result = await handleMissingPredictions();
         break;
       case "daily_winners":
-        result = await handleDailyWinners();
+        result = await handleDailyWinners(force);
         break;
       default:
         return NextResponse.json(
