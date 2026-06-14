@@ -59,7 +59,7 @@ function getTypeStyles(type: NotificationItem["type"]) {
   }
 }
 
-export function NotificationBell() {
+export function NotificationBell({ isLoading }: { isLoading?: boolean }) {
   const { user } = useAuth();
   const { permission, isSubscribed, subscribe } = usePushNotifications(user?.uid);
   const [isOpen, setIsOpen] = useState(false);
@@ -169,7 +169,17 @@ export function NotificationBell() {
     localStorage.setItem("push_prompt_dismissed", "true");
   };
 
-  if (!user) return null;
+  if (!user || isLoading) {
+    return (
+      <button
+        disabled
+        className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-500/50 dark:text-slate-400/50 cursor-not-allowed"
+        aria-label="Cargando notificaciones..."
+      >
+        <Bell className="w-5 h-5" />
+      </button>
+    );
+  }
 
   return (
     <div className="relative" ref={panelRef}>
@@ -177,7 +187,7 @@ export function NotificationBell() {
       <button
         onClick={handleOpen}
         className={clsx(
-          "relative p-2 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/50 cursor-pointer",
+          "relative w-9 h-9 flex items-center justify-center rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/50 cursor-pointer",
           isOpen
             ? "bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400"
             : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200"

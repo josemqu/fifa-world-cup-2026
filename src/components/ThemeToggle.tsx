@@ -28,7 +28,7 @@ export function ThemeToggle() {
     );
   }
 
-  const currentIcon = theme === "system" ? <Monitor className="w-4 h-4" /> : theme === "dark" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />;
+  const currentIcon = theme === "system" ? <Monitor className="w-5 h-5" /> : theme === "dark" ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />;
   const currentLabel = theme === "system" ? "Sistema" : theme === "dark" ? "Oscuro" : "Claro";
 
   return (
@@ -36,7 +36,7 @@ export function ThemeToggle() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={clsx(
-          "p-2 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/50 cursor-pointer",
+          "w-9 h-9 flex items-center justify-center rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/50 cursor-pointer",
           isOpen
             ? "bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400"
             : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200"
