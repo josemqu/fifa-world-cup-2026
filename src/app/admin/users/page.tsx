@@ -18,6 +18,7 @@ import {
   ChevronDown,
   Eye,
   EyeOff,
+  RefreshCw,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { PredictionComparisonModal } from "@/components/PredictionComparisonModal";
@@ -48,6 +49,7 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedCompareUser, setSelectedCompareUser] = useState<DbUser | null>(null);
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
@@ -86,9 +88,11 @@ export default function AdminUsersPage() {
     }
   }, [sortBy, sortOrder]);
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = useCallback(async (isRefresh = false) => {
     if (!dbUser?.email) return;
-    setLoading(true);
+    if (!isRefresh) {
+      setLoading(true);
+    }
     try {
       // Fetch all users at once by passing a high limit
       const queryParams = new URLSearchParams({
@@ -109,12 +113,18 @@ export default function AdminUsersPage() {
       console.error(e);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [dbUser]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchUsers(true);
+  };
 
   // Client-side search / filtering
   const filteredUsers = useMemo(() => {
@@ -240,11 +250,21 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Usuarios</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Gestiona los usuarios registrados y analiza sus estadísticas de uso.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Usuarios</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Gestiona los usuarios registrados y analiza sus estadísticas de uso.
+          </p>
+        </div>
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing || loading}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 dark:border-transparent dark:bg-slate-800 dark:hover:bg-slate-700 text-sm text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white transition-all duration-200 disabled:opacity-50 shadow-xs cursor-pointer"
+        >
+          <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+          Actualizar
+        </button>
       </div>
 
       {/* Search Bar */}
