@@ -24,7 +24,7 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <div className="w-[88px] h-10 animate-pulse bg-slate-200 dark:bg-slate-700 rounded-full" />
+      <div className="w-9 h-9 animate-pulse bg-slate-200 dark:bg-slate-700 rounded-lg" />
     );
   }
 
@@ -35,21 +35,15 @@ export function ThemeToggle() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-2 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-        aria-label="Toggle theme"
+        className={clsx(
+          "p-2 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/50 cursor-pointer",
+          isOpen
+            ? "bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400"
+            : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200"
+        )}
+        aria-label={`Tema: ${currentLabel}`}
       >
-        <div className="text-blue-600 dark:text-blue-400">
-          {currentIcon}
-        </div>
-        <span className="hidden sm:block text-xs font-medium text-slate-700 dark:text-slate-300 w-12 text-left">
-          {currentLabel}
-        </span>
-        <ChevronDown
-          className={clsx(
-            "w-3 h-3 text-slate-400 transition-transform duration-200",
-            isOpen && "rotate-180"
-          )}
-        />
+        {currentIcon}
       </button>
 
       {isOpen && (
