@@ -103,7 +103,18 @@ export function MatchDateTime({
     return Math.max(0, Math.floor((now.getTime() - matchDate.getTime()) / 60000));
   })();
 
-  const isCoolingBreak = isPlaying && currentElapsed >= 22 && currentElapsed <= 25;
+  const displayedMinute = (() => {
+    if (currentElapsed <= 45) return currentElapsed;
+    if (currentElapsed < 50) return 45;
+    if (currentElapsed < 65) return -1;
+    if (currentElapsed <= 110) return currentElapsed - 20;
+    return 90;
+  })();
+
+  const isCoolingBreak = isPlaying && (
+    (displayedMinute >= 22 && displayedMinute <= 25) ||
+    (displayedMinute >= 67 && displayedMinute <= 70)
+  );
 
   const remainingTime = now && !isPlaying && !isFinished ? getRelativeTime(matchDate, now) : null;
 

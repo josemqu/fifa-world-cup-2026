@@ -721,7 +721,7 @@ function RealLiveSimulationPanel({ dbUser, user }: RealLiveSimulationPanelProps)
                               <span className="text-amber-500 animate-pulse uppercase">Entretiempo</span>
                             ) : (
                               <span className="text-green-500 dark:text-green-400 animate-pulse">
-                                Min {match.elapsed}&apos;{match.elapsed >= 22 && match.elapsed <= 25 && " (CB)"}
+                                Min {match.elapsed}&apos;{((match.elapsed >= 22 && match.elapsed <= 25) || (match.elapsed >= 67 && match.elapsed <= 70)) && " (CB)"}
                               </span>
                             )}
                           </div>
