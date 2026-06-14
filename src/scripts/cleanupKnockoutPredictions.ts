@@ -91,7 +91,7 @@ async function run() {
       webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
       interface IPushSub {
-        _id: unknown;
+        _id: string;
         firebaseUid: string;
         endpoint: string;
         keys: {
