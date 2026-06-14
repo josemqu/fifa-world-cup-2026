@@ -114,8 +114,13 @@ export async function GET(
     });
 
     leaderboard.sort(
-      (a: { totalPoints: number }, b: { totalPoints: number }) =>
-        b.totalPoints - a.totalPoints
+      (
+        a: { totalPoints: number; exactCount: number; correctCount: number },
+        b: { totalPoints: number; exactCount: number; correctCount: number }
+      ) =>
+        b.totalPoints - a.totalPoints ||
+        b.exactCount - a.exactCount ||
+        b.correctCount - a.correctCount
     );
 
     return NextResponse.json({

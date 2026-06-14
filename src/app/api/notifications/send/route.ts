@@ -318,11 +318,15 @@ async function handleDailyWinners(force = false) {
     groupLeaderboard.sort((a, b) => b.totalPoints - a.totalPoints || b.exactCount - a.exactCount);
 
     const leaderPoints = groupLeaderboard[0]?.totalPoints || 0;
+    let currentRank = 1;
 
     for (let index = 0; index < groupLeaderboard.length; index++) {
       const member = groupLeaderboard[index];
+      if (index > 0 && member.totalPoints < groupLeaderboard[index - 1].totalPoints) {
+        currentRank += 1;
+      }
       const uid = member.firebaseUid;
-      const rank = index + 1;
+      const rank = currentRank;
       const points = member.totalPoints;
 
       // Skip if already notified for this group today
@@ -401,11 +405,15 @@ async function handleDailyWinners(force = false) {
   globalLeaderboard.sort((a, b) => b.totalPoints - a.totalPoints || b.exactCount - a.exactCount);
 
   const totalGlobalUsers = globalLeaderboard.length;
+  let currentRank = 1;
 
   for (let index = 0; index < globalLeaderboard.length; index++) {
     const member = globalLeaderboard[index];
+    if (index > 0 && member.totalPoints < globalLeaderboard[index - 1].totalPoints) {
+      currentRank += 1;
+    }
     const uid = member.firebaseUid;
-    const rank = index + 1;
+    const rank = currentRank;
     const points = member.totalPoints;
 
     // Skip if they already received a group notification in this run

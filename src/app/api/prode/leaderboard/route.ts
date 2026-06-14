@@ -91,7 +91,12 @@ export async function GET() {
       };
     });
 
-    leaderboard.sort((a, b) => b.totalPoints - a.totalPoints);
+    leaderboard.sort(
+      (a, b) =>
+        b.totalPoints - a.totalPoints ||
+        b.exactCount - a.exactCount ||
+        b.correctCount - a.correctCount
+    );
 
     return NextResponse.json({
       success: true,

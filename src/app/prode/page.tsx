@@ -1673,7 +1673,7 @@ function GroupsTab({
                     let currentRank = 1;
                     return groupDetail.leaderboard.map((entry, index) => {
                       if (index > 0 && entry.totalPoints < groupDetail.leaderboard[index - 1].totalPoints) {
-                        currentRank = index + 1;
+                        currentRank += 1;
                       }
                       const isCurrentUser = firebaseUid === entry.firebaseUid;
                       return (
@@ -1967,7 +1967,7 @@ function LeaderboardTab() {
           let currentRank = 1;
           return leaderboard.map((entry, index) => {
             if (index > 0 && entry.totalPoints < leaderboard[index - 1].totalPoints) {
-              currentRank = index + 1;
+              currentRank += 1;
             }
             const isCurrentUser = user?.uid === entry.firebaseUid;
             return (
