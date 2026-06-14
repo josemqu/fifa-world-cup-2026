@@ -611,7 +611,7 @@ function getPredictionChance(
   userAwayPenalties?: number | "",
   formMap?: Map<string, { formOfensiva: number; formDefensiva: number }>
 ) {
-  if (!homeTeam || !awayTeam || userHomeScore === "" || userAwayScore === "") return null;
+  if (!homeTeam || !awayTeam) return null;
 
   const puntosA = homeTeam.fifaPoints ?? (2000 - (homeTeam.ranking ?? 50) * 10);
   const puntosB = awayTeam.fifaPoints ?? (2000 - (awayTeam.ranking ?? 50) * 10);
@@ -634,62 +634,110 @@ function getPredictionChance(
     formDefensivaB: formB ? formB.formDefensiva : undefined,
   });
 
+  const hasUserPred = userHomeScore !== "" && userAwayScore !== "";
+
   // Calculate user chosen outcome chance
   let chance = 0;
-  if (userHomeScore > userAwayScore) {
-    chance = isKnockout ? (res.probAvanzaA ?? res.probA) : res.probA;
-  } else if (userAwayScore > userHomeScore) {
-    chance = isKnockout ? (res.probAvanzaB ?? res.probB) : res.probB;
-  } else {
-    // Draw
-    if (isKnockout) {
-      const userHomeAdvances = userHomePenalties === 1 && userAwayPenalties === 0;
-      const userAwayAdvances = userAwayPenalties === 1 && userHomePenalties === 0;
-      if (userHomeAdvances) {
-        chance = res.probAvanzaA ?? (res.probA + res.probX * res.we);
-      } else if (userAwayAdvances) {
-        chance = res.probAvanzaB ?? (res.probB + res.probX * (1 - res.we));
-      } else {
-        chance = res.probX; // Tie chosen, but penalties winner not selected yet. Show tie probability.
-      }
+  let ratio = 0;
+  let isExactMatch = false;
+  let isOutcomeMatch = false;
+
+  if (hasUserPred) {
+    const userHomeNum = Number(userHomeScore);
+    const userAwayNum = Number(userAwayScore);
+
+    if (userHomeNum > userAwayNum) {
+      chance = isKnockout ? (res.probAvanzaA ?? res.probA) : res.probA;
+    } else if (userAwayNum > userHomeNum) {
+      chance = isKnockout ? (res.probAvanzaB ?? res.probB) : res.probB;
     } else {
-      chance = res.probX;
+      // Draw
+      if (isKnockout) {
+        const userHomeAdvances = userHomePenalties === 1 && userAwayPenalties === 0;
+        const userAwayAdvances = userAwayPenalties === 1 && userHomePenalties === 0;
+        if (userHomeAdvances) {
+          chance = res.probAvanzaA ?? (res.probA + res.probX * res.we);
+        } else if (userAwayAdvances) {
+          chance = res.probAvanzaB ?? (res.probB + res.probX * (1 - res.we));
+        } else {
+          chance = res.probX; // Tie chosen, but penalties winner not selected yet. Show tie probability.
+        }
+      } else {
+        chance = res.probX;
+      }
     }
+
+    // Calculate match closeness metrics
+    const factorial = (n: number): number => {
+      let output = 1;
+      for (let i = 2; i <= n; i++) output *= i;
+      return output;
+    };
+
+    const poissonPMF = (k: number, lambda: number): number => {
+      if (k < 0) return 0;
+      if (lambda <= 0) return k === 0 ? 1 : 0;
+      return (Math.pow(lambda, k) * Math.exp(-lambda)) / factorial(k);
+    };
+
+    const userPMF = poissonPMF(userHomeNum, res.lambdaA) * poissonPMF(userAwayNum, res.lambdaB);
+
+    const modalHome = res.marcadorMasProbable.golesA;
+    const modalAway = res.marcadorMasProbable.golesB;
+    const modalPMF = poissonPMF(modalHome, res.lambdaA) * poissonPMF(modalAway, res.lambdaB);
+
+    ratio = modalPMF > 0 ? userPMF / modalPMF : 0;
+    isExactMatch = userHomeNum === modalHome && userAwayNum === modalAway;
+
+    const userOutcome = userHomeNum > userAwayNum ? "A" : userHomeNum < userAwayNum ? "B" : "X";
+    const modalOutcome = modalHome > modalAway ? "A" : modalHome < modalAway ? "B" : "X";
+    isOutcomeMatch = userOutcome === modalOutcome;
+
+    // Calculate rank of user's score among top scores
+    const maxGoals = 5;
+    const probsA = Array.from({ length: maxGoals + 1 }, (_, k) => poissonPMF(k, res.lambdaA));
+    const probsB = Array.from({ length: maxGoals + 1 }, (_, k) => poissonPMF(k, res.lambdaB));
+
+    const sumA = probsA.reduce((sum, v) => sum + v, 0);
+    const sumB = probsB.reduce((sum, v) => sum + v, 0);
+
+    const normA = probsA.map((v) => v / (sumA || 1));
+    const normB = probsB.map((v) => v / (sumB || 1));
+
+    const scoresList: { homeGoals: number; awayGoals: number; prob: number }[] = [];
+    for (let a = 0; a <= maxGoals; a++) {
+      for (let b = 0; b <= maxGoals; b++) {
+        scoresList.push({
+          homeGoals: a,
+          awayGoals: b,
+          prob: normA[a] * normB[b],
+        });
+      }
+    }
+    scoresList.sort((s1, s2) => s2.prob - s1.prob);
+
+    const userScoreIndex = scoresList.findIndex(
+      (s) => s.homeGoals === userHomeNum && s.awayGoals === userAwayNum
+    );
+    const rankText = userScoreIndex !== -1 ? `#${userScoreIndex + 1}` : "#5+";
+
+    return {
+      chance: Math.round(chance * 100),
+      ratio,
+      isExactMatch,
+      isOutcomeMatch,
+      hasUserPred,
+      rankText,
+      predictionDetails: res,
+    };
   }
-
-  // Calculate match closeness metrics
-  const factorial = (n: number): number => {
-    let output = 1;
-    for (let i = 2; i <= n; i++) output *= i;
-    return output;
-  };
-
-  const poissonPMF = (k: number, lambda: number): number => {
-    if (k < 0) return 0;
-    if (lambda <= 0) return k === 0 ? 1 : 0;
-    return (Math.pow(lambda, k) * Math.exp(-lambda)) / factorial(k);
-  };
-
-  const userHome = Number(userHomeScore);
-  const userAway = Number(userAwayScore);
-  const userPMF = poissonPMF(userHome, res.lambdaA) * poissonPMF(userAway, res.lambdaB);
-
-  const modalHome = res.marcadorMasProbable.golesA;
-  const modalAway = res.marcadorMasProbable.golesB;
-  const modalPMF = poissonPMF(modalHome, res.lambdaA) * poissonPMF(modalAway, res.lambdaB);
-
-  const ratio = modalPMF > 0 ? userPMF / modalPMF : 0;
-  const isExactMatch = userHome === modalHome && userAway === modalAway;
-
-  const userOutcome = userHome > userAway ? "A" : userHome < userAway ? "B" : "X";
-  const modalOutcome = modalHome > modalAway ? "A" : modalHome < modalAway ? "B" : "X";
-  const isOutcomeMatch = userOutcome === modalOutcome;
 
   return {
     chance: Math.round(chance * 100),
     ratio,
     isExactMatch,
     isOutcomeMatch,
+    hasUserPred,
     predictionDetails: res,
   };
 }
@@ -740,6 +788,8 @@ function PredictionsTab({
       ratio: number;
       isExactMatch: boolean;
       isOutcomeMatch: boolean;
+      hasUserPred: boolean;
+      rankText?: string;
     };
   } | null>(null);
 
@@ -1250,7 +1300,9 @@ function PredictionsTab({
                   chance: modelPrediction.chance,
                   ratio: modelPrediction.ratio,
                   isExactMatch: modelPrediction.isExactMatch,
-                  isOutcomeMatch: modelPrediction.isOutcomeMatch
+                  isOutcomeMatch: modelPrediction.isOutcomeMatch,
+                  hasUserPred: modelPrediction.hasUserPred,
+                  rankText: modelPrediction.rankText
                 }
               }) : undefined}
             />
@@ -1349,6 +1401,8 @@ function ProdeMatchCard({
     ratio: number;
     isExactMatch: boolean;
     isOutcomeMatch: boolean;
+    hasUserPred: boolean;
+    rankText?: string;
     predictionDetails: MatchPredictionResult;
   } | null;
   onOpenModelPrediction?: () => void;
@@ -1362,7 +1416,7 @@ function ProdeMatchCard({
     : "";
 
   const chipStyle = useMemo(() => {
-    if (!modelPrediction) return null;
+    if (!modelPrediction || !modelPrediction.hasUserPred) return null;
     const { isExactMatch, ratio } = modelPrediction;
 
     // Level 1: Exact Match (Emerald Green)
@@ -1651,10 +1705,24 @@ function ProdeMatchCard({
         )}
 
         {/* Model prediction tricolor bar (Matches modal style) & % chip on the far right */}
-        {isAdmin && modelPrediction && chipStyle && (
+        {isAdmin && modelPrediction && (
           <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-between gap-3 w-full">
-            {/* Left Spacer to match the right % chip width and keep the bar centered */}
-            <div className="w-[38px] shrink-0" />
+            {/* Rank chip on the far left (only if user prediction is loaded) */}
+            {chipStyle && modelPrediction.rankText ? (
+              <button
+                type="button"
+                onClick={onOpenModelPrediction}
+                className={clsx(
+                  "w-[38px] h-5 inline-flex items-center justify-center rounded-md text-[9px] font-extrabold border transition-all cursor-pointer active:scale-95 shrink-0 select-none",
+                  chipStyle.className
+                )}
+                title={`Este marcador es el rank ${modelPrediction.rankText} entre los resultados más probables de la simulación`}
+              >
+                <span>{modelPrediction.rankText}</span>
+              </button>
+            ) : (
+              <div className="w-[38px] shrink-0" />
+            )}
 
             {/* Probability distribution bar (same as modal but compact h-5) */}
             <div 
@@ -1688,18 +1756,22 @@ function ProdeMatchCard({
               )}
             </div>
 
-            {/* % chip on the far right */}
-            <button
-              type="button"
-              onClick={onOpenModelPrediction}
-              className={clsx(
-                "w-[38px] h-5 inline-flex items-center justify-center rounded-md text-[9px] font-extrabold border transition-all cursor-pointer active:scale-95 shrink-0",
-                chipStyle.className
-              )}
-              title={chipStyle.title}
-            >
-              <span>{modelPrediction.chance}%</span>
-            </button>
+            {/* % chip on the far right (only if user prediction is loaded) */}
+            {chipStyle ? (
+              <button
+                type="button"
+                onClick={onOpenModelPrediction}
+                className={clsx(
+                  "w-[38px] h-5 inline-flex items-center justify-center rounded-md text-[9px] font-extrabold border transition-all cursor-pointer active:scale-95 shrink-0",
+                  chipStyle.className
+                )}
+                title={chipStyle.title}
+              >
+                <span>{modelPrediction.chance}%</span>
+              </button>
+            ) : (
+              <div className="w-[38px] shrink-0" />
+            )}
           </div>
         )}
 
