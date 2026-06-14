@@ -38,6 +38,7 @@ interface AuthContextType {
   user: User | null;
   dbUser: DbUser | null;
   loading: boolean;
+  dbLoading: boolean;
   profileComplete: boolean;
   loginWithGoogle: () => Promise<void>;
   loginWithCredential: (credential: any) => Promise<void>;
@@ -53,6 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [dbUser, setDbUser] = useState<DbUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dbLoading, setDbLoading] = useState(false);
   const [isProfileModalOpen, setProfileModalOpen] = useState(false);
 
   const profileComplete = useMemo(() => {
@@ -83,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         // Sync with DB asynchronously
         const syncUser = async () => {
+          setDbLoading(true);
           try {
             // First try to get existing user data from MongoDB
             const getResponse = await fetch(`/api/user?uid=${currentUser.uid}`);
@@ -131,6 +134,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           } catch (error) {
             console.error("Error syncing user with DB:", error);
+          } finally {
+            setDbLoading(false);
           }
         };
         syncUser();
@@ -139,6 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           document.cookie = "is_logged_in=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
         }
         setDbUser(null);
+        setDbLoading(false);
       }
     });
 
@@ -211,6 +217,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         dbUser,
         loading,
+        dbLoading,
         profileComplete,
         loginWithGoogle,
         loginWithCredential,

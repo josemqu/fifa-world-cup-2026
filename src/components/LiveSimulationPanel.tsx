@@ -720,7 +720,9 @@ function RealLiveSimulationPanel({ dbUser, user }: RealLiveSimulationPanelProps)
                             ) : match.status === "halftime" ? (
                               <span className="text-amber-500 animate-pulse uppercase">Entretiempo</span>
                             ) : (
-                              <span className="text-green-500 dark:text-green-400 animate-pulse">Min {match.elapsed}&apos;</span>
+                              <span className="text-green-500 dark:text-green-400 animate-pulse">
+                                Min {match.elapsed}&apos;{match.elapsed >= 22 && match.elapsed <= 25 && " (CB)"}
+                              </span>
                             )}
                           </div>
                         </div>

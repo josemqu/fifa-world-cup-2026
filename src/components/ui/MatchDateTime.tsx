@@ -91,6 +91,20 @@ export function MatchDateTime({
     ? matchStatus === "finished"
     : (now ? now >= matchEndDate : false);
 
+  const currentElapsed = (() => {
+    if (!now) return 0;
+    if (matchStatus === "halftime") return -1;
+    if (matchElapsed !== undefined && matchElapsed !== null) {
+      const timeSinceSync = matchLastSync
+        ? Math.floor((now.getTime() - new Date(matchLastSync).getTime()) / 60000)
+        : 0;
+      return Math.min(120, (matchElapsed || 0) + Math.max(0, timeSinceSync));
+    }
+    return Math.max(0, Math.floor((now.getTime() - matchDate.getTime()) / 60000));
+  })();
+
+  const isCoolingBreak = isPlaying && currentElapsed >= 22 && currentElapsed <= 25;
+
   const remainingTime = now && !isPlaying && !isFinished ? getRelativeTime(matchDate, now) : null;
 
   const getLiveMinuteText = () => {
@@ -160,6 +174,18 @@ export function MatchDateTime({
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
             </span>
             {getLiveMinuteText()}
+          </div>
+        </Tooltip>
+      )}
+
+      {now && isPlaying && isCoolingBreak && (
+        <Tooltip content="Cooling Break (Pausa de hidratación)" placement="top">
+          <div className="flex items-center gap-1 bg-sky-50 dark:bg-sky-950/40 text-sky-650 dark:text-sky-400 px-1.5 py-0.5 rounded text-[10px] font-extrabold border border-sky-200/30 dark:border-sky-800/30">
+            <span className="relative flex h-1 w-1 mr-0.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-1 w-1 bg-sky-550"></span>
+            </span>
+            <span>CB</span>
           </div>
         </Tooltip>
       )}
