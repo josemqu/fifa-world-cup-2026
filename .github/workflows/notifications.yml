@@ -33,9 +33,13 @@ jobs:
 
       - name: Send notifications
         run: |
-          RESPONSE=$(curl -s -w "\n%{http_code}" \
+          # Strip trailing slash from APP_URL if present
+          APP_URL="${{ secrets.APP_URL }}"
+          APP_URL="${APP_URL%/}"
+          
+          RESPONSE=$(curl -s -L -w "\n%{http_code}" \
             -X POST \
-            "${{ secrets.APP_URL }}/api/notifications/send?type=${{ steps.notif_type.outputs.type }}" \
+            "$APP_URL/api/notifications/send?type=${{ steps.notif_type.outputs.type }}" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
           
