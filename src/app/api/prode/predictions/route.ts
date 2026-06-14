@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import ProdePrediction from "@/models/ProdePrediction";
+import LiveScore from "@/models/LiveScore";
 import { hasMatchStarted } from "@/utils/prodeUtils";
 import { INITIAL_GROUPS } from "@/data/initialData";
 import {
@@ -86,6 +87,25 @@ export async function POST(request: Request) {
         { error: "predictions array is required" },
         { status: 400 }
       );
+    }
+
+    // Validar si hay predicciones de fase eliminatoria (matchId >= 73)
+    const hasKnockoutPrediction = predictions.some(pred => {
+      const matchIdNum = Number(pred.matchId);
+      return !isNaN(matchIdNum) && matchIdNum >= 73;
+    });
+
+    if (hasKnockoutPrediction) {
+      const totalGroupMatchesInDb = await LiveScore.countDocuments({ stage: "group" });
+      const finishedGroupMatches = await LiveScore.countDocuments({ stage: "group", status: "finished" });
+      const isGroupStageFinished = totalGroupMatchesInDb > 0 && finishedGroupMatches === totalGroupMatchesInDb;
+
+      if (!isGroupStageFinished) {
+        return NextResponse.json(
+          { error: "No se pueden realizar pronósticos de la segunda fase hasta que finalice la fase de grupos y estén definidas las llaves reales." },
+          { status: 400 }
+        );
+      }
     }
 
     let saved = 0;

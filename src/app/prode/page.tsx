@@ -762,6 +762,15 @@ function PredictionsTab({
 
   const formMap = useMemo(() => computeTournamentForm(tournamentGroups), [tournamentGroups]);
 
+  const isGroupStageFinished = useMemo(() => {
+    const allGroupMatches = tournamentGroups.flatMap((g) => g.matches);
+    return allGroupMatches.length > 0 && allGroupMatches.every((m) => m.finished);
+  }, [tournamentGroups]);
+
+  const isKnockoutActive = useMemo(() => {
+    return KNOCKOUT_STAGES.some((s) => s.key === activeStage);
+  }, [activeStage]);
+
   const [predictions, setPredictions] = useState<Map<string, PredictionEntry>>(new Map());
   const [loadingPredictions, setLoadingPredictions] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -1193,6 +1202,22 @@ function PredictionsTab({
         </div>
       </div>
 
+      {/* Warning Banner if knockout stage is locked because group stage is not finished */}
+      {isKnockoutActive && !isGroupStageFinished && (
+        <div className="bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/30 rounded-xl p-4 flex gap-3 text-amber-800 dark:text-amber-300">
+          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+          <div className="text-xs space-y-1">
+            <p className="font-bold">Segunda fase bloqueada</p>
+            <p>
+              No se pueden realizar ni modificar pronósticos para los partidos de la segunda fase (llaves) hasta que finalice la fase de grupos y queden definidos los cruces oficiales.
+            </p>
+            <p className="opacity-90">
+              ⚠️ Se han limpiado los pronósticos previos de la segunda fase debido a discrepancias lógicas. Deberás volver a cargarlos una vez estén disponibles las llaves reales.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Match Cards */}
       <div className="space-y-3">
         {stageMatchIds.map((matchId) => {
@@ -1201,7 +1226,9 @@ function PredictionsTab({
           const homeName = resolved?.home || info?.homeTeamName || "?";
           const awayName = resolved?.away || info?.awayTeamName || "?";
           const utcDate = info?.utcDate || "";
-          const isLocked = utcDate ? new Date() >= new Date(utcDate) : false;
+          const isKnockout = /^\d+$/.test(matchId);
+          const isLockedByGroupStage = isKnockout && !isGroupStageFinished;
+          const isLocked = (utcDate ? new Date() >= new Date(utcDate) : false) || isLockedByGroupStage;
           const pred = predictions.get(matchId);
 
           let actualMatch = null;
@@ -1244,7 +1271,6 @@ function PredictionsTab({
 
           const homeTeamObj = tournamentGroups.flatMap((g: Group) => g.teams).find((t: Team) => t.name === homeName);
           const awayTeamObj = tournamentGroups.flatMap((g: Group) => g.teams).find((t: Team) => t.name === awayName);
-          const isKnockout = /^\d+$/.test(matchId);
 
           const modelPrediction = getPredictionChance(
             homeTeamObj,
