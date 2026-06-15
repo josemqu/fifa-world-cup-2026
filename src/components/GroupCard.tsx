@@ -20,7 +20,9 @@ interface GroupCardProps {
     matchId: string,
     homeScore: number | null,
     awayScore: number | null,
-    finished?: boolean
+    finished?: boolean,
+    status?: "scheduled" | "live" | "halftime" | "finished",
+    elapsed?: number | null,
   ) => void;
   showMatches?: boolean;
   onToggleMatches?: () => void;
@@ -660,7 +662,9 @@ export function GroupCard({
               updatedScore.matchId,
               updatedScore.homeScore,
               updatedScore.awayScore,
-              updatedScore.status === "finished"
+              updatedScore.status === "finished",
+              updatedScore.status,
+              updatedScore.elapsed
             );
             setEditingMatch(null);
           }}

@@ -33,6 +33,8 @@ interface KnockoutStageProps {
     homePenalties?: number | null,
     awayPenalties?: number | null,
     finished?: boolean,
+    status?: "scheduled" | "live" | "halftime" | "finished",
+    elapsed?: number | null,
   ) => void;
 }
 
@@ -120,6 +122,8 @@ function MatchCard({
     hp?: number | null,
     ap?: number | null,
     finished?: boolean,
+    status?: "scheduled" | "live" | "halftime" | "finished",
+    elapsed?: number | null,
   ) => void;
   onSimulate?: (match: KnockoutMatch) => void;
   onReset?: (match: KnockoutMatch) => void;
@@ -607,7 +611,9 @@ function MatchCard({
               updatedScore.awayScore,
               updatedScore.homePenalties,
               updatedScore.awayPenalties,
-              updatedScore.status === "finished"
+              updatedScore.status === "finished",
+              updatedScore.status,
+              updatedScore.elapsed
             );
             setShowOverrideModal(false);
           }}
@@ -639,6 +645,8 @@ function MatchPair({
     hp?: number | null,
     ap?: number | null,
     finished?: boolean,
+    status?: "scheduled" | "live" | "halftime" | "finished",
+    elapsed?: number | null,
   ) => void;
   onSimulate?: (match: KnockoutMatch) => void;
   onReset?: (match: KnockoutMatch) => void;

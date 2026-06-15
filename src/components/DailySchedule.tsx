@@ -242,7 +242,9 @@ export function DailySchedule({
         updatedScore.matchId,
         updatedScore.homeScore,
         updatedScore.awayScore,
-        updatedScore.status === "finished"
+        updatedScore.status === "finished",
+        updatedScore.status,
+        updatedScore.elapsed
       );
     } else if (updatedScore.stage === "knockout") {
       updateKnockoutMatch(
@@ -251,7 +253,9 @@ export function DailySchedule({
         updatedScore.awayScore,
         updatedScore.homePenalties,
         updatedScore.awayPenalties,
-        updatedScore.status === "finished"
+        updatedScore.status === "finished",
+        updatedScore.status,
+        updatedScore.elapsed
       );
     }
     setEditingMatch(null);

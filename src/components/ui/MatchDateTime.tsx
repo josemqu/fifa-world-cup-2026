@@ -104,6 +104,9 @@ export function MatchDateTime({
   })();
 
   const displayedMinute = (() => {
+    if (matchElapsed !== undefined && matchElapsed !== null) {
+      return currentElapsed;
+    }
     if (currentElapsed <= 45) return currentElapsed;
     if (currentElapsed < 50) return 45;
     if (currentElapsed < 65) return -1;
@@ -127,11 +130,11 @@ export function MatchDateTime({
         ? Math.floor((now.getTime() - new Date(matchLastSync).getTime()) / 60000)
         : 0;
       const currentElapsed = Math.min(120, (matchElapsed || 0) + Math.max(0, timeSinceSync));
-      if (currentElapsed <= 45) return `${currentElapsed}'`;
-      if (currentElapsed < 50) return `45+${currentElapsed - 45}'`;
-      if (currentElapsed < 65) return "ET";
-      if (currentElapsed <= 110) return `${currentElapsed - 20}'`;
-      return `90+${currentElapsed - 110}'`;
+      if (matchElapsed <= 45) {
+        return currentElapsed <= 45 ? `${currentElapsed}'` : `45+${currentElapsed - 45}'`;
+      } else {
+        return currentElapsed <= 90 ? `${currentElapsed}'` : `90+${currentElapsed - 90}'`;
+      }
     }
 
     const elapsed = Math.floor((now.getTime() - matchDate.getTime()) / 60000);
