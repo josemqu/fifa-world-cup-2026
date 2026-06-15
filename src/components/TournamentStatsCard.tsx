@@ -305,6 +305,7 @@ export function TournamentStatsCard({
   knockoutMatches,
 }: TournamentStatsCardProps) {
   const [showStandings, setShowStandings] = useState(false);
+  const [showScorers, setShowScorers] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
   // Sorting State
@@ -477,10 +478,57 @@ export function TournamentStatsCard({
       ? standings.reduce((best, curr) => curr.ga < best.ga ? curr : best, standings[0])
       : null;
 
-    // Percentage of decided matches
+    // Player-level top scorers computation
+    const scorersMap = new Map<string, { name: string; team: string; goals: number; penalties: number }>();
+
+    const addScorerObj = (scorer: any, teamName: string) => {
+      if (!scorer || scorer.isOwnGoal) return;
+      const key = `${scorer.name}_${teamName}`;
+      const existing = scorersMap.get(key);
+      if (existing) {
+        existing.goals += 1;
+        if (scorer.isPenalty) existing.penalties += 1;
+      } else {
+        scorersMap.set(key, {
+          name: scorer.name,
+          team: teamName,
+          goals: 1,
+          penalties: scorer.isPenalty ? 1 : 0
+        });
+      }
+    };
+
+    for (const group of groups) {
+      for (const match of group.matches) {
+        if (match.finished || match.homeScore != null || match.awayScore != null) {
+          const homeTeam = group.teams.find((t) => t.id === match.homeTeamId);
+          const awayTeam = group.teams.find((t) => t.id === match.awayTeamId);
+          const homeName = homeTeam?.name || match.homeTeamId;
+          const awayName = awayTeam?.name || match.awayTeamId;
+
+          match.homeScorers?.forEach((s) => addScorerObj(s, homeName));
+          match.awayScorers?.forEach((s) => addScorerObj(s, awayName));
+        }
+      }
+    }
+
+    for (const match of knockoutMatches) {
+      if (match.finished || match.homeScore != null || match.awayScore != null) {
+        const homeName = match.homeTeam && !("placeholder" in match.homeTeam) ? (match.homeTeam as Team).name : "";
+        const awayName = match.awayTeam && !("placeholder" in match.awayTeam) ? (match.awayTeam as Team).name : "";
+
+        if (homeName) match.homeScorers?.forEach((s) => addScorerObj(s, homeName));
+        if (awayName) match.awayScorers?.forEach((s) => addScorerObj(s, awayName));
+      }
+    }
+
+    const topScorers = Array.from(scorersMap.values()).sort((a, b) => {
+      if (b.goals !== a.goals) return b.goals - a.goals;
+      return a.name.localeCompare(b.name);
+    });
+
     const decidedPct = totalMatchesAll > 0 ? (totalMatchesPlayed / totalMatchesAll) * 100 : 0;
 
-    // Historical comparison ranking
     const historicalRank = HISTORICAL_DATA.filter(
       (h) => avgGoalsPerMatch > h.gpg
     ).length + 1;
@@ -508,6 +556,7 @@ export function TournamentStatsCard({
       decidedPct,
       historicalRank,
       standings,
+      topScorers,
     };
   }, [groups, knockoutMatches]);
 
@@ -1023,6 +1072,105 @@ export function TournamentStatsCard({
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Expandable: Top Scorers (Goleadores) */}
+      <div className="border-t border-slate-200 dark:border-slate-700">
+        <button
+          onClick={() => setShowScorers(!showScorers)}
+          className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+        >
+          <span className="flex items-center gap-1.5">
+            <Target size={13} className="text-rose-500" />
+            Goleadores del Torneo
+          </span>
+          {showScorers ? (
+            <ChevronUp size={14} />
+          ) : (
+            <ChevronDown size={14} />
+          )}
+        </button>
+        <AnimatePresence>
+          {showScorers && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="overflow-hidden"
+            >
+              <div className="px-4 pb-4">
+                {stats.topScorers.length === 0 ? (
+                  <div className="text-center text-slate-400 py-6 text-xs italic">
+                    Aún no se han registrado goles en el torneo.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs text-left">
+                      <thead className="text-[10px] text-slate-500 dark:text-slate-400 uppercase bg-slate-50 dark:bg-slate-900/50">
+                        <tr>
+                          <th className="py-1.5 px-2 text-center w-10">#</th>
+                          <th className="py-1.5 px-2">Jugador</th>
+                          <th className="py-1.5 px-2">Equipo</th>
+                          <th className="py-1.5 px-2 text-center w-16">Goles</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(() => {
+                          let currentRank = 0;
+                          let prevGoals = -1;
+                          return stats.topScorers.map((s, idx) => {
+                            if (s.goals !== prevGoals) {
+                              currentRank = idx + 1;
+                              prevGoals = s.goals;
+                            }
+                            
+                            const medal = 
+                              currentRank === 1 ? "🥇" :
+                              currentRank === 2 ? "🥈" :
+                              currentRank === 3 ? "🥉" :
+                              String(currentRank);
+
+                            return (
+                              <tr
+                                key={`${s.name}_${s.team}`}
+                                className="border-b border-slate-100 dark:border-slate-700/50 last:border-none hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors"
+                              >
+                                <td className="px-2 py-1.5 text-center font-bold text-slate-500 dark:text-slate-400">
+                                  {medal}
+                                </td>
+                                <td className="px-2 py-1.5 font-semibold text-slate-900 dark:text-slate-100">
+                                  {s.name}
+                                </td>
+                                <td className="px-2 py-1.5 text-slate-700 dark:text-slate-300">
+                                  <div className="flex items-center gap-1.5">
+                                    <TeamFlag teamName={s.team} className="w-4 h-3 shrink-0" />
+                                    <span>{s.team}</span>
+                                  </div>
+                                </td>
+                                <td className="px-2 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 font-mono">
+                                  <span className="flex items-center justify-center gap-1">
+                                    <span>⚽</span>
+                                    <span>{s.goals}</span>
+                                    {s.penalties > 0 && (
+                                      <span className="text-[9px] text-slate-400 dark:text-slate-500 font-normal normal-case">
+                                        ({s.penalties} p.)
+                                      </span>
+                                    )}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          });
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}

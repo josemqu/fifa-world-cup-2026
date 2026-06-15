@@ -42,6 +42,8 @@ interface WorldCupGame {
   date?: string; // ISO format date
 }
 
+import { IScorer } from "@/models/LiveScore";
+
 // ─── Normalized Types ─────────────────────────────────────────
 
 export type MatchStatus = "scheduled" | "live" | "halftime" | "finished";
@@ -57,10 +59,54 @@ export interface NormalizedScore {
   awayScore: number | null;
   homePenalties: number | null;
   awayPenalties: number | null;
+  homeScorers?: IScorer[];
+  awayScorers?: IScorer[];
   status: MatchStatus;
   elapsed: number | null;
   stage: "group" | "knockout";
   groupId?: string;
+}
+
+/**
+ * Parses scorer string from worldcup26.ir.
+ * Example input: {"Nestory Irankunda 27'","C. Metcalfe 75'"} or {“J. Quiñones 9'”,”R. Jiménez 67'”}
+ */
+export function parseScorerString(scorerStr: string | null): IScorer[] {
+  if (!scorerStr || scorerStr === "null") return [];
+  const matches: string[] = [];
+  const regex = /["“”]([^"“”]+)["“”]/g;
+  let match;
+  while ((match = regex.exec(scorerStr)) !== null) {
+    matches.push(match[1].trim());
+  }
+
+  if (matches.length === 0) {
+    const clean = scorerStr.replace(/[{}]/g, "").trim();
+    if (clean && clean !== "null") {
+      matches.push(clean);
+    }
+  }
+
+  return matches.map((s) => {
+    // Regex matching minutes like 90' or 90'+5'
+    const scorerRegex = /^(.*?)\s+(\d+(?:\'\+\d+)?')\s*(?:\((p|OG)\))?$/i;
+    const parts = s.match(scorerRegex);
+    if (parts) {
+      return {
+        name: parts[1].trim(),
+        minute: parts[2],
+        isPenalty: parts[3]?.toLowerCase() === "p",
+        isOwnGoal: parts[3]?.toUpperCase() === "OG",
+      };
+    } else {
+      return {
+        name: s,
+        minute: "",
+        isPenalty: false,
+        isOwnGoal: false,
+      };
+    }
+  });
 }
 
 // ─── JWT Authentication Caching ────────────────────────────────
@@ -316,6 +362,10 @@ export function normalizeFixtures(
       elapsed = Number(game.time_elapsed);
     }
 
+    // Parse scorers
+    const homeScorers = parseScorerString(game.home_scorers);
+    const awayScorers = parseScorerString(game.away_scorers);
+
     results.push({
       matchId,
       externalId: Number(game.id),
@@ -327,6 +377,8 @@ export function normalizeFixtures(
       awayScore,
       homePenalties,
       awayPenalties,
+      homeScorers,
+      awayScorers,
       status: normalizeStatus(game.finished, game.time_elapsed),
       elapsed,
       stage,

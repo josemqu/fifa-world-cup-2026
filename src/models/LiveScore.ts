@@ -1,5 +1,12 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
+export interface IScorer {
+  name: string;
+  minute: string;
+  isPenalty: boolean;
+  isOwnGoal: boolean;
+}
+
 export interface ILiveScore extends Document {
   matchId: string; // Tu match ID interno (MA1, MB2, "73", etc.)
   externalId: number; // ID de API-Football
@@ -9,6 +16,8 @@ export interface ILiveScore extends Document {
   awayScore: number | null;
   homePenalties: number | null;
   awayPenalties: number | null;
+  homeScorers: IScorer[];
+  awayScorers: IScorer[];
   status: "scheduled" | "live" | "halftime" | "finished";
   elapsed: number | null; // Minuto del partido
   stage: "group" | "knockout";
@@ -29,6 +38,8 @@ const LiveScoreSchema: Schema = new Schema(
     awayScore: { type: Number, default: null },
     homePenalties: { type: Number, default: null },
     awayPenalties: { type: Number, default: null },
+    homeScorers: { type: [Schema.Types.Mixed], default: [] },
+    awayScorers: { type: [Schema.Types.Mixed], default: [] },
     status: {
       type: String,
       enum: ["scheduled", "live", "halftime", "finished"],

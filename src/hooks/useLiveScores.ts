@@ -4,12 +4,16 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import { useTournament } from "@/context/TournamentContext";
 import { useAuth } from "@/context/AuthContext";
 
+import { Scorer } from "@/data/types";
+
 interface LiveScoreData {
   matchId: string;
   homeScore: number | null;
   awayScore: number | null;
   homePenalties: number | null;
   awayPenalties: number | null;
+  homeScorers?: Scorer[];
+  awayScorers?: Scorer[];
   status: "scheduled" | "live" | "halftime" | "finished";
   elapsed: number | null;
   stage: "group" | "knockout";
@@ -101,7 +105,9 @@ export function useLiveScores(enabled: boolean = true) {
             score.awayScore,
             score.status === "finished",
             score.status,
-            score.elapsed
+            score.elapsed,
+            score.homeScorers,
+            score.awayScorers
           );
         } else if (score.stage === "knockout") {
           updateKnockoutMatch(
@@ -112,7 +118,9 @@ export function useLiveScores(enabled: boolean = true) {
             score.awayPenalties,
             score.status === "finished",
             score.status,
-            score.elapsed
+            score.elapsed,
+            score.homeScorers,
+            score.awayScorers
           );
         }
       }

@@ -16,12 +16,21 @@ export type Team = {
   pts: number;
 };
 
+export interface Scorer {
+  name: string;
+  minute: string;
+  isPenalty?: boolean;
+  isOwnGoal?: boolean;
+}
+
 export type Match = {
   id: string;
   homeTeamId: string;
   awayTeamId: string;
   homeScore?: number | null;
   awayScore?: number | null;
+  homeScorers?: Scorer[];
+  awayScorers?: Scorer[];
   utcDate: string; // ISO 8601 UTC string
   location?: string; // Stadium - City
   finished: boolean;
@@ -52,6 +61,8 @@ export type KnockoutMatch = {
   awayScore?: number | null;
   homePenalties?: number | null;
   awayPenalties?: number | null;
+  homeScorers?: Scorer[];
+  awayScorers?: Scorer[];
   winner?: Team | null;
   nextMatchId?: string; // Where the winner goes
   utcDate: string; // ISO 8601 UTC string

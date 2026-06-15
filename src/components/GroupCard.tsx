@@ -624,6 +624,34 @@ export function GroupCard({
                         </span>
                       </div>
                     </div>
+
+                    {/* Scorers */}
+                    {((match.homeScorers && match.homeScorers.length > 0) || (match.awayScorers && match.awayScorers.length > 0)) && (
+                      <div className="mt-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-700/50 grid grid-cols-2 gap-3 text-[9px] text-slate-500 dark:text-slate-400">
+                        <div className="space-y-0.5 text-left">
+                          {match.homeScorers?.map((s, idx) => (
+                            <div key={idx} className="flex items-center gap-0.5">
+                              <span className="shrink-0 text-[8px]">⚽</span>
+                              <span className="font-medium truncate max-w-[80px]" title={s.name}>{s.name}</span>
+                              <span className="text-slate-400 dark:text-slate-500 shrink-0">
+                                {s.minute}{s.isPenalty ? ' (p)' : ''}{s.isOwnGoal ? ' (a.g.)' : ''}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="space-y-0.5 text-right">
+                          {match.awayScorers?.map((s, idx) => (
+                            <div key={idx} className="flex items-center gap-0.5 justify-end">
+                              <span className="text-slate-400 dark:text-slate-500 shrink-0">
+                                {s.minute}{s.isPenalty ? ' (p)' : ''}{s.isOwnGoal ? ' (a.g.)' : ''}
+                              </span>
+                              <span className="font-medium truncate max-w-[80px]" title={s.name}>{s.name}</span>
+                              <span className="shrink-0 text-[8px]">⚽</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}

@@ -66,6 +66,11 @@ async function syncScores(date?: string) {
       continue;
     }
 
+    const scorersChanged =
+      !existing ||
+      JSON.stringify(existing.homeScorers || []) !== JSON.stringify(score.homeScorers || []) ||
+      JSON.stringify(existing.awayScorers || []) !== JSON.stringify(score.awayScorers || []);
+
     const hasChanged =
       !existing ||
       existing.homeScore !== score.homeScore ||
@@ -73,7 +78,8 @@ async function syncScores(date?: string) {
       existing.homePenalties !== score.homePenalties ||
       existing.awayPenalties !== score.awayPenalties ||
       existing.status !== score.status ||
-      existing.elapsed !== score.elapsed;
+      existing.elapsed !== score.elapsed ||
+      scorersChanged;
 
     if (hasChanged) {
       await LiveScore.findOneAndUpdate(
@@ -87,6 +93,8 @@ async function syncScores(date?: string) {
             awayScore: score.awayScore,
             homePenalties: score.homePenalties,
             awayPenalties: score.awayPenalties,
+            homeScorers: score.homeScorers || [],
+            awayScorers: score.awayScorers || [],
             status: score.status,
             elapsed: score.elapsed,
             stage: score.stage,
@@ -218,6 +226,8 @@ export async function GET(request: Request) {
             awayTeamName: "Sudáfrica",
             homeScore: 0,
             awayScore: 0,
+            homeScorers: [],
+            awayScorers: [],
             status: "live",
             elapsed: 1,
             stage: "group",
@@ -231,6 +241,8 @@ export async function GET(request: Request) {
             awayTeamName: "República Checa",
             homeScore: 0,
             awayScore: 0,
+            homeScorers: [],
+            awayScorers: [],
             status: "live",
             elapsed: 1,
             stage: "group",
@@ -244,6 +256,8 @@ export async function GET(request: Request) {
             awayTeamName: "Bosnia y Herzegovina",
             homeScore: 0,
             awayScore: 0,
+            homeScorers: [],
+            awayScorers: [],
             status: "live",
             elapsed: 1,
             stage: "group",
@@ -263,6 +277,8 @@ export async function GET(request: Request) {
           let newElapsed = (existing.elapsed || 0);
           let newHomeScore = existing.homeScore ?? 0;
           let newAwayScore = existing.awayScore ?? 0;
+          let simulatedHomeScorers = [...(existing.homeScorers || [])];
+          let simulatedAwayScorers = [...(existing.awayScorers || [])];
 
           if (existing.status === "live") {
             newElapsed += 5;
@@ -276,10 +292,23 @@ export async function GET(request: Request) {
 
             // Goal chance (12%)
             if (newStatus === "live" && Math.random() < 0.12) {
+              const minStr = `${newElapsed}'`;
               if (Math.random() < 0.5) {
                 newHomeScore += 1;
+                simulatedHomeScorers.push({
+                  name: getRandomPlayer(existing.homeTeamName),
+                  minute: minStr,
+                  isPenalty: Math.random() < 0.15,
+                  isOwnGoal: false
+                });
               } else {
                 newAwayScore += 1;
+                simulatedAwayScorers.push({
+                  name: getRandomPlayer(existing.awayTeamName),
+                  minute: minStr,
+                  isPenalty: Math.random() < 0.15,
+                  isOwnGoal: false
+                });
               }
             }
           } else if (existing.status === "halftime") {
@@ -295,6 +324,8 @@ export async function GET(request: Request) {
                 status: newStatus,
                 homeScore: newHomeScore,
                 awayScore: newAwayScore,
+                homeScorers: simulatedHomeScorers,
+                awayScorers: simulatedAwayScorers,
                 lastSyncAt: new Date(),
               }
             }
@@ -302,6 +333,34 @@ export async function GET(request: Request) {
         }
 
         scores = await LiveScore.find({ matchId: { $in: mockMatchIds } }).lean();
+      }
+
+      function getRandomPlayer(teamName: string): string {
+        const players: Record<string, string[]> = {
+          "México": ["Santiago Giménez", "Hirving Lozano", "Edson Álvarez", "Luis Chávez", "Orbelín Pineda"],
+          "Sudáfrica": ["Percy Tau", "Themba Zwane", "Teboho Mokoena", "Khuliso Mudau"],
+          "Corea del Sur": ["Heung-min Son", "Hee-chan Hwang", "Kang-in Lee", "Gue-sung Cho"],
+          "República Checa": ["Patrik Schick", "Tomas Soucek", "Adam Hlozek", "Vaclav Cerny"],
+          "Canadá": ["Alphonso Davies", "Jonathan David", "Cyle Larin", "Tajon Buchanan"],
+          "Bosnia y Herzegovina": ["Edin Džeko", "Miralem Pjanić", "Ermedin Demirović", "Luka Menalo"]
+        };
+
+        const resolved = resolveTeamNameMock(teamName);
+        const teamPlayers = players[resolved];
+        if (teamPlayers && teamPlayers.length > 0) {
+          return teamPlayers[Math.floor(Math.random() * teamPlayers.length)];
+        }
+        return `Jugador ${teamName}`;
+      }
+
+      function resolveTeamNameMock(name: string): string {
+        if (name.includes("México") || name.includes("Mexico")) return "México";
+        if (name.includes("Sudáfrica") || name.includes("South Africa")) return "Sudáfrica";
+        if (name.includes("Corea") || name.includes("Korea")) return "Corea del Sur";
+        if (name.includes("Checa") || name.includes("Czech")) return "República Checa";
+        if (name.includes("Canadá") || name.includes("Canada")) return "Canadá";
+        if (name.includes("Bosnia")) return "Bosnia y Herzegovina";
+        return name;
       }
 
       const liveCount = scores.filter(

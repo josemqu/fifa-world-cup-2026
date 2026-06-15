@@ -3,7 +3,7 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useCurrentTime } from "@/hooks/useCurrentTime";
-import { Group, KnockoutMatch, Team } from "@/data/types";
+import { Group, KnockoutMatch, Team, Scorer } from "@/data/types";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { MatchDateTime } from "@/components/ui/MatchDateTime";
 import { Tooltip } from "@/components/ui/Tooltip";
@@ -28,6 +28,8 @@ type NormalizedMatch = {
   awayTeamName: string;
   homeScore: number | null | undefined;
   awayScore: number | null | undefined;
+  homeScorers?: Scorer[];
+  awayScorers?: Scorer[];
   location?: string;
   stage: string; // "Grupo A", "16avos", etc.
   isKnockout: boolean;
@@ -77,6 +79,8 @@ export function DailySchedule({
           awayTeamName: awayTeam?.name || match.awayTeamId,
           homeScore: match.homeScore,
           awayScore: match.awayScore,
+          homeScorers: match.homeScorers,
+          awayScorers: match.awayScorers,
           location: match.location,
           stage: `Fase de grupos — Fecha ${matchday}`,
           isKnockout: false,
@@ -95,6 +99,8 @@ export function DailySchedule({
         awayTeamName: getTeamNameFromKnockout(match.awayTeam),
         homeScore: match.homeScore,
         awayScore: match.awayScore,
+        homeScorers: match.homeScorers,
+        awayScorers: match.awayScorers,
         location: match.location,
         stage: STAGE_LABELS[match.stage] || match.stage,
         isKnockout: true,
@@ -793,6 +799,34 @@ function ScheduleMatchCard({
             />
           </div>
         </div>
+
+        {/* Scorers */}
+        {((match.homeScorers && match.homeScorers.length > 0) || (match.awayScorers && match.awayScorers.length > 0)) && (
+          <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/50 grid grid-cols-2 gap-4 text-[10px] text-slate-500 dark:text-slate-400">
+            <div className="space-y-0.5 text-left">
+              {match.homeScorers?.map((s, idx) => (
+                <div key={idx} className="flex items-center gap-1">
+                  <span className="shrink-0 text-[9px]">⚽</span>
+                  <span className="font-medium truncate" title={s.name}>{s.name}</span>
+                  <span className="text-slate-400 dark:text-slate-500 shrink-0">
+                    {s.minute}{s.isPenalty ? ' (p)' : ''}{s.isOwnGoal ? ' (a.g.)' : ''}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="space-y-0.5 text-right">
+              {match.awayScorers?.map((s, idx) => (
+                <div key={idx} className="flex items-center gap-1 justify-end">
+                  <span className="text-slate-400 dark:text-slate-500 shrink-0">
+                    {s.minute}{s.isPenalty ? ' (p)' : ''}{s.isOwnGoal ? ' (a.g.)' : ''}
+                  </span>
+                  <span className="font-medium truncate" title={s.name}>{s.name}</span>
+                  <span className="shrink-0 text-[9px]">⚽</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Location */}
         {match.location && (

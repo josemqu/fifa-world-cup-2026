@@ -9,7 +9,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import { Group, Team, KnockoutMatch, MatchupData } from "@/data/types";
+import { Group, Team, KnockoutMatch, MatchupData, Scorer } from "@/data/types";
 import { INITIAL_GROUPS } from "@/data/initialData";
 import { generateR32Matches } from "@/utils/knockoutUtils";
 import { fetchFifaRankings, getRankingDataForTeam } from "@/utils/rankingUtils";
@@ -60,6 +60,8 @@ interface TournamentContextType {
     finished?: boolean,
     status?: "scheduled" | "live" | "halftime" | "finished",
     elapsed?: number | null,
+    homeScorers?: Scorer[],
+    awayScorers?: Scorer[],
   ) => void;
   updateKnockoutMatch: (
     matchId: string,
@@ -70,6 +72,8 @@ interface TournamentContextType {
     finished?: boolean,
     status?: "scheduled" | "live" | "halftime" | "finished",
     elapsed?: number | null,
+    homeScorers?: Scorer[],
+    awayScorers?: Scorer[],
   ) => void;
   simulateGroups: () => void;
   simulateKnockout: () => void;
@@ -378,6 +382,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     finished?: boolean,
     status?: "scheduled" | "live" | "halftime" | "finished",
     elapsed?: number | null,
+    homeScorers?: Scorer[],
+    awayScorers?: Scorer[],
   ) => {
     setGroups((currentGroups) => {
       return currentGroups.map((group) => {
@@ -390,6 +396,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
             ...match,
             homeScore: homeScore,
             awayScore: awayScore,
+            homeScorers: homeScorers || match.homeScorers,
+            awayScorers: awayScorers || match.awayScorers,
             finished: finished !== undefined ? finished : (homeScore !== null && awayScore !== null),
             status: status || match.status,
             elapsed: elapsed !== undefined ? elapsed : match.elapsed,
@@ -412,6 +420,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     finished?: boolean,
     status?: "scheduled" | "live" | "halftime" | "finished",
     elapsed?: number | null,
+    homeScorers?: Scorer[],
+    awayScorers?: Scorer[],
   ) => {
     setKnockoutMatches((currentMatches) => {
       let newMatches = [...currentMatches];
@@ -423,6 +433,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       match.awayScore = awayScore;
       match.homePenalties = homePenalties;
       match.awayPenalties = awayPenalties;
+      match.homeScorers = homeScorers || match.homeScorers;
+      match.awayScorers = awayScorers || match.awayScorers;
       match.finished = finished !== undefined ? finished : (homeScore !== null && awayScore !== null);
       match.status = status || match.status;
       match.elapsed = elapsed !== undefined ? elapsed : match.elapsed;
