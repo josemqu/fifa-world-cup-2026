@@ -96,7 +96,7 @@ export function MatchDateTime({
     if (matchStatus === "halftime") return -1;
     if (matchElapsed !== undefined && matchElapsed !== null) {
       const timeSinceSync = matchLastSync
-        ? Math.floor((now.getTime() - new Date(matchLastSync).getTime()) / 60000)
+        ? Math.floor((Date.now() - new Date(matchLastSync).getTime()) / 60000)
         : 0;
       return Math.min(120, (matchElapsed || 0) + Math.max(0, timeSinceSync));
     }
@@ -127,7 +127,7 @@ export function MatchDateTime({
 
     if (matchElapsed !== undefined && matchElapsed !== null) {
       const timeSinceSync = matchLastSync
-        ? Math.floor((now.getTime() - new Date(matchLastSync).getTime()) / 60000)
+        ? Math.floor((Date.now() - new Date(matchLastSync).getTime()) / 60000)
         : 0;
       const currentElapsed = Math.min(120, (matchElapsed || 0) + Math.max(0, timeSinceSync));
       if (matchElapsed <= 45) {
