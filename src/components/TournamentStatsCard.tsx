@@ -1212,7 +1212,7 @@ export function TournamentStatsCard({
                   </thead>
                   <tbody>
                     {sortedHistory.map((h) => {
-                      const diff = stats.avgGoalsPerMatch - h.gpg;
+                      const diff = h.gpg - stats.avgGoalsPerMatch;
                       return (
                         <tr
                           key={h.year}
