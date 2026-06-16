@@ -5,6 +5,18 @@ import LiveScore from "@/models/LiveScore";
 import User from "@/models/User";
 import { calculatePoints } from "@/utils/prodeUtils";
 
+interface LeaderboardMatchInfo {
+  matchId: string;
+  homeScore: number;
+  awayScore: number;
+  homePenalties?: number;
+  awayPenalties?: number;
+  actualHomeScore: number;
+  actualAwayScore: number;
+  actualHomePenalties: number | null;
+  actualAwayPenalties: number | null;
+}
+
 export async function GET() {
   try {
     await connectDB();
@@ -61,6 +73,8 @@ export async function GET() {
       let totalPoints = 0;
       let exactCount = 0;
       let correctCount = 0;
+      const exactMatches: LeaderboardMatchInfo[] = [];
+      const correctMatches: LeaderboardMatchInfo[] = [];
 
       for (const pred of preds) {
         const actual = scoreMap[pred.matchId];
@@ -76,8 +90,26 @@ export async function GET() {
           actual.awayPenalties ?? undefined
         );
         totalPoints += pts;
-        if (pts === 3) exactCount++;
-        if (pts === 1) correctCount++;
+
+        const matchInfo = {
+          matchId: pred.matchId,
+          homeScore: pred.homeScore,
+          awayScore: pred.awayScore,
+          homePenalties: pred.homePenalties,
+          awayPenalties: pred.awayPenalties,
+          actualHomeScore: actual.homeScore,
+          actualAwayScore: actual.awayScore,
+          actualHomePenalties: actual.homePenalties,
+          actualAwayPenalties: actual.awayPenalties,
+        };
+
+        if (pts === 3) {
+          exactCount++;
+          exactMatches.push(matchInfo);
+        } else if (pts === 1) {
+          correctCount++;
+          correctMatches.push(matchInfo);
+        }
       }
 
       return {
@@ -88,6 +120,8 @@ export async function GET() {
         exactCount,
         correctCount,
         totalPredictions: preds.length,
+        exactMatches,
+        correctMatches,
       };
     });
 

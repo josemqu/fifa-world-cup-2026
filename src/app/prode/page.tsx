@@ -23,6 +23,7 @@ import { KNOCKOUT_DETAILS } from "@/data/knockoutDetails";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { PageTransition } from "@/components/PageTransition";
 import { RivalPredictionsModal } from "@/components/RivalPredictionsModal";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { clsx } from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -74,6 +75,18 @@ type GroupData = {
   createdAt: string;
 };
 
+type PredictionMatchInfo = {
+  matchId: string;
+  homeScore: number;
+  awayScore: number;
+  homePenalties?: number;
+  awayPenalties?: number;
+  actualHomeScore: number;
+  actualAwayScore: number;
+  actualHomePenalties?: number | null;
+  actualAwayPenalties?: number | null;
+};
+
 type LeaderboardEntry = {
   firebaseUid: string;
   displayName: string;
@@ -82,6 +95,8 @@ type LeaderboardEntry = {
   exactCount: number;
   correctCount: number;
   totalPredictions: number;
+  exactMatches?: PredictionMatchInfo[];
+  correctMatches?: PredictionMatchInfo[];
 };
 
 type GroupDetailData = {
@@ -112,20 +127,22 @@ function getKnockoutMatchIds(stageKey: string) {
 
 // Build full match lookup map
 function buildMatchLookup() {
-  const map = new Map<string, { homeTeamName: string; awayTeamName: string; utcDate: string; stage: string; groupId?: string; label?: string }>();
+  const map = new Map<string, { homeTeamName: string; awayTeamName: string; utcDate: string; stage: string; groupId?: string; label?: string; matchday?: number }>();
 
   for (const group of INITIAL_GROUPS) {
-    for (const match of group.matches) {
+    group.matches.forEach((match, i) => {
       const homeTeam = group.teams.find((t) => t.id === match.homeTeamId);
       const awayTeam = group.teams.find((t) => t.id === match.awayTeamId);
+      const matchday = Math.floor(i / 2) + 1;
       map.set(match.id, {
         homeTeamName: homeTeam?.name || match.homeTeamId,
         awayTeamName: awayTeam?.name || match.awayTeamId,
         utcDate: match.utcDate,
         stage: `Grupo ${group.name}`,
         groupId: group.name,
+        matchday,
       });
-    }
+    });
   }
 
   const allKnockout = [...R32_MATCHES, ...R16_MATCHES, ...QF_MATCHES, ...SF_MATCHES, ...FINAL_MATCHES];
@@ -158,6 +175,59 @@ function buildMatchLookup() {
 }
 
 const MATCH_LOOKUP = buildMatchLookup();
+
+const renderMatchesTooltip = (matches: PredictionMatchInfo[] | undefined, title: string) => {
+  if (!matches || matches.length === 0) {
+    return (
+      <div className="p-2 text-xs text-slate-350 dark:text-slate-400 font-medium">
+        {title}: Ninguno
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col max-w-[280px] p-1 text-left">
+      <p className="text-xs font-bold text-slate-200 mb-1.5 border-b border-slate-700/50 pb-1 flex justify-between gap-4">
+        <span>{title}</span>
+        <span className="text-slate-400 font-normal">({matches.length})</span>
+      </p>
+      <div className="flex flex-col gap-1.5 max-h-[180px] overflow-y-auto scrollbar-hide pr-1">
+        {matches.map((m) => {
+          const detail = MATCH_LOOKUP.get(m.matchId);
+          const homeName = detail?.homeTeamName || `Partido #${m.matchId}`;
+          const awayName = detail?.awayTeamName || '';
+          
+          const isKnockout = Number(m.matchId) >= 73;
+          
+          let predScoreText = `${m.homeScore}-${m.awayScore}`;
+          if (isKnockout && m.homeScore === m.awayScore && m.homePenalties !== undefined && m.awayPenalties !== undefined) {
+            const advName = m.homePenalties > m.awayPenalties ? (detail?.homeTeamName || 'L') : (detail?.awayTeamName || 'V');
+            predScoreText += ` (${advName})`;
+          }
+
+          let actualScoreText = `${m.actualHomeScore}-${m.actualAwayScore}`;
+          if (isKnockout && m.actualHomeScore === m.actualAwayScore && m.actualHomePenalties !== undefined && m.actualAwayPenalties !== undefined && m.actualHomePenalties !== null && m.actualAwayPenalties !== null) {
+            actualScoreText += ` (${m.actualHomePenalties}-${m.actualAwayPenalties} pen)`;
+          }
+
+          const matchdayInfo = detail?.matchday ? `${detail.stage} - Fecha ${detail.matchday}` : detail?.stage || '';
+
+          return (
+            <div key={m.matchId} className="flex flex-col py-0.5 border-b border-slate-800/30 last:border-0 text-[10px] gap-0.5">
+              <div className="flex justify-between font-semibold text-slate-300">
+                <span className="truncate max-w-[170px]">{homeName} - {awayName}</span>
+                <span className="text-white shrink-0 font-mono ml-2">{predScoreText}</span>
+              </div>
+              <div className="flex justify-between items-center text-[9px] text-slate-500 font-mono">
+                <span>{matchdayInfo}</span>
+                <span>Real: {actualScoreText}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 function ProdePageContent() {
   const { user, dbUser, loading, loginWithGoogle } = useAuth();
@@ -1839,6 +1909,7 @@ function GroupsTab({
   const [showJoin, setShowJoin] = useState(false);
   const [groupDetail, setGroupDetail] = useState<GroupDetailData | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [selectedUserForDetails, setSelectedUserForDetails] = useState<LeaderboardEntry | null>(null);
 
   // Create group state
   const [newGroupName, setNewGroupName] = useState("");
@@ -2093,16 +2164,24 @@ function GroupsTab({
                              <span className="text-sm font-mono text-slate-400">{currentRank}</span>}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={clsx(
-                              "text-sm font-medium truncate",
-                              isCurrentUser ? "text-blue-700 dark:text-blue-300 font-bold" : "text-slate-900 dark:text-slate-100"
-                            )}>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedUserForDetails(entry)}
+                              className={clsx(
+                                "text-sm font-medium truncate hover:underline cursor-pointer transition-colors text-left block w-full",
+                                isCurrentUser ? "text-blue-700 dark:text-blue-300 font-bold" : "text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400"
+                              )}
+                            >
                               {entry.nickname || entry.displayName}
                               {isCurrentUser && <span className="ml-2 text-[10px] text-blue-500 font-normal">(Vos)</span>}
-                            </p>
+                            </button>
                             <div className="flex gap-3 text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                              <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{entry.exactCount} exactos</span>
-                              <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" />{entry.correctCount} aciertos</span>
+                              <Tooltip content={renderMatchesTooltip(entry.exactMatches, "Resultados Exactos")} interactive={true} placement="top">
+                                <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{entry.exactCount} exactos</span>
+                              </Tooltip>
+                              <Tooltip content={renderMatchesTooltip(entry.correctMatches, "Aciertos de Tendencia")} interactive={true} placement="top">
+                                <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" />{entry.correctCount} aciertos</span>
+                              </Tooltip>
                               <span>{entry.totalPredictions} pronósticos</span>
                             </div>
                           </div>
@@ -2123,6 +2202,7 @@ function GroupsTab({
             </div>
           </div>
         ) : null}
+        <UserPredictionStatsModal entry={selectedUserForDetails} onClose={() => setSelectedUserForDetails(null)} />
       </div>
     );
   }
@@ -2311,6 +2391,7 @@ function LeaderboardTab() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
   const { user } = useAuth();
+  const [selectedUserForDetails, setSelectedUserForDetails] = useState<LeaderboardEntry | null>(null);
 
   useEffect(() => {
     const loadLeaderboard = async () => {
@@ -2387,16 +2468,24 @@ function LeaderboardTab() {
                    <span className="text-sm font-mono text-slate-400">{currentRank}</span>}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={clsx(
-                    "text-sm font-medium truncate",
-                    isCurrentUser ? "text-blue-700 dark:text-blue-300 font-bold" : "text-slate-900 dark:text-slate-100"
-                  )}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedUserForDetails(entry)}
+                    className={clsx(
+                      "text-sm font-medium truncate hover:underline cursor-pointer transition-colors text-left block w-full",
+                      isCurrentUser ? "text-blue-700 dark:text-blue-300 font-bold" : "text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400"
+                    )}
+                  >
                     {entry.nickname || entry.displayName}
                     {isCurrentUser && <span className="ml-2 text-[10px] text-blue-500 font-normal">(Vos)</span>}
-                  </p>
+                  </button>
                   <div className="flex gap-3 text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                    <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{entry.exactCount} exactos</span>
-                    <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" />{entry.correctCount} aciertos</span>
+                    <Tooltip content={renderMatchesTooltip(entry.exactMatches, "Resultados Exactos")} interactive={true} placement="top">
+                      <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{entry.exactCount} exactos</span>
+                    </Tooltip>
+                    <Tooltip content={renderMatchesTooltip(entry.correctMatches, "Aciertos de Tendencia")} interactive={true} placement="top">
+                      <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" />{entry.correctCount} aciertos</span>
+                    </Tooltip>
                     <span>{entry.totalPredictions} pronósticos</span>
                   </div>
                 </div>
@@ -2408,6 +2497,180 @@ function LeaderboardTab() {
             );
           });
         })()}
+      </div>
+      <UserPredictionStatsModal entry={selectedUserForDetails} onClose={() => setSelectedUserForDetails(null)} />
+    </div>
+  );
+}
+
+interface UserPredictionStatsModalProps {
+  entry: LeaderboardEntry | null;
+  onClose: () => void;
+}
+
+function UserPredictionStatsModal({ entry, onClose }: UserPredictionStatsModalProps) {
+  const [activeTab, setActiveTab] = useState<"exactos" | "aciertos">("exactos");
+
+  if (!entry) return null;
+
+  const exacts = entry.exactMatches || [];
+  const aciertos = entry.correctMatches || [];
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ type: "spring", duration: 0.4 }}
+          className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden max-h-[85vh] flex flex-col"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
+            <div>
+              <h3 className="font-bold text-slate-900 dark:text-white">
+                Pronósticos de {entry.nickname || entry.displayName}
+              </h3>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                Total: {entry.totalPoints} puntos
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-slate-650 dark:hover:text-slate-200 transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Tab buttons */}
+          <div className="flex border-b border-slate-100 dark:border-slate-700/50 p-2 gap-1 bg-slate-50/20 dark:bg-slate-900/20 shrink-0 font-sans">
+            <button
+              onClick={() => setActiveTab("exactos")}
+              className={clsx(
+                "flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+                activeTab === "exactos"
+                  ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-xs border border-slate-200/50 dark:border-slate-600/50"
+                  : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-350"
+              )}
+            >
+              <Zap className="w-3.5 h-3.5 text-yellow-500" />
+              <span>Exactos ({exacts.length})</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("aciertos")}
+              className={clsx(
+                "flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+                activeTab === "aciertos"
+                  ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-xs border border-slate-200/50 dark:border-slate-600/50"
+                  : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-350"
+              )}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Aciertos ({aciertos.length})</span>
+            </button>
+          </div>
+
+          {/* List Content */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-2.5 scrollbar-hide">
+            {activeTab === "exactos" ? (
+              exacts.length > 0 ? (
+                exacts.map((m) => <ModalMatchRow key={m.matchId} match={m} type="exact" />)
+              ) : (
+                <div className="text-center py-12 text-slate-400 dark:text-slate-600 text-xs">
+                  No hay resultados exactos todavía.
+                </div>
+              )
+            ) : (
+              aciertos.length > 0 ? (
+                aciertos.map((m) => <ModalMatchRow key={m.matchId} match={m} type="outcome" />)
+              ) : (
+                <div className="text-center py-12 text-slate-400 dark:text-slate-600 text-xs">
+                  No hay aciertos de tendencia todavía.
+                </div>
+              )
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="px-5 py-3.5 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/50 flex justify-end shrink-0">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 font-bold rounded-xl text-xs transition-all cursor-pointer active:scale-95 shadow-xs"
+            >
+              Cerrar
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+function ModalMatchRow({ match, type }: { match: PredictionMatchInfo; type: "exact" | "outcome" }) {
+  const detail = MATCH_LOOKUP.get(match.matchId);
+  const homeName = detail?.homeTeamName || `Partido #${match.matchId}`;
+  const awayName = detail?.awayTeamName || '';
+  
+  const isKnockout = Number(match.matchId) >= 73;
+  const matchdayInfo = detail?.matchday ? `${detail.stage} · Fecha ${detail.matchday}` : detail?.stage || '';
+
+  let predScoreText = `${match.homeScore} - ${match.awayScore}`;
+  if (isKnockout && match.homeScore === match.awayScore && match.homePenalties !== undefined && match.awayPenalties !== undefined) {
+    const advName = match.homePenalties > match.awayPenalties ? (detail?.homeTeamName || 'L') : (detail?.awayTeamName || 'V');
+    predScoreText += ` (${advName})`;
+  }
+
+  let actualScoreText = `${match.actualHomeScore} - ${match.actualAwayScore}`;
+  if (isKnockout && match.actualHomeScore === match.actualAwayScore && match.actualHomePenalties !== undefined && match.actualAwayPenalties !== undefined && match.actualHomePenalties !== null && match.actualAwayPenalties !== null) {
+    actualScoreText += ` (${match.actualHomePenalties}-${match.actualAwayPenalties} pen)`;
+  }
+
+  return (
+    <div
+      className={clsx(
+        "flex flex-col p-3 rounded-xl border transition-all text-xs",
+        type === "exact"
+          ? "bg-yellow-500/5 dark:bg-yellow-500/2 border-yellow-500/10 hover:border-yellow-500/25"
+          : "bg-emerald-500/5 dark:bg-emerald-500/2 border-emerald-500/10 hover:border-emerald-500/25"
+      )}
+    >
+      <div className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mb-2 uppercase tracking-wide">
+        {matchdayInfo}
+      </div>
+      
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+        {/* Home Team */}
+        <div className="flex items-center gap-2 min-w-0">
+          <TeamFlag teamName={homeName} className="w-5 h-3.5 shrink-0 rounded-xs shadow-xs" />
+          <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">{homeName}</span>
+        </div>
+
+        {/* Scores */}
+        <div className="flex flex-col items-center gap-1 bg-slate-100/50 dark:bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 shrink-0 font-mono text-[11px]">
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-400 dark:text-slate-500 font-medium text-[9px] uppercase tracking-wider">Pronóstico:</span>
+            <span className="font-bold text-slate-900 dark:text-white">{predScoreText}</span>
+          </div>
+          <div className="flex items-center gap-1.5 border-t border-slate-200/50 dark:border-slate-800/80 pt-1 mt-0.5">
+            <span className="text-slate-400 dark:text-slate-500 font-medium text-[9px] uppercase tracking-wider">Resultado:</span>
+            <span className="font-bold text-slate-700 dark:text-slate-350">{actualScoreText}</span>
+          </div>
+        </div>
+
+        {/* Away Team */}
+        <div className="flex items-center gap-2 min-w-0 justify-end">
+          <span className="font-semibold text-slate-800 dark:text-slate-200 truncate text-right">{awayName}</span>
+          <TeamFlag teamName={awayName} className="w-5 h-3.5 shrink-0 rounded-xs shadow-xs" />
+        </div>
       </div>
     </div>
   );
