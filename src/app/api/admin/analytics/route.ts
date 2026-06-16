@@ -29,8 +29,18 @@ export async function GET(request: Request) {
     const last7Days = new Date(now);
     last7Days.setDate(last7Days.getDate() - 7);
 
+    const { searchParams } = new URL(request.url);
+    const includeAdmins = searchParams.get("includeAdmins") === "true";
+
     // ── Get excluded user UIDs ──────────────────────────────────────────────
-    const excludedUsers = await User.find({ excludeFromStats: true }).select("firebaseUid").lean();
+    const queryConditions: any[] = [{ excludeFromStats: true }];
+    if (!includeAdmins) {
+      queryConditions.push({ role: "admin" });
+    }
+
+    const excludedUsers = await User.find({
+      $or: queryConditions
+    }).select("firebaseUid").lean();
     const excludedUids = excludedUsers.map((u) => u.firebaseUid);
 
     // ── Summary KPIs ──────────────────────────────────────────────────────────
