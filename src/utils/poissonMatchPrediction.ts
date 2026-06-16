@@ -24,16 +24,16 @@ export type MatchPredictionResult = {
   probAvanzaB?: number;
 };
 
-const GOLES_BASE = 2.6;
-const HOST_BONUS = 0.35;
-const MAX_GOALS = 6;
+export const GOLES_BASE = 2.6;
+export const HOST_BONUS = 0.15;
+export const MAX_GOALS = 8;
 
 /**
  * How much the tournament form adjusts the lambdas.
  * 0 = form ignored, 1 = full form impact.
  * 0.25 means form can shift lambdas by up to ~±20% in extreme cases.
  */
-const FORM_WEIGHT = 0.25;
+export const FORM_WEIGHT = 0.25;
 
 /** Weighted interpolation towards a factor: lerp(1, factor, weight). */
 const formLerp = (factor: number, weight: number): number =>

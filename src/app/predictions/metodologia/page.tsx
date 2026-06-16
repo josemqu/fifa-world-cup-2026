@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Info, Trophy, Target, Dices, Scale, TrendingUp } from "lucide-react";
 import { clsx } from "clsx";
 import { PageTransition } from "@/components/PageTransition";
-import { predictWorldCupMatch } from "@/utils/poissonMatchPrediction";
+import { predictWorldCupMatch, GOLES_BASE, HOST_BONUS, MAX_GOALS, FORM_WEIGHT } from "@/utils/poissonMatchPrediction";
 import { BlockMath, InlineMath } from "react-katex";
 
 const KATEX_SETTINGS = { strict: false };
@@ -77,7 +77,7 @@ function PoissonChart({ lambda, title, colorClass }: PoissonChartProps) {
             <div
               className={clsx("w-full rounded-md", colorClass)}
               style={{
-                height: `${Math.max(6, Math.round((v / maxV) * 80))}px`,
+                height: `${Math.max(MAX_GOALS, Math.round((v / maxV) * 80))}px`,
               }}
               title={`${k} goles: ${(v * 100).toFixed(1)}%`}
             />
@@ -88,7 +88,7 @@ function PoissonChart({ lambda, title, colorClass }: PoissonChartProps) {
         ))}
       </div>
       <div className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-        Distribución de probabilidad de anotar 0..6 goles.
+        Distribución de probabilidad de anotar 0..{MAX_GOALS} goles.
       </div>
     </div>
   );
@@ -187,7 +187,7 @@ export default function PredictionsMethodologyPage() {
                 <div className="rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 text-slate-700 dark:text-slate-200 overflow-hidden flex justify-center">
                   <div className="scale-[0.98] origin-center">
                     <BlockMath
-                      math={String.raw`\text{GOLES\_BASE} = 2.6`}
+                      math={String.raw`\text{GOLES\_BASE} = ${GOLES_BASE}`}
                       settings={KATEX_SETTINGS}
                     />
                   </div>
@@ -210,7 +210,7 @@ export default function PredictionsMethodologyPage() {
                 </div>
               </div>
               <div className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-                Excepción anfitrión: +0.35 a su λ.
+                Excepción anfitrión: +{HOST_BONUS} a su λ.
               </div>
             </div>
 
@@ -243,14 +243,14 @@ export default function PredictionsMethodologyPage() {
                 </div>
               </div>
               <div className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-                Peso <span className="font-mono">w = 0.25</span>. Factores clampeados a [0.5, 2.0]. Si no hay partidos jugados, factor = 1 (sin ajuste).
+                Peso <span className="font-mono">w = {FORM_WEIGHT}</span>. Factores clampeados a [0.5, 2.0]. Si no hay partidos jugados, factor = 1 (sin ajuste).
               </div>
             </div>
 
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
                 <Dices className="w-4 h-4 text-violet-600 dark:text-violet-400" />
-                Paso 3: Poisson (0..6)
+                Paso 3: Poisson (0..{MAX_GOALS})
               </div>
               <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
                 Con cada λ, calculamos P(goles=k) y armamos una matriz conjunta.
@@ -299,7 +299,7 @@ export default function PredictionsMethodologyPage() {
                       checked={hostA}
                       onChange={(e) => setHostA(e.target.checked)}
                     />
-                    A es anfitrión (+0.35 λ)
+                    A es anfitrión (+{HOST_BONUS} λ)
                   </label>
                 </div>
 
@@ -326,7 +326,7 @@ export default function PredictionsMethodologyPage() {
                       checked={hostB}
                       onChange={(e) => setHostB(e.target.checked)}
                     />
-                    B es anfitrión (+0.35 λ)
+                    B es anfitrión (+{HOST_BONUS} λ)
                   </label>
                 </div>
               </div>
@@ -486,7 +486,7 @@ export default function PredictionsMethodologyPage() {
                 predicciones según el rendimiento real. Un equipo que viene
                 goleando (ej: 7 goles en 3 partidos) recibe un boost ofensivo,
                 mientras que uno que recibe muchos goles ve aumentar el λ del
-                rival. El ajuste es moderado (peso 0.25) para no sobreponderar
+                rival. El ajuste es moderado (peso {FORM_WEIGHT}) para no sobreponderar
                 partidos puntuales.
               </p>
             </div>
