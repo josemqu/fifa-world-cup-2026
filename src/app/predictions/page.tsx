@@ -78,52 +78,76 @@ function getLinearColorStyle(value: number, min: number, max: number, isDark: bo
   }
   const t = Math.max(0, Math.min(1, (value - min) / (max - min)));
 
-  let hue = 0;
-  let sat = 0;
-  let litBg = 0;
-  let satTxt = 85;
-  let litTxt = 75;
-  let hueTxt = 0;
+  // Interpolate RGBA values
+  // Blue (low) -> Yellow (mid) -> Green (high)
+  const interpolateRGBA = (
+    c1: [number, number, number, number],
+    c2: [number, number, number, number],
+    factor: number
+  ): string => {
+    const r = Math.round(c1[0] + factor * (c2[0] - c1[0]));
+    const g = Math.round(c1[1] + factor * (c2[1] - c1[1]));
+    const b = Math.round(c1[2] + factor * (c2[2] - c1[2]));
+    const a = c1[3] + factor * (c2[3] - c1[3]);
+    return `rgba(${r}, ${g}, ${b}, ${a.toFixed(2)})`;
+  };
 
   if (isDark) {
-    if (t >= 0.5) {
-      const factor = (t - 0.5) * 2;
-      hue = 48 + factor * 92;
-      sat = 80 - factor * 10;
-      litBg = 16 - factor * 1;
-    } else {
+    // Dark Mode Colors:
+    // Blue (t = 0): bg = [23, 37, 84, 0.3] (blue-950/30), text = [148, 163, 184, 1] (slate-400 / gray)
+    // Yellow (t = 0.5): bg = [74, 62, 8, 1], text = [245, 219, 137, 1]
+    // Green (t = 1.0): bg = [11, 65, 29, 1], text = [137, 245, 173, 1]
+    const bgBlue: [number, number, number, number] = [23, 37, 84, 0.3];
+    const txtBlue: [number, number, number, number] = [148, 163, 184, 1];
+
+    const bgYellow: [number, number, number, number] = [74, 62, 8, 1];
+    const txtYellow: [number, number, number, number] = [245, 219, 137, 1];
+
+    const bgGreen: [number, number, number, number] = [11, 65, 29, 1];
+    const txtGreen: [number, number, number, number] = [137, 245, 173, 1];
+
+    let bg: string;
+    let txt: string;
+
+    if (t < 0.5) {
       const factor = t * 2;
-      hue = factor * 48;
-      sat = 75 + factor * 5;
-      litBg = 18 - factor * 2;
+      bg = interpolateRGBA(bgBlue, bgYellow, factor);
+      txt = interpolateRGBA(txtBlue, txtYellow, factor);
+    } else {
+      const factor = (t - 0.5) * 2;
+      bg = interpolateRGBA(bgYellow, bgGreen, factor);
+      txt = interpolateRGBA(txtYellow, txtGreen, factor);
     }
-    hueTxt = hue;
-    return {
-      backgroundColor: `hsl(${hue.toFixed(0)}, ${sat.toFixed(0)}%, ${litBg.toFixed(0)}%)`,
-      color: `hsl(${hueTxt.toFixed(0)}, ${satTxt.toFixed(0)}%, ${litTxt.toFixed(0)}%)`
-    };
+
+    return { backgroundColor: bg, color: txt };
   } else {
-    if (t >= 0.5) {
-      const factor = (t - 0.5) * 2;
-      hue = 48 + factor * 92;
-      sat = 95 - factor * 20;
-      litBg = 90 + factor * 2;
-      hueTxt = 42 + factor * 98;
-      satTxt = 90 - factor * 10;
-      litTxt = 25 - factor * 1;
-    } else {
+    // Light Mode Colors:
+    // Blue (t = 0): bg = [239, 246, 255, 1] (blue-50), text = [100, 116, 139, 1] (slate-500 / gray)
+    // Yellow (t = 0.5): bg = [254, 246, 204, 1], text = [121, 85, 6, 1]
+    // Green (t = 1.0): bg = [220, 249, 230, 1], text = [12, 110, 45, 1]
+    const bgBlue: [number, number, number, number] = [239, 246, 255, 1];
+    const txtBlue: [number, number, number, number] = [100, 116, 139, 1];
+
+    const bgYellow: [number, number, number, number] = [254, 246, 204, 1];
+    const txtYellow: [number, number, number, number] = [121, 85, 6, 1];
+
+    const bgGreen: [number, number, number, number] = [220, 249, 230, 1];
+    const txtGreen: [number, number, number, number] = [12, 110, 45, 1];
+
+    let bg: string;
+    let txt: string;
+
+    if (t < 0.5) {
       const factor = t * 2;
-      hue = factor * 48;
-      sat = 95;
-      litBg = 94 - factor * 4;
-      hueTxt = factor * 42;
-      satTxt = 80 + factor * 10;
-      litTxt = 32 - factor * 7;
+      bg = interpolateRGBA(bgBlue, bgYellow, factor);
+      txt = interpolateRGBA(txtBlue, txtYellow, factor);
+    } else {
+      const factor = (t - 0.5) * 2;
+      bg = interpolateRGBA(bgYellow, bgGreen, factor);
+      txt = interpolateRGBA(txtYellow, txtGreen, factor);
     }
-    return {
-      backgroundColor: `hsl(${hue.toFixed(0)}, ${sat.toFixed(0)}%, ${litBg.toFixed(0)}%)`,
-      color: `hsl(${hueTxt.toFixed(0)}, ${satTxt.toFixed(0)}%, ${litTxt.toFixed(0)}%)`
-    };
+
+    return { backgroundColor: bg, color: txt };
   }
 }
 
