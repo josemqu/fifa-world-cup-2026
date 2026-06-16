@@ -289,66 +289,66 @@ export default function AdminUsersPage() {
               <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 <th
                   onClick={() => handleSort("displayName")}
-                  className="px-6 py-4 cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
+                  className="px-3 py-3 cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
                 >
                   Usuario {renderSortIcon("displayName")}
                 </th>
                 <th
                   onClick={() => handleSort("country")}
-                  className="px-6 py-4 cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
+                  className="px-3 py-3 cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
                 >
                   Ubicación {renderSortIcon("country")}
                 </th>
                 <th
                   onClick={() => handleSort("profileComplete")}
-                  className="px-6 py-4 text-center cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
+                  className="px-3 py-3 text-center cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
                 >
                   Perfil {renderSortIcon("profileComplete")}
                 </th>
                 <th
                   onClick={() => handleSort("predictionCount")}
-                  className="px-6 py-4 text-center cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
+                  className="px-3 py-3 text-center cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
                 >
-                  Predicciones {renderSortIcon("predictionCount")}
+                  Preds {renderSortIcon("predictionCount")}
                 </th>
                 <th
                   onClick={() => handleSort("loginCount")}
-                  className="px-6 py-4 text-center cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
+                  className="px-3 py-3 text-center cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
                 >
-                  Sesiones {renderSortIcon("loginCount")}
+                  Sess {renderSortIcon("loginCount")}
                 </th>
                 <th
                   onClick={() => handleSort("lastActiveAt")}
-                  className="px-6 py-4 cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
+                  className="px-3 py-3 cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
                 >
-                  Última Actividad {renderSortIcon("lastActiveAt")}
+                  Actividad {renderSortIcon("lastActiveAt")}
                 </th>
                 <th
                   onClick={() => handleSort("createdAt")}
-                  className="px-6 py-4 cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
+                  className="px-3 py-3 cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
                 >
                   Registro {renderSortIcon("createdAt")}
                 </th>
                 <th
                   onClick={() => handleSort("excludeFromStats")}
-                  className="px-6 py-4 text-center cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
+                  className="px-3 py-3 text-center cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
                 >
                   Stats {renderSortIcon("excludeFromStats")}
                 </th>
-                <th className="px-6 py-4 text-center">Acciones</th>
+                <th className="px-3 py-3 text-center">Acción</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200/80 dark:divide-slate-800/60 text-sm">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center">
+                  <td colSpan={9} className="px-3 py-12 text-center">
                     <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
                     <p className="text-xs text-slate-500">Cargando usuarios...</p>
                   </td>
                 </tr>
               ) : paginatedUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={9} className="px-3 py-12 text-center text-slate-500">
                     No se encontraron usuarios.
                   </td>
                 </tr>
@@ -358,16 +358,16 @@ export default function AdminUsersPage() {
                   return (
                     <tr key={u._id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
                       {/* Name/Email */}
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-3">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
                             <User className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold text-slate-900 dark:text-white truncate max-w-[180px]">
+                            <p className="font-semibold text-slate-900 dark:text-white truncate max-w-[150px]">
                               {u.displayName || "Sin nombre"}
                             </p>
-                            <p className="text-xs text-slate-500 truncate max-w-[180px]">
+                            <p className="text-xs text-slate-500 truncate max-w-[150px]">
                               {u.email}
                             </p>
                             {u.nickname && (
@@ -380,12 +380,12 @@ export default function AdminUsersPage() {
                       </td>
 
                       {/* Location & fav team */}
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-3">
                         <div className="space-y-1">
                           {u.country ? (
                             <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300">
                               <MapPin className="w-3.5 h-3.5 text-slate-550 shrink-0" />
-                              <span>{u.country}</span>
+                              <span className="truncate max-w-[100px]">{u.country}</span>
                             </div>
                           ) : (
                             <span className="text-xs text-slate-500 dark:text-slate-600">-</span>
@@ -393,31 +393,31 @@ export default function AdminUsersPage() {
                           {u.favoriteTeam && (
                             <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
                               <Trophy className="w-3.5 h-3.5 text-slate-550 shrink-0" />
-                              <span>{u.favoriteTeam}</span>
+                              <span className="truncate max-w-[100px]">{u.favoriteTeam}</span>
                             </div>
                           )}
                         </div>
                       </td>
 
                       {/* Profile complete status */}
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-3 py-3 text-center">
                         <div className="flex justify-center">
                           {completed ? (
                             <div className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full">
                               <CheckCircle className="w-3.5 h-3.5" />
-                              <span>Completo</span>
+                              <span>Ok</span>
                             </div>
                           ) : (
                             <div className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-full">
                               <XCircle className="w-3.5 h-3.5" />
-                              <span>Incompleto</span>
+                              <span>Inc</span>
                             </div>
                           )}
                         </div>
                       </td>
 
                       {/* Prediction count */}
-                      <td className="px-6 py-4 text-center font-semibold text-slate-900 dark:text-white">
+                      <td className="px-3 py-3 text-center font-semibold text-slate-900 dark:text-white">
                         {u.predictionCount > 0 ? (
                           <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-500/10 text-indigo-650 dark:text-indigo-400 text-xs">
                             {u.predictionCount}
@@ -428,12 +428,12 @@ export default function AdminUsersPage() {
                       </td>
 
                       {/* Login count */}
-                      <td className="px-6 py-4 text-center text-slate-700 dark:text-slate-300 font-medium">
+                      <td className="px-3 py-3 text-center text-slate-700 dark:text-slate-300 font-medium">
                         {u.loginCount || 0}
                       </td>
 
                       {/* Last active */}
-                      <td className="px-6 py-4 text-xs text-slate-750 dark:text-slate-300">
+                      <td className="px-3 py-3 text-xs text-slate-750 dark:text-slate-300">
                         {u.lastActiveAt ? (
                           <span>{formatDate(u.lastActiveAt)}</span>
                         ) : u.lastLoginAt ? (
@@ -444,7 +444,7 @@ export default function AdminUsersPage() {
                       </td>
 
                       {/* Sign up date */}
-                      <td className="px-6 py-4 text-xs text-slate-600 dark:text-slate-400">
+                      <td className="px-3 py-3 text-xs text-slate-600 dark:text-slate-400">
                         <div className="flex items-center gap-1.5">
                           <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-600" />
                           <span>{formatDate(u.createdAt)}</span>
@@ -452,42 +452,36 @@ export default function AdminUsersPage() {
                       </td>
 
                       {/* Stats toggle */}
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-3 py-3 text-center">
                         <button
                           onClick={() => toggleExcludeFromStats(u)}
                           className={clsx(
-                            "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-full transition-all border shadow-xs cursor-pointer",
+                            "inline-flex items-center justify-center p-2 text-xs font-bold rounded-lg transition-all border shadow-xs cursor-pointer",
                             u.excludeFromStats
                               ? "bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/20"
                               : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
                           )}
                           title={
                             u.excludeFromStats
-                              ? "Excluido de las estadísticas del panel de control y leaderboard"
-                              : "Incluido en las estadísticas"
+                              ? "Excluido de las estadísticas. Haz clic para incluir."
+                              : "Incluido en las estadísticas. Haz clic para excluir."
                           }
                         >
                           {u.excludeFromStats ? (
-                            <>
-                              <EyeOff className="w-3.5 h-3.5" />
-                              <span>Oculto</span>
-                            </>
+                            <EyeOff className="w-4 h-4" />
                           ) : (
-                            <>
-                              <Eye className="w-3.5 h-3.5" />
-                              <span>Visible</span>
-                            </>
+                            <Eye className="w-4 h-4" />
                           )}
                         </button>
                       </td>
 
                       {/* Acciones */}
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-3 py-3 text-center">
                         <button
                           disabled={u.predictionCount === 0 || u.firebaseUid === dbUser?.firebaseUid}
                           onClick={() => setSelectedCompareUser(u)}
                           className={clsx(
-                            "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all",
+                            "inline-flex items-center justify-center p-2 text-xs font-bold rounded-lg transition-all",
                             u.predictionCount > 0 && u.firebaseUid !== dbUser?.firebaseUid
                               ? "bg-indigo-600/10 hover:bg-indigo-600 text-indigo-600 dark:text-indigo-400 hover:text-white dark:hover:text-white border border-indigo-500/20 cursor-pointer"
                               : "bg-slate-100 dark:bg-slate-800/40 text-slate-450 dark:text-slate-600 border border-slate-200 dark:border-slate-800/20 cursor-not-allowed"
@@ -500,8 +494,7 @@ export default function AdminUsersPage() {
                               : "Comparar pronósticos"
                           }
                         >
-                          <ArrowLeftRight className="w-3.5 h-3.5" />
-                          <span>Comparar</span>
+                          <ArrowLeftRight className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>
