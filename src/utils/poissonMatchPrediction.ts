@@ -25,7 +25,7 @@ export type MatchPredictionResult = {
 };
 
 export const GOLES_BASE = 2.6;
-export const HOST_BONUS = 0.15;
+export const HOST_BONUS = 0.12;
 export const MAX_GOALS = 8;
 
 /**
