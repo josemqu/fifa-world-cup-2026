@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useCallback, Suspense, type ReactNode } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTournament } from "@/context/TournamentContext";
+import { useTheme } from "next-themes";
 import { simulateTournament } from "@/utils/simulationUtils";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { TeamFlag } from "@/components/ui/TeamFlag";
@@ -69,8 +70,66 @@ function getHeatmapClasses(pct: number): string {
   return "text-slate-300 dark:text-slate-700";
 }
 
+function getLinearColorStyle(value: number, min: number, max: number, isDark: boolean) {
+  if (max <= min) {
+    return isDark
+      ? { backgroundColor: "rgba(30, 41, 59, 0.4)", color: "#94a3b8" }
+      : { backgroundColor: "#f1f5f9", color: "#475569" };
+  }
+  const t = Math.max(0, Math.min(1, (value - min) / (max - min)));
+
+  let hue = 0;
+  let sat = 0;
+  let litBg = 0;
+  let satTxt = 85;
+  let litTxt = 75;
+  let hueTxt = 0;
+
+  if (isDark) {
+    if (t >= 0.5) {
+      const factor = (t - 0.5) * 2;
+      hue = 48 + factor * 92;
+      sat = 80 - factor * 10;
+      litBg = 16 - factor * 1;
+    } else {
+      const factor = t * 2;
+      hue = factor * 48;
+      sat = 75 + factor * 5;
+      litBg = 18 - factor * 2;
+    }
+    hueTxt = hue;
+    return {
+      backgroundColor: `hsl(${hue.toFixed(0)}, ${sat.toFixed(0)}%, ${litBg.toFixed(0)}%)`,
+      color: `hsl(${hueTxt.toFixed(0)}, ${satTxt.toFixed(0)}%, ${litTxt.toFixed(0)}%)`
+    };
+  } else {
+    if (t >= 0.5) {
+      const factor = (t - 0.5) * 2;
+      hue = 48 + factor * 92;
+      sat = 95 - factor * 20;
+      litBg = 90 + factor * 2;
+      hueTxt = 42 + factor * 98;
+      satTxt = 90 - factor * 10;
+      litTxt = 25 - factor * 1;
+    } else {
+      const factor = t * 2;
+      hue = factor * 48;
+      sat = 95;
+      litBg = 94 - factor * 4;
+      hueTxt = factor * 42;
+      satTxt = 80 + factor * 10;
+      litTxt = 32 - factor * 7;
+    }
+    return {
+      backgroundColor: `hsl(${hue.toFixed(0)}, ${sat.toFixed(0)}%, ${litBg.toFixed(0)}%)`,
+      color: `hsl(${hueTxt.toFixed(0)}, ${satTxt.toFixed(0)}%, ${litTxt.toFixed(0)}%)`
+    };
+  }
+}
+
 function PredictionsPageContent() {
   const { user, dbUser, loading: authLoading } = useAuth();
+  const { resolvedTheme } = useTheme();
   const {
     groups,
     knockoutMatches,
@@ -102,6 +161,7 @@ function PredictionsPageContent() {
   const [currentIteration, setCurrentIteration] = useState(0);
   const [iterations, setIterations] = useState(simulationIterations);
   const [isMounted, setIsMounted] = useState(false);
+  const isDark = isMounted && resolvedTheme === "dark";
 
   useEffect(() => {
     setIsMounted(true);
@@ -429,16 +489,50 @@ function PredictionsPageContent() {
       });
   }, [predictions, sortColumn, sortDirection]);
 
-  const getPercentage = (count: number) => {
-    return ((count / iterations) * 100).toFixed(1) + "%";
-  };
+  const columnBounds = useMemo(() => {
+    if (sortedResults.length === 0) {
+      return {
+        r32Count: { min: 0, max: 0 },
+        r16Count: { min: 0, max: 0 },
+        quarterFinalistCount: { min: 0, max: 0 },
+        semiFinalistCount: { min: 0, max: 0 },
+        finalistCount: { min: 0, max: 0 },
+        championCount: { min: 0, max: 0 },
+      };
+    }
 
-  const getProbabilityColor = (percentage: number) => {
-    if (percentage >= 50) return "text-green-600 dark:text-green-400 font-bold";
-    if (percentage >= 25)
-      return "text-blue-600 dark:text-blue-400 font-semibold";
-    if (percentage >= 10) return "text-slate-900 dark:text-slate-100";
-    return "text-slate-500 dark:text-slate-500";
+    const r32Vals = sortedResults.map((t) => t.r32Count);
+    const r16Vals = sortedResults.map((t) => t.r16Count);
+    const qfVals = sortedResults.map((t) => t.quarterFinalistCount);
+    const sfVals = sortedResults.map((t) => t.semiFinalistCount);
+    const finalVals = sortedResults.map((t) => t.finalistCount);
+    const champVals = sortedResults.map((t) => t.championCount);
+
+    return {
+      r32Count: { min: Math.min(...r32Vals), max: Math.max(...r32Vals) },
+      r16Count: { min: Math.min(...r16Vals), max: Math.max(...r16Vals) },
+      quarterFinalistCount: { min: Math.min(...qfVals), max: Math.max(...qfVals) },
+      semiFinalistCount: { min: Math.min(...sfVals), max: Math.max(...sfVals) },
+      finalistCount: { min: Math.min(...finalVals), max: Math.max(...finalVals) },
+      championCount: { min: Math.min(...champVals), max: Math.max(...champVals) },
+    };
+  }, [sortedResults]);
+
+  const renderPercentageCell = (count: number, col: keyof typeof columnBounds) => {
+    const pct = (count / iterations) * 100;
+    if (pct > 0) {
+      const bounds = columnBounds[col];
+      const style = getLinearColorStyle(count, bounds.min, bounds.max, isDark);
+      return (
+        <span
+          style={style}
+          className="inline-block min-w-[48px] text-center text-xs px-1.5 py-0.5 rounded font-medium transition-colors duration-200"
+        >
+          {pct >= 100 ? "100%" : `${pct.toFixed(1)}%`}
+        </span>
+      );
+    }
+    return <span className="text-xs text-slate-300 dark:text-slate-750">—</span>;
   };
 
   const selectedTeam = allTeams.find((t) => t.id === selectedTeamId);
@@ -761,8 +855,6 @@ function PredictionsPageContent() {
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {sortedResults.map((team, index) => {
-                          const winRate = (team.championCount / iterations) * 100;
-
                           return (
                             <tr
                               key={team.teamId}
@@ -788,28 +880,23 @@ function PredictionsPageContent() {
                                   ? team.teamFifaPoints.toFixed(0)
                                   : "-"}
                               </td>
-                              <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
-                                {getPercentage(team.r32Count)}
+                              <td className="px-4 py-3 text-right">
+                                {renderPercentageCell(team.r32Count, "r32Count")}
                               </td>
-                              <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
-                                {getPercentage(team.r16Count)}
+                              <td className="px-4 py-3 text-right">
+                                {renderPercentageCell(team.r16Count, "r16Count")}
                               </td>
-                              <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
-                                {getPercentage(team.quarterFinalistCount)}
+                              <td className="px-4 py-3 text-right">
+                                {renderPercentageCell(team.quarterFinalistCount, "quarterFinalistCount")}
                               </td>
-                              <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
-                                {getPercentage(team.semiFinalistCount)}
+                              <td className="px-4 py-3 text-right">
+                                {renderPercentageCell(team.semiFinalistCount, "semiFinalistCount")}
                               </td>
-                              <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
-                                {getPercentage(team.finalistCount)}
+                              <td className="px-4 py-3 text-right">
+                                {renderPercentageCell(team.finalistCount, "finalistCount")}
                               </td>
-                              <td
-                                className={clsx(
-                                  "px-4 py-3 text-right",
-                                  getProbabilityColor(winRate),
-                                )}
-                              >
-                                {getPercentage(team.championCount)}
+                              <td className="px-4 py-3 text-right">
+                                {renderPercentageCell(team.championCount, "championCount")}
                               </td>
                             </tr>
                           );
