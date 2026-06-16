@@ -751,12 +751,12 @@ function PredictionsPageContent() {
                             }
                             align="right"
                           />
-                          <SortHeader column="championCount" label="Campeón" />
-                          <SortHeader column="finalistCount" label="Final" />
-                          <SortHeader column="semiFinalistCount" label="Semis" />
-                          <SortHeader column="quarterFinalistCount" label="Cuartos" />
-                          <SortHeader column="r16Count" label="Octavos" />
                           <SortHeader column="r32Count" label="16avos" />
+                          <SortHeader column="r16Count" label="Octavos" />
+                          <SortHeader column="quarterFinalistCount" label="Cuartos" />
+                          <SortHeader column="semiFinalistCount" label="Semis" />
+                          <SortHeader column="finalistCount" label="Final" />
+                          <SortHeader column="championCount" label="Campeón" />
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -788,6 +788,21 @@ function PredictionsPageContent() {
                                   ? team.teamFifaPoints.toFixed(0)
                                   : "-"}
                               </td>
+                              <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
+                                {getPercentage(team.r32Count)}
+                              </td>
+                              <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
+                                {getPercentage(team.r16Count)}
+                              </td>
+                              <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
+                                {getPercentage(team.quarterFinalistCount)}
+                              </td>
+                              <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
+                                {getPercentage(team.semiFinalistCount)}
+                              </td>
+                              <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
+                                {getPercentage(team.finalistCount)}
+                              </td>
                               <td
                                 className={clsx(
                                   "px-4 py-3 text-right",
@@ -795,21 +810,6 @@ function PredictionsPageContent() {
                                 )}
                               >
                                 {getPercentage(team.championCount)}
-                              </td>
-                              <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
-                                {getPercentage(team.finalistCount)}
-                              </td>
-                              <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
-                                {getPercentage(team.semiFinalistCount)}
-                              </td>
-                              <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
-                                {getPercentage(team.quarterFinalistCount)}
-                              </td>
-                              <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
-                                {getPercentage(team.r16Count)}
-                              </td>
-                              <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
-                                {getPercentage(team.r32Count)}
                               </td>
                             </tr>
                           );
