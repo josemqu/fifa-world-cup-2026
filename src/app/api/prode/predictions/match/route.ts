@@ -69,20 +69,25 @@ export async function GET(request: Request) {
 
     // 1. Find all groups where the current user is a member
     const userGroups = await ProdeGroup.find({ members: uid });
-    if (userGroups.length === 0) {
-      return NextResponse.json({ success: true, groups: [] });
-    }
 
-    // 2. Gather all unique member IDs across all these groups
+    // 2. Fetch all predictions for this matchId
+    const allPredictionsForMatch = await ProdePrediction.find({ matchId });
+    const allPredictingUids = allPredictionsForMatch.map((p) => p.firebaseUid);
+
+    // 3. Gather all unique member IDs across all user groups + all users who predicted + current user
     const allMemberUids = new Set<string>();
     for (const g of userGroups) {
       for (const m of g.members) {
         allMemberUids.add(m);
       }
     }
+    for (const predictingUid of allPredictingUids) {
+      allMemberUids.add(predictingUid);
+    }
+    allMemberUids.add(uid);
     const memberUidsArray = Array.from(allMemberUids);
 
-    // 3. Fetch user profiles for these members
+    // 4. Fetch user profiles for these members
     const users = await User.find(
       { firebaseUid: { $in: memberUidsArray } },
       { firebaseUid: 1, displayName: 1, nickname: 1, _id: 0 }
@@ -95,17 +100,13 @@ export async function GET(request: Request) {
       });
     }
 
-    // 4. Fetch predictions for this matchId and these members
-    const predictions = await ProdePrediction.find({
-      matchId,
-      firebaseUid: { $in: memberUidsArray },
-    });
-    const predictionMap = new Map<string, typeof predictions[0]>();
-    for (const pred of predictions) {
+    // 5. Create prediction map for the matchId predictions
+    const predictionMap = new Map<string, typeof allPredictionsForMatch[0]>();
+    for (const pred of allPredictionsForMatch) {
       predictionMap.set(pred.firebaseUid, pred);
     }
 
-    // 5. Fetch actual match score from LiveScore to calculate points
+    // 6. Fetch actual match score from LiveScore to calculate points
     const liveScore = await LiveScore.findOne({ matchId });
     const isFinished = liveScore?.status === "finished";
     const actualScore = isFinished && liveScore.homeScore !== null && liveScore.awayScore !== null
@@ -117,44 +118,46 @@ export async function GET(request: Request) {
         }
       : null;
 
-    // 6. Construct response grouped by ProdeGroup
+    // Helper to format member prediction data
+    const formatMemberData = (memberUid: string) => {
+      const profile = userMap.get(memberUid) || { displayName: memberUid };
+      const pred = predictionMap.get(memberUid);
+      
+      let points = null;
+      if (actualScore && pred) {
+        points = calculatePoints(
+          pred.homeScore,
+          pred.awayScore,
+          actualScore.homeScore,
+          actualScore.awayScore,
+          pred.homePenalties ?? undefined,
+          pred.awayPenalties ?? undefined,
+          actualScore.homePenalties,
+          actualScore.awayPenalties
+        );
+      }
+
+      return {
+        firebaseUid: memberUid,
+        displayName: profile.displayName,
+        nickname: profile.nickname || null,
+        prediction: pred
+          ? {
+              homeScore: pred.homeScore,
+              awayScore: pred.awayScore,
+              homePenalties: pred.homePenalties ?? null,
+              awayPenalties: pred.awayPenalties ?? null,
+            }
+          : null,
+        points,
+      };
+    };
+
+    // 7. Construct response grouped by ProdeGroup
     const responseGroups = userGroups.map((group) => {
-      const membersData = group.members.map((memberUid) => {
-        const profile = userMap.get(memberUid) || { displayName: memberUid };
-        const pred = predictionMap.get(memberUid);
-        
-        let points = null;
-        if (actualScore && pred) {
-          points = calculatePoints(
-            pred.homeScore,
-            pred.awayScore,
-            actualScore.homeScore,
-            actualScore.awayScore,
-            pred.homePenalties ?? undefined,
-            pred.awayPenalties ?? undefined,
-            actualScore.homePenalties,
-            actualScore.awayPenalties
-          );
-        }
+      const membersData = group.members.map((memberUid) => formatMemberData(memberUid));
 
-        return {
-          firebaseUid: memberUid,
-          displayName: profile.displayName,
-          nickname: profile.nickname || null,
-          prediction: pred
-            ? {
-                homeScore: pred.homeScore,
-                awayScore: pred.awayScore,
-                homePenalties: pred.homePenalties ?? null,
-                awayPenalties: pred.awayPenalties ?? null,
-              }
-            : null,
-          points,
-        };
-      });
-
-      // Sort group members by points or display name
-      // Let's sort: current user first, then others alphabetically by display name
+      // Sort group members: current user first, then others alphabetically by display name
       membersData.sort((a, b) => {
         if (a.firebaseUid === uid) return -1;
         if (b.firebaseUid === uid) return 1;
@@ -162,12 +165,40 @@ export async function GET(request: Request) {
       });
 
       return {
-        _id: group._id,
+        _id: group._id.toString(),
         name: group.name,
         code: group.code,
         members: membersData,
       };
     });
+
+    // 8. Add virtual group "Todos los usuarios" (containing all users who predicted, plus the current user)
+    const allUsersUids = new Set<string>();
+    allUsersUids.add(uid);
+    for (const predictingUid of allPredictingUids) {
+      allUsersUids.add(predictingUid);
+    }
+
+    const allUsersMembers = Array.from(allUsersUids).map((memberUid) => formatMemberData(memberUid));
+
+    // Sort: current user first, then by points desc (if finished), then alphabetically
+    allUsersMembers.sort((a, b) => {
+      if (a.firebaseUid === uid) return -1;
+      if (b.firebaseUid === uid) return 1;
+      if (a.points !== null && b.points !== null) {
+        return b.points - a.points;
+      }
+      return a.displayName.localeCompare(b.displayName);
+    });
+
+    const allUsersGroup = {
+      _id: "all_users",
+      name: "Todos los usuarios",
+      code: "ALL_USERS",
+      members: allUsersMembers,
+    };
+
+    responseGroups.push(allUsersGroup);
 
     return NextResponse.json({
       success: true,

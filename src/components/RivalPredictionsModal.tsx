@@ -216,8 +216,8 @@ export function RivalPredictionsModal({
               </div>
             ) : (
               <div className="space-y-4 flex-1 flex flex-col">
-                {/* Group Dropdown Selector (if multiple groups) */}
-                {groups.length > 1 && (
+                {/* Group Dropdown Selector */}
+                {groups.length > 1 ? (
                   <div className="flex flex-col gap-1.5 shrink-0">
                     <label htmlFor="group-select" className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                       Grupo a mostrar
@@ -237,7 +237,7 @@ export function RivalPredictionsModal({
                       >
                         {groups.map((group) => (
                           <option key={group._id} value={group._id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                            {group.name} ({group.members.length} miembros)
+                            {group.name} ({group.members.length} {group._id === "all_users" ? "usuarios" : "miembros"})
                           </option>
                         ))}
                       </select>
@@ -246,6 +246,17 @@ export function RivalPredictionsModal({
                       </div>
                     </div>
                   </div>
+                ) : (
+                  groups.length === 1 && (
+                    <div className="flex flex-col gap-1 shrink-0 px-1">
+                      <span className="text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider">
+                        Mostrando
+                      </span>
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        {groups[0].name} ({groups[0].members.length} {groups[0]._id === "all_users" ? "usuarios" : "miembros"})
+                      </span>
+                    </div>
+                  )
                 )}
 
                 {/* Opponents List */}
