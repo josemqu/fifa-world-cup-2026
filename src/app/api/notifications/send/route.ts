@@ -306,11 +306,39 @@ async function handleDailyWinners(force = false) {
 
     // Build the group leaderboard
     const groupLeaderboard = group.members.map((uid) => {
-      const pointsData = userPointsMap[uid] || { totalPoints: 0, exactCount: 0 };
+      const userPreds = allPredictions.filter((pred) => {
+        if (pred.firebaseUid !== uid) return false;
+        const utcDateStr = matchDateMap[pred.matchId]?.utcDate;
+        if (!utcDateStr) return true;
+        return new Date(utcDateStr) > new Date(group.createdAt);
+      });
+
+      let totalPoints = 0;
+      let exactCount = 0;
+
+      for (const pred of userPreds) {
+        const actual = scoreMap[pred.matchId];
+        if (!actual) continue;
+
+        const pts = calculatePoints(
+          pred.homeScore,
+          pred.awayScore,
+          actual.homeScore,
+          actual.awayScore,
+          pred.homePenalties,
+          pred.awayPenalties,
+          actual.homePenalties ?? undefined,
+          actual.awayPenalties ?? undefined
+        );
+
+        totalPoints += pts;
+        if (pts === 3) exactCount++;
+      }
+
       return {
         firebaseUid: uid,
-        totalPoints: pointsData.totalPoints,
-        exactCount: pointsData.exactCount,
+        totalPoints,
+        exactCount,
       };
     });
 

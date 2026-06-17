@@ -119,22 +119,28 @@ export async function GET(request: Request) {
       : null;
 
     // Helper to format member prediction data
-    const formatMemberData = (memberUid: string) => {
+    const formatMemberData = (memberUid: string, groupCreatedAt?: Date) => {
       const profile = userMap.get(memberUid) || { displayName: memberUid };
       const pred = predictionMap.get(memberUid);
       
       let points = null;
       if (actualScore && pred) {
-        points = calculatePoints(
-          pred.homeScore,
-          pred.awayScore,
-          actualScore.homeScore,
-          actualScore.awayScore,
-          pred.homePenalties ?? undefined,
-          pred.awayPenalties ?? undefined,
-          actualScore.homePenalties,
-          actualScore.awayPenalties
-        );
+        const utcDateStr = matchDateMap[matchId];
+        const matchDate = utcDateStr ? new Date(utcDateStr) : null;
+        if (groupCreatedAt && matchDate && matchDate <= groupCreatedAt) {
+          points = 0;
+        } else {
+          points = calculatePoints(
+            pred.homeScore,
+            pred.awayScore,
+            actualScore.homeScore,
+            actualScore.awayScore,
+            pred.homePenalties ?? undefined,
+            pred.awayPenalties ?? undefined,
+            actualScore.homePenalties,
+            actualScore.awayPenalties
+          );
+        }
       }
 
       return {
@@ -155,7 +161,7 @@ export async function GET(request: Request) {
 
     // 7. Construct response grouped by ProdeGroup
     const responseGroups = userGroups.map((group) => {
-      const membersData = group.members.map((memberUid) => formatMemberData(memberUid));
+      const membersData = group.members.map((memberUid) => formatMemberData(memberUid, group.createdAt));
 
       // Sort group members: current user first, then others alphabetically by display name
       membersData.sort((a, b) => {

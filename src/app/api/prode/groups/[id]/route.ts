@@ -5,6 +5,43 @@ import ProdePrediction from "@/models/ProdePrediction";
 import LiveScore from "@/models/LiveScore";
 import User from "@/models/User";
 import { calculatePoints } from "@/utils/prodeUtils";
+import { INITIAL_GROUPS } from "@/data/initialData";
+import {
+  R32_MATCHES,
+  R16_MATCHES,
+  QF_MATCHES,
+  SF_MATCHES,
+  FINAL_MATCHES,
+} from "@/data/knockoutData";
+
+function buildMatchDateMap(): Record<string, string> {
+  const map: Record<string, string> = {};
+
+  for (const group of INITIAL_GROUPS) {
+    for (const match of group.matches) {
+      map[match.id] = match.utcDate;
+    }
+  }
+
+  const knockoutArrays = [
+    R32_MATCHES,
+    R16_MATCHES,
+    QF_MATCHES,
+    SF_MATCHES,
+    FINAL_MATCHES,
+  ];
+  for (const arr of knockoutArrays) {
+    for (const match of arr) {
+      if (match.utcDate) {
+        map[match.id] = match.utcDate;
+      }
+    }
+  }
+
+  return map;
+}
+
+const matchDateMap = buildMatchDateMap();
 
 interface LeaderboardMatchInfo {
   matchId: string;
@@ -34,14 +71,22 @@ export async function GET(
       );
     }
 
+    const groupCreatedAt = new Date(group.createdAt);
     const finishedMatches = await LiveScore.find({ status: "finished" });
-    const finishedMatchIds = finishedMatches.map((m) => m.matchId);
+    
+    const filteredFinishedMatches = finishedMatches.filter((m) => {
+      const utcDateStr = matchDateMap[m.matchId];
+      if (!utcDateStr) return true;
+      return new Date(utcDateStr) > groupCreatedAt;
+    });
+
+    const finishedMatchIds = filteredFinishedMatches.map((m) => m.matchId);
 
     const scoreMap: Record<
       string,
       { homeScore: number; awayScore: number; homePenalties: number | null; awayPenalties: number | null }
     > = {};
-    for (const match of finishedMatches) {
+    for (const match of filteredFinishedMatches) {
       if (match.homeScore !== null && match.awayScore !== null) {
         scoreMap[match.matchId] = {
           homeScore: match.homeScore,
