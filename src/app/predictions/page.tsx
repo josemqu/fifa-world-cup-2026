@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback, Suspense, type ReactNode } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef, Suspense, type ReactNode } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTournament } from "@/context/TournamentContext";
 import { useTheme } from "next-themes";
@@ -165,6 +165,11 @@ function PredictionsPageContent() {
     clearSimulationResults,
     isSimulationStale,
   } = useTournament();
+
+  const setSimulationResultsRef = useRef(setSimulationResults);
+  useEffect(() => {
+    setSimulationResultsRef.current = setSimulationResults;
+  }, [setSimulationResults]);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -405,7 +410,7 @@ function PredictionsPageContent() {
         setProgress(progress);
         setCurrentIteration(currentIteration);
       } else if (status === "success") {
-        setSimulationResults(e.data.predictions, e.data.matchups, e.data.knockoutProbabilities, numIterations, elapsedMs);
+        setSimulationResultsRef.current(e.data.predictions, e.data.matchups, e.data.knockoutProbabilities, numIterations, elapsedMs);
         setIsRunning(false);
         worker.terminate();
       } else if (status === "error") {

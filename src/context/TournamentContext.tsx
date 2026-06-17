@@ -278,6 +278,11 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       const hasR16 = currentMatches.some(m => m.stage === "R16");
       const baseMatches = hasR16 ? currentMatches : [...currentMatches, ...initialMatches];
 
+      const getTeamIdentifier = (team: any) => {
+        if (!team) return "";
+        return "placeholder" in team ? team.placeholder : team.id;
+      };
+
       // Update R32 matches
       // We need to preserve scores if the teams haven't changed
       const updatedR32 = r32.map((newMatch) => {
@@ -285,11 +290,11 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
 
         // Check if teams changed
         const homeChanged =
-          JSON.stringify(existing?.homeTeam) !==
-          JSON.stringify(newMatch.homeTeam);
+          getTeamIdentifier(existing?.homeTeam) !==
+          getTeamIdentifier(newMatch.homeTeam);
         const awayChanged =
-          JSON.stringify(existing?.awayTeam) !==
-          JSON.stringify(newMatch.awayTeam);
+          getTeamIdentifier(existing?.awayTeam) !==
+          getTeamIdentifier(newMatch.awayTeam);
 
         if (existing && !homeChanged && !awayChanged) {
           return {
