@@ -221,14 +221,15 @@ export default function PredictionsMethodologyPage() {
               </div>
               <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
                 Ajustamos los λ según cómo viene rindiendo cada equipo en los
-                partidos ya jugados del Mundial. Se calcula un factor ofensivo
-                (goles a favor vs promedio) y defensivo (goles en contra vs promedio).
+                partidos ya jugados del Mundial. Se calcula un factor ofensivo y defensivo
+                a partir de los goles a favor y en contra ponderados según la fuerza relativa
+                (Puntos FIFA) del rival en cada partido (ej: golear a Brasil otorga mayor boost ofensivo que golear a un rival de menor ranking).
               </p>
               <div className="mt-3 grid grid-cols-1 gap-2">
                 <div className="rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 text-slate-700 dark:text-slate-200 overflow-hidden flex justify-center">
                   <div className="scale-[0.88] origin-center">
                     <BlockMath
-                      math={String.raw`f_{\text{of}} = \frac{\text{GF}/\text{PJ}}{\overline{\text{goles}}} \quad f_{\text{def}} = \frac{\text{GC}/\text{PJ}}{\overline{\text{goles}}}`}
+                      math={String.raw`f_{\text{of}} = \frac{\text{GF}_{\text{pond}}/\text{PJ}}{\overline{\text{goles}_{\text{pond}}}} \quad f_{\text{def}} = \frac{\text{GC}_{\text{pond}}/\text{PJ}}{\overline{\text{goles}_{\text{pond}}}}`}
                       settings={KATEX_SETTINGS}
                     />
                   </div>
@@ -243,7 +244,7 @@ export default function PredictionsMethodologyPage() {
                 </div>
               </div>
               <div className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-                Peso <span className="font-mono">w = {FORM_WEIGHT}</span>. Factores clampeados a [0.5, 2.0]. Si no hay partidos jugados, factor = 1 (sin ajuste).
+                Peso <span className="font-mono">w = {FORM_WEIGHT}</span>. Los goles anotados/recibidos se multiplican por un factor entre 0.2 y 2.0 según la diferencia de Puntos FIFA del rival vs el promedio del torneo. Se mantiene la atenuación temporal por partidos jugados (40% de peso en el 1er partido, 70% en el 2º, y 100% a partir del 3º).
               </div>
             </div>
 
@@ -482,12 +483,13 @@ export default function PredictionsMethodologyPage() {
                 Forma del torneo
               </div>
               <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                A medida que se juegan partidos, el modelo ajusta las
-                predicciones según el rendimiento real. Un equipo que viene
-                goleando (ej: 7 goles en 3 partidos) recibe un boost ofensivo,
-                mientras que uno que recibe muchos goles ve aumentar el λ del
-                rival. El ajuste es moderado (peso {FORM_WEIGHT}) para no sobreponderar
-                partidos puntuales.
+                A medida que se juegan partidos, el modelo ajusta las predicciones
+                según el rendimiento real, ponderando los goles según la dificultad del rival.
+                Un gol anotado frente a un rival fuerte (ej: Brasil) vale más para la forma ofensiva que
+                uno marcado a un rival de menor jerarquía; de la misma manera, encajar goles ante rivales
+                fuertes penaliza menos la forma defensiva. El ajuste es moderado (peso {FORM_WEIGHT})
+                y se atenúa al inicio (40% en el 1er partido, 70% en el 2º) para evitar que
+                partidos aislados distorsionen la estimación.
               </p>
             </div>
 
