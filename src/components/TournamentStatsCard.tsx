@@ -1121,12 +1121,10 @@ export function TournamentStatsCard({
                       </thead>
                       <tbody>
                         {(() => {
-                          let currentRank = 0;
-                          let prevGoals = -1;
+                          let currentRank = 1;
                           return stats.topScorers.map((s, idx) => {
-                            if (s.goals !== prevGoals) {
-                              currentRank = idx + 1;
-                              prevGoals = s.goals;
+                            if (idx > 0 && s.goals < stats.topScorers[idx - 1].goals) {
+                              currentRank += 1;
                             }
                             
                             const medal = 
