@@ -363,7 +363,7 @@ export function GroupCard({
                       teamName={team.name}
                       className="w-5 h-3.5 mr-1 shadow-sm shrink-0"
                     />
-                    <Tooltip content={team.name} placement="right">
+                    <Tooltip content={team.name} placement="right" wrapperClassName="flex items-center">
                       <span className="cursor-help mr-0.5 truncate font-mono text-xs font-semibold">
                         {getTeamAbbreviation(team.name)}
                       </span>
@@ -375,6 +375,7 @@ export function GroupCard({
                         <Tooltip
                           content="Clasificado a la siguiente fase"
                           placement="top"
+                          wrapperClassName="flex items-center"
                         >
                           <CheckCircle2
                             size={13}
@@ -389,6 +390,7 @@ export function GroupCard({
                           <Tooltip
                             content="Clasificado como mejor tercero"
                             placement="top"
+                            wrapperClassName="flex items-center"
                           >
                             <CheckCircle2
                               size={13}
@@ -401,6 +403,7 @@ export function GroupCard({
                         <Tooltip
                           content={`Posición asegurada (${index + 1}º)`}
                           placement="top"
+                          wrapperClassName="flex items-center"
                         >
                           <Lock
                             size={13}
@@ -443,10 +446,11 @@ export function GroupCard({
                         <Tooltip
                           content={`Parcial: ${teamScore} - ${oppScore} vs ${opponentName}`}
                           placement="top"
+                          wrapperClassName="flex items-center"
                         >
                           <span
                             className={clsx(
-                              "px-1 py-0.5 text-[9px] font-black font-mono rounded-md border shrink-0 ml-1 leading-none select-none tracking-tight shadow-xs cursor-help animate-pulse",
+                              "inline-flex items-center justify-center px-1 py-0.5 text-[9px] font-black font-mono rounded-md border shrink-0 ml-1 leading-none select-none tracking-tight shadow-xs cursor-help animate-pulse",
                               bgClass
                             )}
                           >
