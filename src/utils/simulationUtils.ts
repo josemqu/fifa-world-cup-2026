@@ -266,6 +266,222 @@ export const getInitialKnockoutMatches = (): KnockoutMatch[] => {
   return matches;
 };
 
+export const propagateKnockoutTeams = (
+  matches: KnockoutMatch[]
+): KnockoutMatch[] => {
+  const allStaticMatches = [
+    ...R16_MATCHES,
+    ...QF_MATCHES,
+    ...SF_MATCHES,
+    ...FINAL_MATCHES,
+  ];
+
+  // Make a shallow copy of matches and sort by ID to ensure chronological progression
+  let newMatches = matches.map((m) => ({ ...m }));
+  newMatches.sort((a, b) => Number(a.id) - Number(b.id));
+
+  for (let i = 0; i < newMatches.length; i++) {
+    const match = newMatches[i];
+
+    // Determine the winner (if the match has real teams and a finished score)
+    let winner: Team | null = null;
+    const hasRealTeams =
+      match.homeTeam &&
+      !("placeholder" in match.homeTeam) &&
+      match.awayTeam &&
+      !("placeholder" in match.awayTeam);
+
+    if (hasRealTeams && match.homeScore != null && match.awayScore != null) {
+      if (match.homeScore > match.awayScore) {
+        winner = match.homeTeam as Team;
+      } else if (match.awayScore > match.homeScore) {
+        winner = match.awayTeam as Team;
+      } else if (match.homePenalties != null && match.awayPenalties != null) {
+        if (match.homePenalties > match.awayPenalties) {
+          winner = match.homeTeam as Team;
+        } else if (match.awayPenalties > match.homePenalties) {
+          winner = match.awayTeam as Team;
+        }
+      }
+    }
+
+    // Update winner field
+    match.winner = winner;
+
+    // Propagate to next match
+    if (match.nextMatchId) {
+      const nextMatchIndex = newMatches.findIndex(
+        (m) => m.id === match.nextMatchId
+      );
+      if (nextMatchIndex !== -1) {
+        const nextMatch = newMatches[nextMatchIndex];
+        const staticNextMatch = allStaticMatches.find(
+          (m) => m.id === match.nextMatchId
+        );
+
+        if (staticNextMatch) {
+          const isHomeSource =
+            staticNextMatch.home === `W${match.id}` ||
+            staticNextMatch.home === `L${match.id}`;
+          const isAwaySource =
+            staticNextMatch.away === `W${match.id}` ||
+            staticNextMatch.away === `L${match.id}`;
+
+          // Get previous team IDs to check if they change
+          const prevHomeId =
+            nextMatch.homeTeam && !("placeholder" in nextMatch.homeTeam)
+              ? nextMatch.homeTeam.id
+              : "";
+          const prevAwayId =
+            nextMatch.awayTeam && !("placeholder" in nextMatch.awayTeam)
+              ? nextMatch.awayTeam.id
+              : "";
+
+          if (winner) {
+            if (isHomeSource) {
+              if (staticNextMatch.home === `L${match.id}`) {
+                const loser =
+                  winner.id === (match.homeTeam as Team).id
+                    ? match.awayTeam
+                    : match.homeTeam;
+                nextMatch.homeTeam = (loser as Team) || {
+                  placeholder: `L${match.id}`,
+                };
+              } else {
+                nextMatch.homeTeam = winner;
+              }
+            }
+            if (isAwaySource) {
+              if (staticNextMatch.away === `L${match.id}`) {
+                const loser =
+                  winner.id === (match.homeTeam as Team).id
+                    ? match.awayTeam
+                    : match.homeTeam;
+                nextMatch.awayTeam = (loser as Team) || {
+                  placeholder: `L${match.id}`,
+                };
+              } else {
+                nextMatch.awayTeam = winner;
+              }
+            }
+          } else {
+            // Revert to placeholder if winner is removed or not determined
+            if (isHomeSource) {
+              const ph = staticNextMatch.home.startsWith("W")
+                ? `W${match.id}`
+                : `L${match.id}`;
+              nextMatch.homeTeam = { placeholder: ph };
+            }
+            if (isAwaySource) {
+              const ph = staticNextMatch.away.startsWith("W")
+                ? `W${match.id}`
+                : `L${match.id}`;
+              nextMatch.awayTeam = { placeholder: ph };
+            }
+          }
+
+          // Check if the teams for the next match changed
+          const newHomeId =
+            nextMatch.homeTeam && !("placeholder" in nextMatch.homeTeam)
+              ? nextMatch.homeTeam.id
+              : "";
+          const newAwayId =
+            nextMatch.awayTeam && !("placeholder" in nextMatch.awayTeam)
+              ? nextMatch.awayTeam.id
+              : "";
+
+          if (prevHomeId !== newHomeId || prevAwayId !== newAwayId) {
+            // If teams changed, reset score, penalties, and winner of next match
+            nextMatch.homeScore = null;
+            nextMatch.awayScore = null;
+            nextMatch.homePenalties = null;
+            nextMatch.awayPenalties = null;
+            nextMatch.winner = null;
+          }
+        }
+      }
+    }
+
+    // Special handling for SF matches propagating to 3rd Place match (103)
+    if (match.id === "101" || match.id === "102") {
+      const thirdPlaceMatchId = "103";
+      const thirdPlaceIndex = newMatches.findIndex(
+        (m) => m.id === thirdPlaceMatchId
+      );
+      if (thirdPlaceIndex !== -1) {
+        const thirdPlaceMatch = newMatches[thirdPlaceIndex];
+        const staticThirdPlace = FINAL_MATCHES.find(
+          (m) => m.id === thirdPlaceMatchId
+        );
+
+        if (staticThirdPlace) {
+          const isHomeSource = staticThirdPlace.home === `L${match.id}`;
+          const isAwaySource = staticThirdPlace.away === `L${match.id}`;
+
+          const prevHomeId =
+            thirdPlaceMatch.homeTeam &&
+            !("placeholder" in thirdPlaceMatch.homeTeam)
+              ? thirdPlaceMatch.homeTeam.id
+              : "";
+          const prevAwayId =
+            thirdPlaceMatch.awayTeam &&
+            !("placeholder" in thirdPlaceMatch.awayTeam)
+              ? thirdPlaceMatch.awayTeam.id
+              : "";
+
+          if (winner) {
+            const loser =
+              winner.id === (match.homeTeam as Team).id
+                ? match.awayTeam
+                : match.homeTeam;
+
+            if (isHomeSource) {
+              thirdPlaceMatch.homeTeam = (loser as Team) || {
+                placeholder: `L${match.id}`,
+              };
+            }
+            if (isAwaySource) {
+              thirdPlaceMatch.awayTeam = (loser as Team) || {
+                placeholder: `L${match.id}`,
+              };
+            }
+          } else {
+            // Revert to placeholder if winner is removed or not determined
+            if (isHomeSource) {
+              thirdPlaceMatch.homeTeam = { placeholder: `L${match.id}` };
+            }
+            if (isAwaySource) {
+              thirdPlaceMatch.awayTeam = { placeholder: `L${match.id}` };
+            }
+          }
+
+          const newHomeId =
+            thirdPlaceMatch.homeTeam &&
+            !("placeholder" in thirdPlaceMatch.homeTeam)
+              ? thirdPlaceMatch.homeTeam.id
+              : "";
+          const newAwayId =
+            thirdPlaceMatch.awayTeam &&
+            !("placeholder" in thirdPlaceMatch.awayTeam)
+              ? thirdPlaceMatch.awayTeam.id
+              : "";
+
+          if (prevHomeId !== newHomeId || prevAwayId !== newAwayId) {
+            // Reset results
+            thirdPlaceMatch.homeScore = null;
+            thirdPlaceMatch.awayScore = null;
+            thirdPlaceMatch.homePenalties = null;
+            thirdPlaceMatch.awayPenalties = null;
+            thirdPlaceMatch.winner = null;
+          }
+        }
+      }
+    }
+  }
+
+  return newMatches;
+};
+
 export const runKnockoutSimulation = (
   matches: KnockoutMatch[],
   formMap?: TournamentFormMap
@@ -278,8 +494,7 @@ export const runKnockoutSimulation = (
   ];
 
   let newMatches = matches.map((m) => {
-    // Update metadata for non-R32 matches (or all, but R32 is usually from generator)
-    // We check if it exists in static definitions
+    // Update metadata for non-R32 matches
     const def = allStaticMatches.find((d) => d.id === m.id);
     if (def) {
       return {
@@ -291,27 +506,25 @@ export const runKnockoutSimulation = (
     return m;
   });
 
-  // Sort by ID to ensure we process stages in order (R32 -> R16 -> ... -> Final)
+  // Sort by ID to ensure stage-by-stage chronological order
   newMatches.sort((a, b) => Number(a.id) - Number(b.id));
 
   for (let i = 0; i < newMatches.length; i++) {
-    // eslint-disable-next-line security/detect-object-injection
     const match = newMatches[i];
 
-    // Only simulate if teams are present
-    if (
+    let winner: Team | null = null;
+    const hasRealTeams =
       match.homeTeam &&
       !("placeholder" in match.homeTeam) &&
       match.awayTeam &&
-      !("placeholder" in match.awayTeam)
-    ) {
-      let winner: Team | null = match.winner || null;
+      !("placeholder" in match.awayTeam);
 
-      // Check if match is already played/simulated (has scores)
+    if (hasRealTeams) {
+      winner = match.winner || null;
       const isPlayed = match.homeScore != null && match.awayScore != null;
 
       if (!isPlayed) {
-        // Generate realistic scores based on ranking
+        // Generate realistic scores based on ranking/form
         const hTeam = match.homeTeam as Team;
         const aTeam = match.awayTeam as Team;
 
@@ -346,7 +559,7 @@ export const runKnockoutSimulation = (
         }
         match.winner = winner;
       } else {
-        // If played but winner not set (shouldn't happen if merged correctly, but safety check)
+        // If already played, safety check to resolve winner field
         if (!winner) {
           if ((match.homeScore as number) > (match.awayScore as number)) {
             winner = match.homeTeam as Team;
@@ -364,7 +577,7 @@ export const runKnockoutSimulation = (
               winner = match.awayTeam as Team;
             }
           } else {
-            // Tied but no penalties entered yet. Simulate them to determine a winner for progression.
+            // Tied but no penalties entered yet. Simulate them to determine winner.
             const hTeam = match.homeTeam as Team;
             const aTeam = match.awayTeam as Team;
 
@@ -381,9 +594,6 @@ export const runKnockoutSimulation = (
             const homeWins = decidePenaltyWinnerIsHome(we);
             const { homePens, awayPens } = generatePenaltyShootout(homeWins);
 
-            // We only set these for the simulation instance
-            // If this is the "Simulate" button, these values will be saved.
-            // If this is probability calc, they are transient.
             match.homePenalties = homePens;
             match.awayPenalties = awayPens;
             winner = homeWins
@@ -393,97 +603,181 @@ export const runKnockoutSimulation = (
           match.winner = winner;
         }
       }
+    } else {
+      // Revert scores, penalties, and winner if not real teams
+      match.homeScore = null;
+      match.awayScore = null;
+      match.homePenalties = null;
+      match.awayPenalties = null;
+      match.winner = null;
+      winner = null;
+    }
 
-      // Propagate to next match
-      if (match.nextMatchId) {
-        const nextMatchIndex = newMatches.findIndex(
+    // Propagate to next match
+    if (match.nextMatchId) {
+      const nextMatchIndex = newMatches.findIndex(
+        (m) => m.id === match.nextMatchId
+      );
+      if (nextMatchIndex !== -1) {
+        const nextMatch = newMatches[nextMatchIndex];
+        const staticNextMatch = allStaticMatches.find(
           (m) => m.id === match.nextMatchId
         );
-        if (nextMatchIndex !== -1) {
-          // eslint-disable-next-line security/detect-object-injection
-          const nextMatch = newMatches[nextMatchIndex];
-          const staticNextMatch = allStaticMatches.find(
-            (m) => m.id === match.nextMatchId
-          );
 
-          if (staticNextMatch) {
-            const isHomeSource =
-              staticNextMatch.home === `W${match.id}` ||
-              staticNextMatch.home === `L${match.id}`;
-            const isAwaySource =
-              staticNextMatch.away === `W${match.id}` ||
-              staticNextMatch.away === `L${match.id}`;
+        if (staticNextMatch) {
+          const isHomeSource =
+            staticNextMatch.home === `W${match.id}` ||
+            staticNextMatch.home === `L${match.id}`;
+          const isAwaySource =
+            staticNextMatch.away === `W${match.id}` ||
+            staticNextMatch.away === `L${match.id}`;
 
-            if (winner) {
-              if (isHomeSource) {
-                if (staticNextMatch.home === `L${match.id}`) {
-                  const loser =
-                    winner.id === (match.homeTeam as Team).id
-                      ? match.awayTeam
-                      : match.homeTeam;
-                  nextMatch.homeTeam = loser as Team;
-                } else {
-                  nextMatch.homeTeam = winner;
-                }
-              }
-              if (isAwaySource) {
-                if (staticNextMatch.away === `L${match.id}`) {
-                  const loser =
-                    winner.id === (match.homeTeam as Team).id
-                      ? match.awayTeam
-                      : match.homeTeam;
-                  nextMatch.awayTeam = loser as Team;
-                } else {
-                  nextMatch.awayTeam = winner;
-                }
+          // Get previous team IDs to check if they change
+          const prevHomeId =
+            nextMatch.homeTeam && !("placeholder" in nextMatch.homeTeam)
+              ? nextMatch.homeTeam.id
+              : "";
+          const prevAwayId =
+            nextMatch.awayTeam && !("placeholder" in nextMatch.awayTeam)
+              ? nextMatch.awayTeam.id
+              : "";
+
+          if (winner) {
+            if (isHomeSource) {
+              if (staticNextMatch.home === `L${match.id}`) {
+                const loser =
+                  winner.id === (match.homeTeam as Team).id
+                    ? match.awayTeam
+                    : match.homeTeam;
+                nextMatch.homeTeam = (loser as Team) || {
+                  placeholder: `L${match.id}`,
+                };
+              } else {
+                nextMatch.homeTeam = winner;
               }
             }
+            if (isAwaySource) {
+              if (staticNextMatch.away === `L${match.id}`) {
+                const loser =
+                  winner.id === (match.homeTeam as Team).id
+                    ? match.awayTeam
+                    : match.homeTeam;
+                nextMatch.awayTeam = (loser as Team) || {
+                  placeholder: `L${match.id}`,
+                };
+              } else {
+                nextMatch.awayTeam = winner;
+              }
+            }
+          } else {
+            // Revert to placeholder if winner is removed or not determined
+            if (isHomeSource) {
+              const ph = staticNextMatch.home.startsWith("W")
+                ? `W${match.id}`
+                : `L${match.id}`;
+              nextMatch.homeTeam = { placeholder: ph };
+            }
+            if (isAwaySource) {
+              const ph = staticNextMatch.away.startsWith("W")
+                ? `W${match.id}`
+                : `L${match.id}`;
+              nextMatch.awayTeam = { placeholder: ph };
+            }
+          }
+
+          // Check if the teams for the next match changed
+          const newHomeId =
+            nextMatch.homeTeam && !("placeholder" in nextMatch.homeTeam)
+              ? nextMatch.homeTeam.id
+              : "";
+          const newAwayId =
+            nextMatch.awayTeam && !("placeholder" in nextMatch.awayTeam)
+              ? nextMatch.awayTeam.id
+              : "";
+
+          if (prevHomeId !== newHomeId || prevAwayId !== newAwayId) {
+            // If teams changed, reset score, penalties, and winner of next match
+            nextMatch.homeScore = null;
+            nextMatch.awayScore = null;
+            nextMatch.homePenalties = null;
+            nextMatch.awayPenalties = null;
+            nextMatch.winner = null;
           }
         }
       }
+    }
 
-      // Special handling for SF matches propagating to 3rd Place match (103)
-      if (match.id === "101" || match.id === "102") {
-        const thirdPlaceMatchId = "103";
-        const thirdPlaceIndex = newMatches.findIndex(
+    // Special handling for SF matches propagating to 3rd Place match (103)
+    if (match.id === "101" || match.id === "102") {
+      const thirdPlaceMatchId = "103";
+      const thirdPlaceIndex = newMatches.findIndex(
+        (m) => m.id === thirdPlaceMatchId
+      );
+      if (thirdPlaceIndex !== -1) {
+        const thirdPlaceMatch = newMatches[thirdPlaceIndex];
+        const staticThirdPlace = FINAL_MATCHES.find(
           (m) => m.id === thirdPlaceMatchId
         );
-        if (thirdPlaceIndex !== -1) {
-          // eslint-disable-next-line security/detect-object-injection
-          const thirdPlaceMatch = newMatches[thirdPlaceIndex];
-          const staticThirdPlace = FINAL_MATCHES.find(
-            (m) => m.id === thirdPlaceMatchId
-          );
 
-          if (staticThirdPlace) {
-            const isHomeSource = staticThirdPlace.home === `L${match.id}`;
-            const isAwaySource = staticThirdPlace.away === `L${match.id}`;
+        if (staticThirdPlace) {
+          const isHomeSource = staticThirdPlace.home === `L${match.id}`;
+          const isAwaySource = staticThirdPlace.away === `L${match.id}`;
 
-            if (winner) {
-              const loser =
-                winner.id === (match.homeTeam as Team).id
-                  ? match.awayTeam
-                  : match.homeTeam;
+          const prevHomeId =
+            thirdPlaceMatch.homeTeam &&
+            !("placeholder" in thirdPlaceMatch.homeTeam)
+              ? thirdPlaceMatch.homeTeam.id
+              : "";
+          const prevAwayId =
+            thirdPlaceMatch.awayTeam &&
+            !("placeholder" in thirdPlaceMatch.awayTeam)
+              ? thirdPlaceMatch.awayTeam.id
+              : "";
 
-              if (isHomeSource) {
-                thirdPlaceMatch.homeTeam = loser as Team;
-                // Reset results
-                thirdPlaceMatch.homeScore = null;
-                thirdPlaceMatch.awayScore = null;
-                thirdPlaceMatch.homePenalties = null;
-                thirdPlaceMatch.awayPenalties = null;
-                thirdPlaceMatch.winner = null;
-              }
-              if (isAwaySource) {
-                thirdPlaceMatch.awayTeam = loser as Team;
-                // Reset results
-                thirdPlaceMatch.homeScore = null;
-                thirdPlaceMatch.awayScore = null;
-                thirdPlaceMatch.homePenalties = null;
-                thirdPlaceMatch.awayPenalties = null;
-                thirdPlaceMatch.winner = null;
-              }
+          if (winner) {
+            const loser =
+              winner.id === (match.homeTeam as Team).id
+                ? match.awayTeam
+                : match.homeTeam;
+
+            if (isHomeSource) {
+              thirdPlaceMatch.homeTeam = (loser as Team) || {
+                placeholder: `L${match.id}`,
+              };
             }
+            if (isAwaySource) {
+              thirdPlaceMatch.awayTeam = (loser as Team) || {
+                placeholder: `L${match.id}`,
+              };
+            }
+          } else {
+            // Revert to placeholder if winner is removed or not determined
+            if (isHomeSource) {
+              thirdPlaceMatch.homeTeam = { placeholder: `L${match.id}` };
+            }
+            if (isAwaySource) {
+              thirdPlaceMatch.awayTeam = { placeholder: `L${match.id}` };
+            }
+          }
+
+          const newHomeId =
+            thirdPlaceMatch.homeTeam &&
+            !("placeholder" in thirdPlaceMatch.homeTeam)
+              ? thirdPlaceMatch.homeTeam.id
+              : "";
+          const newAwayId =
+            thirdPlaceMatch.awayTeam &&
+            !("placeholder" in thirdPlaceMatch.awayTeam)
+              ? thirdPlaceMatch.awayTeam.id
+              : "";
+
+          if (prevHomeId !== newHomeId || prevAwayId !== newAwayId) {
+            // Reset results
+            thirdPlaceMatch.homeScore = null;
+            thirdPlaceMatch.awayScore = null;
+            thirdPlaceMatch.homePenalties = null;
+            thirdPlaceMatch.awayPenalties = null;
+            thirdPlaceMatch.winner = null;
           }
         }
       }

@@ -25,6 +25,7 @@ import {
   recalculateGroupStats,
   predictMatchScore,
   simulateTournament,
+  propagateKnockoutTeams,
 } from "@/utils/simulationUtils";
 import { PredictionResult } from "@/utils/monteCarlo";
 
@@ -336,9 +337,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           return m;
         });
 
-      return [...updatedR32, ...nonR32].sort(
-        (a, b) => Number(a.id) - Number(b.id),
-      );
+      const combined = [...updatedR32, ...nonR32];
+      return propagateKnockoutTeams(combined);
     });
   }, [groups]);
 
@@ -429,185 +429,24 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     awayScorers?: Scorer[],
   ) => {
     setKnockoutMatches((currentMatches) => {
-      let newMatches = [...currentMatches];
-      const matchIndex = newMatches.findIndex((m) => m.id === matchId);
-      if (matchIndex === -1) return currentMatches;
+      const newMatches = currentMatches.map((m) => {
+        if (m.id !== matchId) return m;
+        return {
+          ...m,
+          homeScore: homeScore,
+          awayScore: awayScore,
+          homePenalties: homePenalties,
+          awayPenalties: awayPenalties,
+          homeScorers: homeScorers || m.homeScorers,
+          awayScorers: awayScorers || m.awayScorers,
+          finished: finished !== undefined ? finished : (homeScore !== null && awayScore !== null),
+          status: status || m.status,
+          elapsed: elapsed !== undefined ? elapsed : m.elapsed,
+          lastSyncAt: new Date().toISOString(),
+        };
+      });
 
-      const match = { ...newMatches[matchIndex] };
-      match.homeScore = homeScore;
-      match.awayScore = awayScore;
-      match.homePenalties = homePenalties;
-      match.awayPenalties = awayPenalties;
-      match.homeScorers = homeScorers || match.homeScorers;
-      match.awayScorers = awayScorers || match.awayScorers;
-      match.finished = finished !== undefined ? finished : (homeScore !== null && awayScore !== null);
-      match.status = status || match.status;
-      match.elapsed = elapsed !== undefined ? elapsed : match.elapsed;
-      match.lastSyncAt = new Date().toISOString();
-
-      // Determine winner
-      let winner: Team | null = null;
-      if (homeScore !== null && awayScore !== null) {
-        if (
-          match.homeTeam &&
-          !("placeholder" in match.homeTeam) &&
-          match.awayTeam &&
-          !("placeholder" in match.awayTeam)
-        ) {
-          if (homeScore > awayScore) {
-            winner = match.homeTeam as Team;
-          } else if (awayScore > homeScore) {
-            winner = match.awayTeam as Team;
-          } else if (homePenalties !== null && awayPenalties !== null) {
-            // Penalties tie-breaker
-            if (homePenalties > awayPenalties) {
-              winner = match.homeTeam as Team;
-            } else if (awayPenalties > homePenalties) {
-              winner = match.awayTeam as Team;
-            }
-          }
-        }
-      }
-      match.winner = winner;
-      newMatches[matchIndex] = match;
-
-      // Propagate to next match
-      if (match.nextMatchId) {
-        const nextMatchIndex = newMatches.findIndex(
-          (m) => m.id === match.nextMatchId,
-        );
-        if (nextMatchIndex !== -1) {
-          const nextMatch = { ...newMatches[nextMatchIndex] };
-          const allStaticMatches = [
-            ...R16_MATCHES,
-            ...QF_MATCHES,
-            ...SF_MATCHES,
-            ...FINAL_MATCHES,
-          ];
-          const staticNextMatch = allStaticMatches.find(
-            (m) => m.id === match.nextMatchId,
-          );
-
-          if (staticNextMatch) {
-            const isHomeSource =
-              staticNextMatch.home === `W${matchId}` ||
-              staticNextMatch.home === `L${matchId}`;
-            const isAwaySource =
-              staticNextMatch.away === `W${matchId}` ||
-              staticNextMatch.away === `L${matchId}`;
-
-            if (winner) {
-              if (isHomeSource) {
-                if (staticNextMatch.home === `L${matchId}`) {
-                  const loser =
-                    winner.id === (match.homeTeam as Team).id
-                      ? match.awayTeam
-                      : match.homeTeam;
-                  nextMatch.homeTeam = (loser as Team) || {
-                    placeholder: `L${matchId}`,
-                  };
-                } else {
-                  nextMatch.homeTeam = winner;
-                }
-              }
-              if (isAwaySource) {
-                if (staticNextMatch.away === `L${matchId}`) {
-                  const loser =
-                    winner.id === (match.homeTeam as Team).id
-                      ? match.awayTeam
-                      : match.homeTeam;
-                  nextMatch.awayTeam = (loser as Team) || {
-                    placeholder: `L${matchId}`,
-                  };
-                } else {
-                  nextMatch.awayTeam = winner;
-                }
-              }
-            } else {
-              // Revert to placeholder if winner is removed
-              if (isHomeSource) {
-                const ph = staticNextMatch.home.startsWith("W")
-                  ? `W${matchId}`
-                  : `L${matchId}`;
-                nextMatch.homeTeam = { placeholder: ph };
-              }
-              if (isAwaySource) {
-                const ph = staticNextMatch.away.startsWith("W")
-                  ? `W${matchId}`
-                  : `L${matchId}`;
-                nextMatch.awayTeam = { placeholder: ph };
-              }
-            }
-
-            // Reset score/winner of next match if teams changed (or were reset)
-            nextMatch.homeScore = null;
-            nextMatch.awayScore = null;
-            nextMatch.homePenalties = null;
-            nextMatch.awayPenalties = null;
-            nextMatch.winner = null;
-
-            newMatches[nextMatchIndex] = nextMatch;
-          }
-        }
-      }
-
-      // Special handling for SF matches propagating to 3rd Place match (103)
-      if (matchId === "101" || matchId === "102") {
-        const thirdPlaceMatchId = "103";
-        const thirdPlaceIndex = newMatches.findIndex(
-          (m) => m.id === thirdPlaceMatchId,
-        );
-        if (thirdPlaceIndex !== -1) {
-          const thirdPlaceMatch = { ...newMatches[thirdPlaceIndex] };
-          const staticThirdPlace = FINAL_MATCHES.find(
-            (m) => m.id === thirdPlaceMatchId,
-          );
-
-          if (staticThirdPlace) {
-            const isHomeSource = staticThirdPlace.home === `L${matchId}`;
-            const isAwaySource = staticThirdPlace.away === `L${matchId}`;
-
-            if (winner) {
-              const loser =
-                winner.id === (match.homeTeam as Team).id
-                  ? match.awayTeam
-                  : match.homeTeam;
-
-              // Propagación silenciosa a 3er puesto
-
-
-              if (isHomeSource) {
-                thirdPlaceMatch.homeTeam = (loser as Team) || {
-                  placeholder: `L${matchId}`,
-                };
-              }
-              if (isAwaySource) {
-                thirdPlaceMatch.awayTeam = (loser as Team) || {
-                  placeholder: `L${matchId}`,
-                };
-              }
-            } else {
-              if (isHomeSource) {
-                thirdPlaceMatch.homeTeam = { placeholder: `L${matchId}` };
-              }
-              if (isAwaySource) {
-                thirdPlaceMatch.awayTeam = { placeholder: `L${matchId}` };
-              }
-            }
-
-            // Reset score/winner of 3rd place match
-            thirdPlaceMatch.homeScore = null;
-            thirdPlaceMatch.awayScore = null;
-            thirdPlaceMatch.homePenalties = null;
-            thirdPlaceMatch.awayPenalties = null;
-            thirdPlaceMatch.winner = null;
-
-            newMatches[thirdPlaceIndex] = thirdPlaceMatch;
-          }
-        }
-      }
-
-      return newMatches;
+      return propagateKnockoutTeams(newMatches);
     });
   }, []);
 
