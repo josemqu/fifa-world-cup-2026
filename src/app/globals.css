@@ -6,6 +6,7 @@
   --background: #f8fafc;
   --foreground: #171717;
   --chart-grid: #e2e8f0;
+  --font-geist-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 .dark {

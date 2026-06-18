@@ -273,61 +273,61 @@ export function GroupCard({
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-slate-500 dark:text-slate-400 uppercase bg-slate-50 dark:bg-slate-900/50">
             <tr>
-              <th scope="col" className="px-2 py-2 font-medium">
+              <th scope="col" className="px-1 py-2 pl-3 font-medium">
                 Equipo
               </th>
               <th
                 scope="col"
-                className="px-1 py-2 text-center w-7"
+                className="px-0.5 py-2 text-center w-6"
                 title="Partidos Jugados"
               >
                 PJ
               </th>
               <th
                 scope="col"
-                className="px-1 py-2 text-center w-7"
+                className="px-0.5 py-2 text-center w-5"
                 title="Ganados"
               >
                 G
               </th>
               <th
                 scope="col"
-                className="px-1 py-2 text-center w-7"
+                className="px-0.5 py-2 text-center w-5"
                 title="Empatados"
               >
                 E
               </th>
               <th
                 scope="col"
-                className="px-1 py-2 text-center w-7"
+                className="px-0.5 py-2 text-center w-5"
                 title="Perdidos"
               >
                 P
               </th>
               <th
                 scope="col"
-                className="px-1 py-2 text-center w-7"
+                className="px-0.5 py-2 text-center w-6"
                 title="Goles a Favor"
               >
                 GF
               </th>
               <th
                 scope="col"
-                className="px-1 py-2 text-center w-7"
+                className="px-0.5 py-2 text-center w-6"
                 title="Goles en Contra"
               >
                 GC
               </th>
               <th
                 scope="col"
-                className="px-1 py-2 text-center w-7"
+                className="px-0.5 py-2 text-center w-7"
                 title="Diferencia de Goles"
               >
                 DG
               </th>
               <th
                 scope="col"
-                className="px-1 py-2 text-center w-7 font-bold text-slate-700 dark:text-slate-200"
+                className="px-0.5 py-2 text-center w-7 font-bold text-slate-700 dark:text-slate-200"
                 title="Puntos"
               >
                 Pts
@@ -345,7 +345,7 @@ export function GroupCard({
                     : ""
                 )}
               >
-                <td className="px-2 py-1 pl-4 font-medium text-slate-900 dark:text-slate-100 flex items-center gap-1.5 relative h-8">
+                <td className="px-1 py-1 pl-3 font-medium text-slate-900 dark:text-slate-100 relative h-8">
                   <span
                     className={clsx(
                       "w-1 h-full absolute left-0 top-0",
@@ -358,17 +358,59 @@ export function GroupCard({
                         : "bg-transparent"
                     )}
                   />
-                  <div className="flex items-center min-w-0 flex-1">
+                  <div className="flex items-center min-w-0 flex-1 h-full">
                     <TeamFlag
                       teamName={team.name}
-                      className="w-5 h-3.5 mr-2 shadow-sm shrink-0"
+                      className="w-5 h-3.5 mr-1 shadow-sm shrink-0"
                     />
                     <Tooltip content={team.name} placement="right">
-                      <span className="cursor-help mr-1 truncate">
+                      <span className="cursor-help mr-0.5 truncate font-mono text-xs font-semibold">
                         {getTeamAbbreviation(team.name)}
                       </span>
                     </Tooltip>
 
+                    {/* Qualification/Lock Indicators right after abbreviation */}
+                    <div className="flex gap-0.5 ml-0.5 shrink-0 w-[30px] items-center">
+                      {analysis[team.id]?.isQualified && (
+                        <Tooltip
+                          content="Clasificado a la siguiente fase"
+                          placement="top"
+                        >
+                          <CheckCircle2
+                            size={13}
+                            className="text-green-600 dark:text-green-400"
+                          />
+                        </Tooltip>
+                      )}
+                      {/* Check for Qualified Best Third Place */}
+                      {!analysis[team.id]?.isQualified &&
+                        index === 2 &&
+                        qualifiedThirdIds?.has(team.id) && (
+                          <Tooltip
+                            content="Clasificado como mejor tercero"
+                            placement="top"
+                          >
+                            <CheckCircle2
+                              size={13}
+                              className="text-green-600 dark:text-green-400"
+                            />
+                          </Tooltip>
+                        )}
+
+                      {analysis[team.id]?.isPositionLocked && (
+                        <Tooltip
+                          content={`Posición asegurada (${index + 1}º)`}
+                          placement="top"
+                        >
+                          <Lock
+                            size={13}
+                            className="text-slate-400 dark:text-slate-500"
+                          />
+                        </Tooltip>
+                      )}
+                    </div>
+
+                    {/* Live Match Score Indicator */}
                     {(() => {
                       const liveMatch = group.matches.find((m) => {
                         const hasStarted = new Date() >= new Date(m.utcDate);
@@ -404,7 +446,7 @@ export function GroupCard({
                         >
                           <span
                             className={clsx(
-                              "px-1 py-0.5 text-[9px] font-black font-mono rounded-md border shrink-0 ml-1.5 leading-none select-none tracking-tight shadow-xs cursor-help animate-pulse",
+                              "px-1 py-0.5 text-[9px] font-black font-mono rounded-md border shrink-0 ml-1 leading-none select-none tracking-tight shadow-xs cursor-help animate-pulse",
                               bgClass
                             )}
                           >
@@ -413,73 +455,32 @@ export function GroupCard({
                         </Tooltip>
                       );
                     })()}
-
-                    {/* Qualification/Lock Indicators */}
-                    <div className="flex gap-0.5 ml-1 shrink-0">
-                      {analysis[team.id]?.isQualified && (
-                        <Tooltip
-                          content="Clasificado a la siguiente fase"
-                          placement="top"
-                        >
-                          <CheckCircle2
-                            size={14}
-                            className="text-green-600 dark:text-green-400"
-                          />
-                        </Tooltip>
-                      )}
-                      {/* Check for Qualified Best Third Place */}
-                      {!analysis[team.id]?.isQualified &&
-                        index === 2 &&
-                        qualifiedThirdIds?.has(team.id) && (
-                          <Tooltip
-                            content="Clasificado como mejor tercero"
-                            placement="top"
-                          >
-                            <CheckCircle2
-                              size={14}
-                              className="text-green-600 dark:text-green-400"
-                            />
-                          </Tooltip>
-                        )}
-
-                      {analysis[team.id]?.isPositionLocked && (
-                        <Tooltip
-                          content={`Posición asegurada (${index + 1}º)`}
-                          placement="top"
-                        >
-                          <Lock
-                            size={14}
-                            className="text-slate-400 dark:text-slate-500"
-                          />
-                        </Tooltip>
-                      )}
-                    </div>
                   </div>
                 </td>
-                <td className="px-1 py-1 text-center text-slate-600 dark:text-slate-400">
+                <td className="px-0.5 py-1 text-center text-slate-600 dark:text-slate-400 tabular-nums">
                   {team.played}
                 </td>
-                <td className="px-1 py-1 text-center text-slate-600 dark:text-slate-400">
+                <td className="px-0.5 py-1 text-center text-slate-600 dark:text-slate-400 tabular-nums">
                   {team.won}
                 </td>
-                <td className="px-1 py-1 text-center text-slate-600 dark:text-slate-400">
+                <td className="px-0.5 py-1 text-center text-slate-600 dark:text-slate-400 tabular-nums">
                   {team.drawn}
                 </td>
-                <td className="px-1 py-1 text-center text-slate-600 dark:text-slate-400">
+                <td className="px-0.5 py-1 text-center text-slate-600 dark:text-slate-400 tabular-nums">
                   {team.lost}
                 </td>
-                <td className="px-1 py-1 text-center text-slate-600 dark:text-slate-400">
+                <td className="px-0.5 py-1 text-center text-slate-600 dark:text-slate-400 tabular-nums">
                   {team.gf}
                 </td>
-                <td className="px-1 py-1 text-center text-slate-600 dark:text-slate-400">
+                <td className="px-0.5 py-1 text-center text-slate-600 dark:text-slate-400 tabular-nums">
                   {team.ga}
                 </td>
-                <td className="px-1 py-1 text-center text-slate-600 dark:text-slate-400 font-medium">
+                <td className="px-0.5 py-1 text-center text-slate-600 dark:text-slate-400 font-medium tabular-nums">
                   {team.gf - team.ga > 0
                     ? `+${team.gf - team.ga}`
                     : team.gf - team.ga}
                 </td>
-                <td className="px-1 py-1 text-center font-bold text-slate-800 dark:text-slate-100">
+                <td className="px-0.5 py-1 text-center font-bold text-slate-800 dark:text-slate-100 tabular-nums">
                   {team.pts}
                 </td>
               </tr>
