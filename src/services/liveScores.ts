@@ -120,9 +120,18 @@ async function fetchWithRetry(
   delayMs = 1000
 ): Promise<Response> {
   let lastError: any;
+  const mergedHeaders = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "*/*",
+    ...options.headers,
+  };
+  const mergedOptions = {
+    ...options,
+    headers: mergedHeaders,
+  };
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const res = await fetch(url, options);
+      const res = await fetch(url, mergedOptions);
       return res;
     } catch (err: any) {
       lastError = err;

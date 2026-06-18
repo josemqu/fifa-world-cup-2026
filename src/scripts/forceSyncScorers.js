@@ -354,11 +354,18 @@ async function main() {
   const LiveScore = mongoose.models.LiveScore || mongoose.model("LiveScore", LiveScoreSchema);
 
   const baseUrl = "https://worldcup26.ir";
+  const defaultHeaders = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "*/*"
+  };
   
   console.log('Authenticating with worldcup26.ir...');
   const authRes = await fetch(`${baseUrl}/auth/authenticate`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { 
+      "Content-Type": "application/json",
+      ...defaultHeaders
+    },
     body: JSON.stringify({ email, password }),
   });
   const authData = await authRes.json();
@@ -366,7 +373,10 @@ async function main() {
   
   console.log('Fetching all games...');
   const gamesRes = await fetch(`${baseUrl}/get/games`, {
-    headers: { Authorization: `Bearer ${token}` }
+    headers: { 
+      Authorization: `Bearer ${token}`,
+      ...defaultHeaders
+    }
   });
   const gamesData = await gamesRes.json();
   const games = gamesData.games || [];
