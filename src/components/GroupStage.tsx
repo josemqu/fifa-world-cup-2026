@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { GroupCard } from "./GroupCard";
 import { Group } from "@/data/types";
 import { Eye, EyeOff, Trash2 } from "lucide-react";
@@ -17,7 +17,7 @@ import {
   estimateGroupPositionProbabilities,
   AllGroupPositionProbs,
 } from "@/utils/groupPositionMonteCarlo";
-import { analyzeQualifiedThirds } from "@/utils/groupAnalysis";
+import { analyzeQualifiedThirds, TeamAnalysis, analyzeGroup } from "@/utils/groupAnalysis";
 
 interface GroupStageProps {
   groups: Group[];
@@ -30,9 +30,14 @@ interface GroupStageProps {
     status?: "scheduled" | "live" | "halftime" | "finished",
     elapsed?: number | null,
   ) => void;
+  onAnalyzingChange?: (analyzing: boolean) => void;
 }
 
-export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
+export function GroupStage({
+  groups,
+  onMatchUpdate,
+  onAnalyzingChange,
+}: GroupStageProps) {
   const { simulateGroups, resetTournament } = useTournament();
 
   const [thirdQualificationProbabilities, setThirdQualificationProbabilities] =
@@ -44,6 +49,13 @@ export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
   const [qualifiedThirdIds, setQualifiedThirdIds] = useState<Set<string>>(
     new Set()
   );
+
+  const [groupAnalysis, setGroupAnalysis] = useState<Record<
+    string,
+    Record<string, TeamAnalysis>
+  > | null>(null);
+
+  const workerRef = useRef<Worker | null>(null);
 
   const [showProbabilitiesIcon, setShowProbabilitiesIcon] = useState(true);
 
@@ -92,23 +104,82 @@ export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
     }, [groups]);
 
   useEffect(() => {
-    // Monte Carlo estimations — defer to avoid blocking render.
-    setThirdQualificationProbabilities(null);
-    setGroupPositionProbs(null);
-    const t = setTimeout(() => {
-      setThirdQualificationProbabilities(
-        estimateBestThirdQualificationProbabilities(groups, 1200)
-      );
-      setGroupPositionProbs(
-        estimateGroupPositionProbabilities(groups, 1200)
-      );
-      // Monte Carlo counterexample-based third-place qualification:
-      // A third is "qualified" only if it finishes in the top 8 thirds
-      // in ALL simulations (no counterexample found).
-      setQualifiedThirdIds(analyzeQualifiedThirds(groups, 1000));
-    }, 0);
-    return () => clearTimeout(t);
-  }, [groups]);
+    // 1. Immediately perform a quick synchronous simulation (200 iterations) for instant UI feedback
+    const fastThirdProbs = estimateBestThirdQualificationProbabilities(groups, 200);
+    const fastGroupPosProbs = estimateGroupPositionProbabilities(groups, 200);
+    const fastQualifiedThirdIds = analyzeQualifiedThirds(groups, 200);
+    const fastGroupAnalysis: Record<string, Record<string, TeamAnalysis>> = {};
+    groups.forEach((g) => {
+      fastGroupAnalysis[g.name] = analyzeGroup(g, 200);
+    });
+
+    setThirdQualificationProbabilities(fastThirdProbs);
+    setGroupPositionProbs(fastGroupPosProbs);
+    setQualifiedThirdIds(fastQualifiedThirdIds);
+    setGroupAnalysis(fastGroupAnalysis);
+
+    // 2. Terminate previous worker if running
+    if (workerRef.current) {
+      workerRef.current.terminate();
+      workerRef.current = null;
+      onAnalyzingChange?.(false);
+    }
+
+    // 3. Kick off a background Web Worker with 10,000 iterations for high precision
+    const worker = new Worker(
+      new URL("../workers/groupAnalysis.worker.ts", import.meta.url)
+    );
+    workerRef.current = worker;
+    onAnalyzingChange?.(true);
+
+    worker.postMessage({ groups, iterations: 10000 });
+
+    worker.onmessage = (e) => {
+      const { status, groupAnalysis: workerAnalysis, groupPositionProbs: workerPosProbs, thirdPlaceProbs, qualifiedThirdIds: workerQualifiedThirds, error } = e.data;
+      
+      if (status === "success") {
+        const finalThirdProbs = new Map<string, number>(Object.entries(thirdPlaceProbs));
+        
+        const finalGroupPosProbs: AllGroupPositionProbs = new Map();
+        Object.entries(workerPosProbs).forEach(([groupName, groupData]: [string, any]) => {
+          const map = new Map<string, number[]>(Object.entries(groupData));
+          finalGroupPosProbs.set(groupName, map);
+        });
+
+        const finalQualifiedThirds = new Set<string>(workerQualifiedThirds);
+
+        setThirdQualificationProbabilities(finalThirdProbs);
+        setGroupPositionProbs(finalGroupPosProbs);
+        setQualifiedThirdIds(finalQualifiedThirds);
+        setGroupAnalysis(workerAnalysis);
+      } else if (status === "error") {
+        console.error("[GroupStage Worker] Error:", error);
+      }
+      
+      if (workerRef.current === worker) {
+        workerRef.current = null;
+        onAnalyzingChange?.(false);
+      }
+      worker.terminate();
+    };
+
+    worker.onerror = (err) => {
+      console.error("[GroupStage Worker] Error Event:", err);
+      if (workerRef.current === worker) {
+        workerRef.current = null;
+        onAnalyzingChange?.(false);
+      }
+      worker.terminate();
+    };
+
+    return () => {
+      if (workerRef.current === worker) {
+        worker.terminate();
+        workerRef.current = null;
+        onAnalyzingChange?.(false);
+      }
+    };
+  }, [groups, onAnalyzingChange]);
 
   // Store which groups have their matches HIDDEN.
   const [hiddenGroups, setHiddenGroups] = useState<Map<string, boolean>>(() => {
@@ -148,6 +219,7 @@ export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
             qualifiedThirdIds={qualifiedThirdIds}
             positionProbabilities={groupPositionProbs?.get(group.name) ?? undefined}
             showPositionProbabilitiesIcon={showProbabilitiesIcon}
+            analysis={groupAnalysis?.[group.name] ?? undefined}
           />
         ))}
       </div>

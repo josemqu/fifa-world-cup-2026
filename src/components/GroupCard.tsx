@@ -4,7 +4,7 @@ import { Tooltip } from "@/components/ui/Tooltip";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { getTeamAbbreviation } from "@/utils/teamAbbreviations";
 import { ChevronDown, ChevronUp, CheckCircle2, Lock, Info, Edit2 } from "lucide-react";
-import { analyzeGroup } from "@/utils/groupAnalysis";
+import { analyzeGroup, TeamAnalysis } from "@/utils/groupAnalysis";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { MatchDateTime } from "@/components/ui/MatchDateTime";
 import { FlashScoreInput } from "@/components/ui/FlashScoreInput";
@@ -29,6 +29,7 @@ interface GroupCardProps {
   qualifiedThirdIds?: Set<string>;
   positionProbabilities?: GroupPositionProbMap;
   showPositionProbabilitiesIcon?: boolean;
+  analysis?: Record<string, TeamAnalysis>;
 }
 
 export function GroupCard({
@@ -39,6 +40,7 @@ export function GroupCard({
   qualifiedThirdIds,
   positionProbabilities,
   showPositionProbabilitiesIcon = true,
+  analysis: analysisProp,
 }: GroupCardProps) {
   const { dbUser, user } = useAuth();
   const [dbScores, setDbScores] = useState<any[]>([]);
@@ -77,7 +79,10 @@ export function GroupCard({
     });
   }, [group.teams]);
 
-  const analysis = useMemo(() => analyzeGroup(group), [group]);
+  const analysis = useMemo(() => {
+    if (analysisProp) return analysisProp;
+    return analyzeGroup(group, 200);
+  }, [group, analysisProp]);
 
   const getTeamName = (id: string) => {
     const team = group.teams.find((t) => t.id === id);
@@ -133,13 +138,15 @@ export function GroupCard({
                                     className="text-center py-1 px-1.5 font-mono tabular-nums"
                                     style={{
                                       color:
-                                        pct >= 70
-                                          ? "#4ade80"
-                                          : pct >= 40
-                                          ? "#facc15"
-                                          : pct >= 15
-                                          ? "#f97316"
-                                          : "#ef4444",
+                                        p === 0
+                                          ? "#990026ff"
+                                          : pct >= 70
+                                            ? "#4ade80"
+                                            : pct >= 40
+                                              ? "#facc15"
+                                              : pct >= 15
+                                                ? "#f97316"
+                                                : "#ef4444",
                                     }}
                                   >
                                     {label}
@@ -180,8 +187,8 @@ export function GroupCard({
                     // Overall certainty: geometric mean of individual confidences
                     const overallCertainty = ordered.length > 0
                       ? Math.round(
-                          ordered.reduce((prod, e) => prod * e.confidence, 1) ** (1 / ordered.length) * 100
-                        )
+                        ordered.reduce((prod, e) => prod * e.confidence, 1) ** (1 / ordered.length) * 100
+                      )
                       : 0;
 
                     return (
@@ -211,13 +218,15 @@ export function GroupCard({
                                     style={{
                                       width: `${confPct}%`,
                                       background:
-                                        confPct >= 70
-                                          ? "linear-gradient(90deg, #22c55e, #4ade80)"
-                                          : confPct >= 40
-                                          ? "linear-gradient(90deg, #eab308, #facc15)"
-                                          : confPct >= 15
-                                          ? "linear-gradient(90deg, #ea580c, #f97316)"
-                                          : "linear-gradient(90deg, #dc2626, #ef4444)",
+                                        entry.confidence === 0
+                                          ? "linear-gradient(90deg, #500010, #800020)"
+                                          : confPct >= 70
+                                            ? "linear-gradient(90deg, #22c55e, #4ade80)"
+                                            : confPct >= 40
+                                              ? "linear-gradient(90deg, #eab308, #facc15)"
+                                              : confPct >= 15
+                                                ? "linear-gradient(90deg, #ea580c, #f97316)"
+                                                : "linear-gradient(90deg, #dc2626, #ef4444)",
                                     }}
                                   />
                                 </div>
@@ -225,13 +234,15 @@ export function GroupCard({
                                   className="text-[10px] font-mono tabular-nums w-8 text-right shrink-0"
                                   style={{
                                     color:
-                                      confPct >= 70
-                                        ? "#4ade80"
-                                        : confPct >= 40
-                                        ? "#facc15"
-                                        : confPct >= 15
-                                        ? "#f97316"
-                                        : "#ef4444",
+                                      entry.confidence === 0
+                                        ? "#800020"
+                                        : confPct >= 70
+                                          ? "#4ade80"
+                                          : confPct >= 40
+                                            ? "#facc15"
+                                            : confPct >= 15
+                                              ? "#f97316"
+                                              : "#ef4444",
                                   }}
                                 >
                                   {confPct}%
@@ -356,10 +367,10 @@ export function GroupCard({
                       index < 2
                         ? "bg-green-500"
                         : index === 2 && qualifiedThirdIds?.has(team.id)
-                        ? "bg-green-500"
-                        : index === 2
-                        ? "bg-yellow-400/50"
-                        : "bg-transparent"
+                          ? "bg-green-500"
+                          : index === 2
+                            ? "bg-yellow-400/50"
+                            : "bg-transparent"
                     )}
                   />
                   <div className="flex items-center min-w-0 flex-1 h-full">
@@ -375,9 +386,15 @@ export function GroupCard({
 
                     {/* Qualification/Lock Indicators right after abbreviation */}
                     <div className="flex gap-0.5 ml-0.5 shrink-0 w-[30px] items-center">
-                      {analysis[team.id]?.isQualified && (
+                      {analysis[team.id]?.isGuaranteedQualified && (
                         <Tooltip
-                          content="Clasificado a la siguiente fase"
+                          content={
+                            analysis[team.id]?.isQualified
+                              ? "Clasificado a la siguiente fase"
+                              : index === 2
+                                ? "Clasificado como mejor tercero"
+                                : "Clasificado a la siguiente fase"
+                          }
                           placement="top"
                           wrapperClassName="flex items-center"
                         >
@@ -387,21 +404,6 @@ export function GroupCard({
                           />
                         </Tooltip>
                       )}
-                      {/* Check for Qualified Best Third Place */}
-                      {!analysis[team.id]?.isQualified &&
-                        index === 2 &&
-                        qualifiedThirdIds?.has(team.id) && (
-                          <Tooltip
-                            content="Clasificado como mejor tercero"
-                            placement="top"
-                            wrapperClassName="flex items-center"
-                          >
-                            <CheckCircle2
-                              size={13}
-                              className="text-green-600 dark:text-green-400"
-                            />
-                          </Tooltip>
-                        )}
 
                       {analysis[team.id]?.isPositionLocked && (
                         <Tooltip
@@ -514,8 +516,8 @@ export function GroupCard({
                   >
                     <div className="flex justify-between items-center text-[10px] text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-wide leading-none">
                       <div className="flex items-center gap-1.5">
-                        <MatchDateTime 
-                          utcDate={match.utcDate} 
+                        <MatchDateTime
+                          utcDate={match.utcDate}
                           matchId={match.id}
                         />
                         {isAdmin && (

@@ -122,6 +122,17 @@ function getEffectiveNow(): Date {
   return now;
 }
 
+function areScorersEqual(s1?: Scorer[], s2?: Scorer[]): boolean {
+  const len1 = s1?.length ?? 0;
+  const len2 = s2?.length ?? 0;
+  if (len1 !== len2) return false;
+  if (len1 === 0) return true;
+  return s1!.every((scorer, idx) => {
+    const other = s2![idx];
+    return other && scorer.name === other.name && scorer.minute === other.minute;
+  });
+}
+
 export function TournamentProvider({ children }: { children: ReactNode }) {
   const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
   const [knockoutMatches, setKnockoutMatches] = useState<KnockoutMatch[]>([]);
@@ -391,6 +402,35 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     awayScorers?: Scorer[],
   ) => {
     setGroups((currentGroups) => {
+      const targetGroup = currentGroups.find((g) => g.name === groupId);
+      if (!targetGroup) return currentGroups;
+
+      const targetMatch = targetGroup.matches.find((m) => m.id === matchId);
+      if (!targetMatch) return currentGroups;
+
+      const expectedFinished = finished !== undefined ? finished : (homeScore !== null && awayScore !== null);
+      const expectedStatus = status || targetMatch.status;
+      const expectedElapsed = elapsed !== undefined ? elapsed : targetMatch.elapsed;
+
+      const scoreUnchanged = targetMatch.homeScore === homeScore && targetMatch.awayScore === awayScore;
+      const statusUnchanged = targetMatch.status === expectedStatus;
+      const finishedUnchanged = targetMatch.finished === expectedFinished;
+      const elapsedUnchanged = targetMatch.elapsed === expectedElapsed;
+      const scorersUnchanged = areScorersEqual(targetMatch.homeScorers, homeScorers) &&
+                               areScorersEqual(targetMatch.awayScorers, awayScorers);
+
+      if (scoreUnchanged && statusUnchanged && finishedUnchanged && elapsedUnchanged && scorersUnchanged) {
+        return currentGroups;
+      }
+
+      console.log(`[TournamentContext] updateMatch triggered groups change for match ${matchId}:`, {
+        scoreUnchanged,
+        statusUnchanged,
+        finishedUnchanged,
+        elapsedUnchanged,
+        scorersUnchanged
+      });
+
       return currentGroups.map((group) => {
         if (group.name !== groupId) return group;
 
@@ -403,9 +443,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
             awayScore: awayScore,
             homeScorers: homeScorers || match.homeScorers,
             awayScorers: awayScorers || match.awayScorers,
-            finished: finished !== undefined ? finished : (homeScore !== null && awayScore !== null),
-            status: status || match.status,
-            elapsed: elapsed !== undefined ? elapsed : match.elapsed,
+            finished: expectedFinished,
+            status: expectedStatus,
+            elapsed: expectedElapsed,
             lastSyncAt: new Date().toISOString(),
           };
         });
@@ -429,6 +469,34 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     awayScorers?: Scorer[],
   ) => {
     setKnockoutMatches((currentMatches) => {
+      const targetMatch = currentMatches.find((m) => m.id === matchId);
+      if (!targetMatch) return currentMatches;
+
+      const expectedFinished = finished !== undefined ? finished : (homeScore !== null && awayScore !== null);
+      const expectedStatus = status || targetMatch.status;
+      const expectedElapsed = elapsed !== undefined ? elapsed : targetMatch.elapsed;
+
+      const scoreUnchanged = targetMatch.homeScore === homeScore && targetMatch.awayScore === awayScore;
+      const pensUnchanged = targetMatch.homePenalties === homePenalties && targetMatch.awayPenalties === awayPenalties;
+      const statusUnchanged = targetMatch.status === expectedStatus;
+      const finishedUnchanged = targetMatch.finished === expectedFinished;
+      const elapsedUnchanged = targetMatch.elapsed === expectedElapsed;
+      const scorersUnchanged = areScorersEqual(targetMatch.homeScorers, homeScorers) &&
+                               areScorersEqual(targetMatch.awayScorers, awayScorers);
+
+      if (scoreUnchanged && pensUnchanged && statusUnchanged && finishedUnchanged && elapsedUnchanged && scorersUnchanged) {
+        return currentMatches;
+      }
+
+      console.log(`[TournamentContext] updateKnockoutMatch triggered knockoutMatches change for match ${matchId}:`, {
+        scoreUnchanged,
+        pensUnchanged,
+        statusUnchanged,
+        finishedUnchanged,
+        elapsedUnchanged,
+        scorersUnchanged
+      });
+
       const newMatches = currentMatches.map((m) => {
         if (m.id !== matchId) return m;
         return {
@@ -439,9 +507,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           awayPenalties: awayPenalties,
           homeScorers: homeScorers || m.homeScorers,
           awayScorers: awayScorers || m.awayScorers,
-          finished: finished !== undefined ? finished : (homeScore !== null && awayScore !== null),
-          status: status || m.status,
-          elapsed: elapsed !== undefined ? elapsed : m.elapsed,
+          finished: expectedFinished,
+          status: expectedStatus,
+          elapsed: expectedElapsed,
           lastSyncAt: new Date().toISOString(),
         };
       });

@@ -10,9 +10,13 @@ export interface TeamAnalysis {
   maxRank: number;
   isQualified: boolean; // Guaranteed Top 2 (no counterexample found in N simulations)
   isPositionLocked: boolean; // Fixed position (e.g. guaranteed 1st, or guaranteed 4th)
+  isGuaranteedQualified: boolean; // Guaranteed to qualify to R32 (Top 2 or Best Third)
 }
 
-export const analyzeGroup = (group: Group): Record<string, TeamAnalysis> => {
+export const analyzeGroup = (
+  group: Group,
+  iterations: number = MONTE_CARLO_ITERATIONS
+): Record<string, TeamAnalysis> => {
   const playedMatches = group.matches.filter(
     (m) => m.homeScore != null && m.awayScore != null
   );
@@ -26,6 +30,7 @@ export const analyzeGroup = (group: Group): Record<string, TeamAnalysis> => {
         maxRank: teamCount,
         isQualified: false,
         isPositionLocked: false,
+        isGuaranteedQualified: false,
       };
     });
     return result;
@@ -47,6 +52,7 @@ export const analyzeGroup = (group: Group): Record<string, TeamAnalysis> => {
         maxRank: rank,
         isQualified: rank <= 2,
         isPositionLocked: true,
+        isGuaranteedQualified: rank <= 2,
       };
     });
     return result;
@@ -63,7 +69,7 @@ export const analyzeGroup = (group: Group): Record<string, TeamAnalysis> => {
     teamStats[t.id] = { min: group.teams.length + 1, max: 0 };
   });
 
-  for (let i = 0; i < MONTE_CARLO_ITERATIONS; i++) {
+  for (let i = 0; i < iterations; i++) {
     // Generate a random scenario for all unplayed matches using Poisson model
     const scenarioMatches = generateMonteCarloScenario(unplayedMatches, teamMap);
 
@@ -89,6 +95,7 @@ export const analyzeGroup = (group: Group): Record<string, TeamAnalysis> => {
       // across ALL Monte Carlo simulations (no counterexample found)
       isQualified: stats.max <= 2,
       isPositionLocked: stats.min === stats.max,
+      isGuaranteedQualified: stats.max <= 2,
     };
   });
 
