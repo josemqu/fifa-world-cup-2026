@@ -123,6 +123,10 @@ export function GroupCard({
                             {probs ? (
                               probs.map((p, i) => {
                                 const pct = Math.round(p * 100);
+                                const label =
+                                  pct === 0 && p > 0
+                                    ? "~0%"
+                                    : `${pct}%`;
                                 return (
                                   <td
                                     key={i}
@@ -132,13 +136,13 @@ export function GroupCard({
                                         pct >= 70
                                           ? "#4ade80"
                                           : pct >= 40
-                                          ? "#fbbf24"
+                                          ? "#facc15"
                                           : pct >= 15
-                                          ? "#fb923c"
-                                          : "#94a3b8",
+                                          ? "#f97316"
+                                          : "#ef4444",
                                     }}
                                   >
-                                    {pct}%
+                                    {label}
                                   </td>
                                 );
                               })
@@ -210,10 +214,10 @@ export function GroupCard({
                                         confPct >= 70
                                           ? "linear-gradient(90deg, #22c55e, #4ade80)"
                                           : confPct >= 40
-                                          ? "linear-gradient(90deg, #eab308, #fbbf24)"
+                                          ? "linear-gradient(90deg, #eab308, #facc15)"
                                           : confPct >= 15
-                                          ? "linear-gradient(90deg, #ea580c, #fb923c)"
-                                          : "linear-gradient(90deg, #475569, #64748b)",
+                                          ? "linear-gradient(90deg, #ea580c, #f97316)"
+                                          : "linear-gradient(90deg, #dc2626, #ef4444)",
                                     }}
                                   />
                                 </div>
@@ -224,10 +228,10 @@ export function GroupCard({
                                       confPct >= 70
                                         ? "#4ade80"
                                         : confPct >= 40
-                                        ? "#fbbf24"
+                                        ? "#facc15"
                                         : confPct >= 15
-                                        ? "#fb923c"
-                                        : "#94a3b8",
+                                        ? "#f97316"
+                                        : "#ef4444",
                                   }}
                                 >
                                   {confPct}%
