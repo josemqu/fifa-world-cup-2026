@@ -1,10 +1,14 @@
 import { Group, Team, Match } from "@/data/types";
-import { recalculateGroupStats } from "@/utils/simulationUtils";
+import { recalculateGroupStats, predictMatchScore } from "@/utils/simulationUtils";
+
+// Number of Monte Carlo simulations to run per group analysis.
+// Higher = more accurate but slower. 1000 is a good balance for real-time UI.
+const MONTE_CARLO_ITERATIONS = 1000;
 
 export interface TeamAnalysis {
   minRank: number;
   maxRank: number;
-  isQualified: boolean; // Guaranteed Top 2
+  isQualified: boolean; // Guaranteed Top 2 (no counterexample found in N simulations)
   isPositionLocked: boolean; // Fixed position (e.g. guaranteed 1st, or guaranteed 4th)
 }
 
@@ -48,39 +52,23 @@ export const analyzeGroup = (group: Group): Record<string, TeamAnalysis> => {
     return result;
   }
 
-  // Generate all scenarios (3^N)
-  // Each match has 3 outcomes: Home Win, Draw, Away Win
-  // We will assign provisional scores. To be safe/simple, we can use 1-0 for wins and 0-0 for draws.
-  // Note: Goal difference matters for tie-breakers.
-  // Strictly speaking, "Mathematically Secured" implies it holds even with extreme scores.
-  // However, iterating over ALL scores is impossible.
-  // Standard practice for "mathematical qualification" usually assumes "Points" primarily.
-  // But GD is the second tie-breaker. A team could theoretically lose 0-100 and lose the GD advantage.
-  // So, "Mathematically Secured" usually means "Points are enough such that even with worst case GD, you pass".
-  // OR, we can just assume "worst reasonable case".
-  // BUT, usually "Secured" implies POINTS are sufficient.
-  // OR, we assume checking only W/D/L outcomes.
-  // If we check only W/D/L outcomes with minimal margins (1-0), we might miss a scenario where a team loses on GD.
-  // However, checking infinite scores is impossible.
-  // A common approximation is to check W/D/L.
-  // If a team is Top 2 in ALL W/D/L scenarios, they are qualified *barring* GD swings.
-  // For strict mathematical certainty including GD, it's hard.
-  // BUT, usually people care about Points.
-  // Let's stick to the W/D/L permutation with minimal scores (1-0, 0-0, 0-1).
-  // This covers the Points permutations.
-  // For the "Locked" status, if minRank == maxRank in all W/D/L scenarios, it's pretty solid.
+  // Build a team lookup map for the unplayed matches so we can pass
+  // ranking/fifaPoints to predictMatchScore
+  const teamMap = new Map<string, Team>();
+  group.teams.forEach((t) => teamMap.set(t.id, t));
 
-  const scenarios = generateScenarios(unplayedMatches);
-
-  // Track min/max rank for each team across all scenarios
+  // Track min/max rank for each team across all Monte Carlo simulations
   const teamStats: Record<string, { min: number; max: number }> = {};
   group.teams.forEach((t) => {
-    teamStats[t.id] = { min: 5, max: 0 }; // Initialize with inverted values
+    teamStats[t.id] = { min: group.teams.length + 1, max: 0 };
   });
 
-  for (const scenario of scenarios) {
-    // Apply scenario to a clone of the group
-    const simulatedGroup = applyScenario(group, scenario);
+  for (let i = 0; i < MONTE_CARLO_ITERATIONS; i++) {
+    // Generate a random scenario for all unplayed matches using Poisson model
+    const scenarioMatches = generateMonteCarloScenario(unplayedMatches, teamMap);
+
+    // Apply scenario and compute standings
+    const simulatedGroup = applyScenario(group, scenarioMatches);
     const standings = getStandings(simulatedGroup);
 
     standings.forEach((team, index) => {
@@ -97,6 +85,8 @@ export const analyzeGroup = (group: Group): Record<string, TeamAnalysis> => {
     result[t.id] = {
       minRank: stats.min,
       maxRank: stats.max,
+      // Qualified only if the team never dropped below 2nd place
+      // across ALL Monte Carlo simulations (no counterexample found)
       isQualified: stats.max <= 2,
       isPositionLocked: stats.min === stats.max,
     };
@@ -105,39 +95,134 @@ export const analyzeGroup = (group: Group): Record<string, TeamAnalysis> => {
   return result;
 };
 
-// Helper to generate 3^N outcomes
-function generateScenarios(matches: Match[]): Match[][] {
-  if (matches.length === 0) return [[]];
+/**
+ * Analyze ALL groups together via Monte Carlo to determine which third-place
+ * teams are guaranteed to qualify as "best thirds" (top 8 of 12 thirds).
+ *
+ * Counterexample approach: a third-place team is only marked as qualified if
+ * it finishes in the top 8 thirds in EVERY simulation. If there is even one
+ * simulation where it falls outside the top 8, it is NOT marked as qualified.
+ *
+ * Returns a Set<string> of team IDs that are guaranteed to qualify as best thirds.
+ */
+export function analyzeQualifiedThirds(
+  groups: Group[],
+  iterations: number = MONTE_CARLO_ITERATIONS
+): Set<string> {
+  // If no groups have any matches played, nobody qualifies
+  const anyPlayed = groups.some((g) =>
+    g.matches.some((m) => m.homeScore != null && m.awayScore != null)
+  );
+  if (!anyPlayed) return new Set<string>();
 
-  const firstMatch = matches[0];
-  const restMatches = matches.slice(1);
-  const restScenarios = generateScenarios(restMatches);
+  // Build team lookup maps per group
+  const groupTeamMaps = new Map<string, Map<string, Team>>();
+  groups.forEach((g) => {
+    const teamMap = new Map<string, Team>();
+    g.teams.forEach((t) => teamMap.set(t.id, t));
+    groupTeamMaps.set(g.name, teamMap);
+  });
 
-  const scenarios: Match[][] = [];
+  // Track: for each team, the worst ranking among thirds across all simulations
+  // A team qualifies only if it's ALWAYS in top 8 (worstThirdRank <= 8)
+  const worstThirdRank = new Map<string, number>();
+  // Also track if a team ever fails to be 3rd in its group (then it's not a "third")
+  const everNotThird = new Set<string>();
+  // Track all team IDs that were ever 3rd in their group
+  const allThirdCandidates = new Set<string>();
 
-  // Outcome 1: Home Win (1-0)
-  const homeWin = { ...firstMatch, homeScore: 1, awayScore: 0, finished: true };
+  // Check which groups are fully played (deterministic results)
+  const groupFullyPlayed = new Map<string, boolean>();
+  groups.forEach((g) => {
+    const allPlayed = g.matches.every(
+      (m) => m.homeScore != null && m.awayScore != null
+    );
+    groupFullyPlayed.set(g.name, allPlayed);
+  });
 
-  // Outcome 2: Draw (0-0)
-  const draw = { ...firstMatch, homeScore: 0, awayScore: 0, finished: true };
+  for (let i = 0; i < iterations; i++) {
+    // Simulate all groups
+    const thirdPlaceTeams: Team[] = [];
 
-  // Outcome 3: Away Win (0-1)
-  const awayWin = { ...firstMatch, homeScore: 0, awayScore: 1, finished: true };
+    for (const group of groups) {
+      const teamMap = groupTeamMaps.get(group.name)!;
+      let simulatedGroup: Group;
 
-  for (const rest of restScenarios) {
-    scenarios.push([homeWin, ...rest]);
-    scenarios.push([draw, ...rest]);
-    scenarios.push([awayWin, ...rest]);
+      if (groupFullyPlayed.get(group.name)) {
+        // No simulation needed — use actual results
+        simulatedGroup = group;
+      } else {
+        const unplayedMatches = group.matches.filter(
+          (m) => m.homeScore == null || m.awayScore == null
+        );
+        const scenarioMatches = generateMonteCarloScenario(unplayedMatches, teamMap);
+        simulatedGroup = applyScenario(group, scenarioMatches);
+      }
+
+      const standings = getStandings(simulatedGroup);
+      if (standings[2]) {
+        thirdPlaceTeams.push(standings[2]);
+        allThirdCandidates.add(standings[2].id);
+      }
+    }
+
+    // Sort thirds and determine top 8
+    const sortedThirds = sortThirdPlaceTeams(thirdPlaceTeams);
+
+    // Record the rank for each third-place team in this simulation
+    sortedThirds.forEach((team, idx) => {
+      const thirdRank = idx + 1; // 1 = best third, 12 = worst third
+      const current = worstThirdRank.get(team.id) ?? 0;
+      if (thirdRank > current) {
+        worstThirdRank.set(team.id, thirdRank);
+      }
+    });
   }
 
-  return scenarios;
+  // A team is a guaranteed "best third" if:
+  // - It was ALWAYS 3rd in its group (handled by worstThirdRank being set)
+  // - Its worst ranking among thirds across all simulations is <= 8
+  const qualifiedIds = new Set<string>();
+  worstThirdRank.forEach((worst, teamId) => {
+    if (worst <= 8) {
+      qualifiedIds.add(teamId);
+    }
+  });
+
+  return qualifiedIds;
+}
+
+/**
+ * Generate a single Monte Carlo scenario for all unplayed matches.
+ * Uses Poisson-based predictMatchScore which considers FIFA rankings
+ * and produces realistic goal distributions (0-0, 1-0, 2-1, 3-0, etc.)
+ * so that goal-difference tiebreakers are properly exercised.
+ */
+function generateMonteCarloScenario(
+  unplayedMatches: Match[],
+  teamMap: Map<string, Team>
+): Match[] {
+  return unplayedMatches.map((match) => {
+    const homeTeam = teamMap.get(match.homeTeamId);
+    const awayTeam = teamMap.get(match.awayTeamId);
+
+    // predictMatchScore returns Poisson-sampled goals based on FIFA points
+    const score = predictMatchScore(
+      homeTeam || {},
+      awayTeam || {}
+    );
+
+    return {
+      ...match,
+      homeScore: score.home,
+      awayScore: score.away,
+      finished: true,
+    };
+  });
 }
 
 function applyScenario(originalGroup: Group, scenarioMatches: Match[]): Group {
-  // Create a deep copy of the group to avoid mutating the original
-  // But we can optimize by only cloning teams and match list
-
-  // We need to merge the scenario matches into the group's match list
+  // Merge the scenario matches into the group's match list
   const combinedMatches = originalGroup.matches.map((m) => {
     const scenarioMatch = scenarioMatches.find((sm) => sm.id === m.id);
     return scenarioMatch || m;
@@ -159,5 +244,14 @@ function getStandings(group: Group): Team[] {
     if (b.gf - b.ga !== a.gf - a.ga) return b.gf - b.ga - (a.gf - a.ga);
     if (b.gf !== a.gf) return b.gf - a.gf;
     return b.won - a.won; // 4th tiebreaker: wins
+  });
+}
+
+function sortThirdPlaceTeams(teams: Team[]): Team[] {
+  return [...teams].sort((a, b) => {
+    if (b.pts !== a.pts) return b.pts - a.pts;
+    if (b.gf - b.ga !== a.gf - a.ga) return b.gf - b.ga - (a.gf - a.ga);
+    if (b.gf !== a.gf) return b.gf - a.gf;
+    return b.won - a.won;
   });
 }

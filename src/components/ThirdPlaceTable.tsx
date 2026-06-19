@@ -9,16 +9,19 @@ interface ThirdPlaceTableProps {
   teams: Team[];
   showQualification?: boolean;
   qualificationProbabilities?: Map<string, number>;
+  /** Monte Carlo counterexample-based qualified IDs (guaranteed top-8 third) */
+  monteCarloQualifiedIds?: Set<string>;
 }
 
 export function ThirdPlaceTable({
   teams,
   showQualification = false,
   qualificationProbabilities,
+  monteCarloQualifiedIds,
 }: ThirdPlaceTableProps) {
   // We expect 'teams' to be already sorted by performance
   const top8 = teams.slice(0, 8);
-  const qualifiedIds = new Set(top8.map((t) => t.id));
+  const deterministicQualifiedIds = new Set(top8.map((t) => t.id));
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col animate-fade-in-up">
@@ -63,8 +66,15 @@ export function ThirdPlaceTable({
           </thead>
           <tbody>
             {teams.map((team, index) => {
-              const isQualified =
-                showQualification && qualifiedIds.has(team.id);
+              // A team is qualified if:
+              // - All groups are complete and it's deterministically in top 8, OR
+              // - Monte Carlo says it qualifies in ALL simulations (guaranteed)
+              const isDeterministicallyQualified =
+                showQualification && deterministicQualifiedIds.has(team.id);
+              const isMCQualified =
+                monteCarloQualifiedIds && monteCarloQualifiedIds.has(team.id);
+              const isQualified = isDeterministicallyQualified || !!isMCQualified;
+
               const prob = qualificationProbabilities?.get(team.id);
               return (
                 <tr
@@ -91,7 +101,7 @@ export function ThirdPlaceTable({
                       </span>
                     </Tooltip>
                     {isQualified && (
-                      <Tooltip content="Clasificado" placement="top">
+                      <Tooltip content="Clasificado como mejor tercero" placement="top">
                         <CheckCircle2
                           size={14}
                           className="text-green-600 dark:text-green-400 ml-1"

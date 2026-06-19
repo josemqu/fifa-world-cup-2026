@@ -17,6 +17,7 @@ import {
   estimateGroupPositionProbabilities,
   AllGroupPositionProbs,
 } from "@/utils/groupPositionMonteCarlo";
+import { analyzeQualifiedThirds } from "@/utils/groupAnalysis";
 
 interface GroupStageProps {
   groups: Group[];
@@ -39,6 +40,10 @@ export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
 
   const [groupPositionProbs, setGroupPositionProbs] =
     useState<AllGroupPositionProbs | null>(null);
+
+  const [qualifiedThirdIds, setQualifiedThirdIds] = useState<Set<string>>(
+    new Set()
+  );
 
   const [showProbabilitiesIcon, setShowProbabilitiesIcon] = useState(true);
 
@@ -73,25 +78,21 @@ export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const { sortedThirds, qualifiedThirdIds, isGroupStageComplete } =
+  const { sortedThirds, isGroupStageComplete } =
     useMemo(() => {
       const { thirdPlaceTeams } = getGroupStandings(groups);
       const sorted = getSortedThirdPlaceTeams(thirdPlaceTeams);
       const stageComplete = groups.every((g) =>
         g.matches.every((m) => m.homeScore != null && m.awayScore != null)
       );
-      const top8Ids = stageComplete
-        ? new Set(sorted.slice(0, 8).map((t) => t.id))
-        : new Set<string>();
       return {
         sortedThirds: sorted,
-        qualifiedThirdIds: top8Ids,
         isGroupStageComplete: stageComplete,
       };
     }, [groups]);
 
   useEffect(() => {
-    // Monte Carlo estimation can be a bit heavy; defer it to avoid blocking render.
+    // Monte Carlo estimations — defer to avoid blocking render.
     setThirdQualificationProbabilities(null);
     setGroupPositionProbs(null);
     const t = setTimeout(() => {
@@ -101,6 +102,10 @@ export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
       setGroupPositionProbs(
         estimateGroupPositionProbabilities(groups, 1200)
       );
+      // Monte Carlo counterexample-based third-place qualification:
+      // A third is "qualified" only if it finishes in the top 8 thirds
+      // in ALL simulations (no counterexample found).
+      setQualifiedThirdIds(analyzeQualifiedThirds(groups, 1000));
     }, 0);
     return () => clearTimeout(t);
   }, [groups]);
@@ -154,6 +159,7 @@ export function GroupStage({ groups, onMatchUpdate }: GroupStageProps) {
           qualificationProbabilities={
             thirdQualificationProbabilities ?? undefined
           }
+          monteCarloQualifiedIds={qualifiedThirdIds}
         />
       </div>
 
