@@ -407,7 +407,11 @@ export function GroupCard({
 
                       {analysis[team.id]?.isPositionLocked && (
                         <Tooltip
-                          content={`Posición asegurada (${index + 1}º)`}
+                          content={
+                            index === 3
+                              ? "Equipo eliminado"
+                              : `Posición asegurada (${index + 1}º)`
+                          }
                           placement="top"
                           wrapperClassName="flex items-center"
                         >
