@@ -1122,16 +1122,19 @@ export function TournamentStatsCard({
                       <tbody>
                         {(() => {
                           let currentRank = 1;
-                          return stats.topScorers.map((s, idx) => {
+                          const rankedScorers = stats.topScorers.map((s, idx) => {
                             if (idx > 0 && s.goals < stats.topScorers[idx - 1].goals) {
                               currentRank += 1;
                             }
-                            
+                            return { ...s, rank: currentRank };
+                          });
+
+                          return rankedScorers.slice(0, 10).map((s) => {
                             const medal = 
-                              currentRank === 1 ? "🥇" :
-                              currentRank === 2 ? "🥈" :
-                              currentRank === 3 ? "🥉" :
-                              String(currentRank);
+                              s.rank === 1 ? "🥇" :
+                              s.rank === 2 ? "🥈" :
+                              s.rank === 3 ? "🥉" :
+                              String(s.rank);
 
                             return (
                               <tr
