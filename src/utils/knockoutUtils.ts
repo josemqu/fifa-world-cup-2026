@@ -1,4 +1,5 @@
 import { Group, Team } from "@/data/types";
+import { sortGroupTeams } from "@/utils/groupSorting";
 import {
   THIRD_PLACE_MATRIX,
   R32_MATCHES,
@@ -21,11 +22,7 @@ export function getGroupStandings(groups: Group[]) {
   const thirdPlaceTeams: Team[] = [];
 
   groups.forEach((group) => {
-    const sorted = [...group.teams].sort((a, b) => {
-      if (b.pts !== a.pts) return b.pts - a.pts;
-      if (b.gf - b.ga !== a.gf - a.ga) return b.gf - b.ga - (a.gf - a.ga);
-      return b.gf - a.gf;
-    });
+    const sorted = sortGroupTeams(group.teams, group.matches);
 
     qualified.set(group.name, {
       first: sorted[0],

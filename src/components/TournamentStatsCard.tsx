@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Group, KnockoutMatch, Team } from "@/data/types";
+import { sortGroupTeams } from "@/utils/groupSorting";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { getTeamAbbreviation } from "@/utils/teamAbbreviations";
 import {
@@ -98,13 +99,8 @@ function computeStandings(
 
   // Process group stage
   for (const group of groups) {
-    // Sort teams within the group to determine position
-    const sortedTeams = [...group.teams].sort((a, b) => {
-      if (b.pts !== a.pts) return b.pts - a.pts;
-      if (b.gf - b.ga !== a.gf - a.ga) return b.gf - b.ga - (a.gf - a.ga);
-      if (b.gf !== a.gf) return b.gf - a.gf;
-      return b.won - a.won;
-    });
+    // Sort teams within the group to determine position using Olympic tiebreaker
+    const sortedTeams = sortGroupTeams(group.teams, group.matches);
 
     sortedTeams.forEach((team, idx) => {
       teamMap.set(team.id, {

@@ -6,6 +6,7 @@ import { getTeamAbbreviation } from "@/utils/teamAbbreviations";
 import { ChevronDown, ChevronUp, CheckCircle2, Lock, Info, Edit2 } from "lucide-react";
 import { analyzeGroup, TeamAnalysis } from "@/utils/groupAnalysis";
 import { useMemo, useState, useEffect, useCallback } from "react";
+import { sortGroupTeams } from "@/utils/groupSorting";
 import { MatchDateTime } from "@/components/ui/MatchDateTime";
 import { FlashScoreInput } from "@/components/ui/FlashScoreInput";
 import { GroupPositionProbMap } from "@/utils/groupPositionMonteCarlo";
@@ -71,13 +72,8 @@ export function GroupCard({
   }, [fetchDbScores]);
 
   const sortedTeams = useMemo(() => {
-    return [...group.teams].sort((a, b) => {
-      if (b.pts !== a.pts) return b.pts - a.pts;
-      if (b.gf - b.ga !== a.gf - a.ga) return b.gf - b.ga - (a.gf - a.ga);
-      if (b.gf !== a.gf) return b.gf - a.gf;
-      return b.won - a.won;
-    });
-  }, [group.teams]);
+    return sortGroupTeams(group.teams, group.matches);
+  }, [group.teams, group.matches]);
 
   const analysis = useMemo(() => {
     if (analysisProp) return analysisProp;

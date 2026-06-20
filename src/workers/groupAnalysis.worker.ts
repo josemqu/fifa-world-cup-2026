@@ -1,6 +1,7 @@
 import { Group, Team, Match } from "../data/types";
 import { predictMatchScore, recalculateGroupStats } from "../utils/simulationUtils";
 import { TeamAnalysis } from "../utils/groupAnalysis";
+import { sortGroupTeams } from "../utils/groupSorting";
 
 self.onmessage = async (e: MessageEvent) => {
   const { groups, iterations } = e.data;
@@ -87,13 +88,8 @@ self.onmessage = async (e: MessageEvent) => {
 
         simulatedGroups.push(simulatedGroup);
 
-        // Sort teams (standings)
-        const standings = [...simulatedGroup.teams].sort((a, b) => {
-          if (b.pts !== a.pts) return b.pts - a.pts;
-          if (b.gf - b.ga !== a.gf - a.ga) return b.gf - b.ga - (a.gf - a.ga);
-          if (b.gf !== a.gf) return b.gf - a.gf;
-          return b.won - a.won;
-        });
+        // Sort teams (standings) using Olympic tiebreaker
+        const standings = sortGroupTeams(simulatedGroup.teams, simulatedGroup.matches);
 
         // Record standings for each team
         standings.forEach((team, index) => {
@@ -129,12 +125,7 @@ self.onmessage = async (e: MessageEvent) => {
 
       // Mark qualified thirds and count eliminations
       simulatedGroups.forEach((g) => {
-        const standings = [...g.teams].sort((a, b) => {
-          if (b.pts !== a.pts) return b.pts - a.pts;
-          if (b.gf - b.ga !== a.gf - a.ga) return b.gf - b.ga - (a.gf - a.ga);
-          if (b.gf !== a.gf) return b.gf - a.gf;
-          return b.won - a.won;
-        });
+        const standings = sortGroupTeams(g.teams, g.matches);
 
         standings.forEach((team, index) => {
           if (index === 3) {

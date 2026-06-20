@@ -1,4 +1,5 @@
-import { Group, Team } from "@/data/types";
+import { Group, Team, Match } from "@/data/types";
+import { sortGroupTeams } from "@/utils/groupSorting";
 import {
   predictMatchScore,
   recalculateGroupStats,
@@ -61,12 +62,7 @@ export function estimateBestThirdQualificationProbabilities(
     const thirdPlaceTeams: Team[] = [];
 
     simulatedGroups.forEach((group) => {
-      const sorted = [...group.teams].sort((a, b) => {
-        if (b.pts !== a.pts) return b.pts - a.pts;
-        if (b.gf - b.ga !== a.gf - a.ga) return b.gf - b.ga - (a.gf - a.ga);
-        if (b.gf !== a.gf) return b.gf - a.gf;
-        return b.won - a.won;
-      });
+      const sorted = sortGroupTeams(group.teams, group.matches);
 
       if (sorted[2]) thirdPlaceTeams.push(sorted[2]);
     });

@@ -1,4 +1,5 @@
-import { Group, Team } from "@/data/types";
+import { Group, Team, Match } from "@/data/types";
+import { sortGroupTeams } from "@/utils/groupSorting";
 import {
   predictMatchScore,
   recalculateGroupStats,
@@ -20,13 +21,8 @@ export type GroupPositionProbMap = Map<string, PositionProbabilities>;
  */
 export type AllGroupPositionProbs = Map<string, GroupPositionProbMap>;
 
-function sortTeams(teams: Team[]): Team[] {
-  return [...teams].sort((a, b) => {
-    if (b.pts !== a.pts) return b.pts - a.pts;
-    if (b.gf - b.ga !== a.gf - a.ga) return b.gf - b.ga - (a.gf - a.ga);
-    if (b.gf !== a.gf) return b.gf - a.gf;
-    return b.won - a.won;
-  });
+function sortTeams(teams: Team[], matches: Match[]): Team[] {
+  return sortGroupTeams(teams, matches);
 }
 
 /**
@@ -55,7 +51,7 @@ export function estimateGroupPositionProbabilities(
 
     if (allPlayed) {
       // Deterministic – just use the current standings
-      const sorted = sortTeams(group.teams);
+      const sorted = sortTeams(group.teams, group.matches);
       const probMap: GroupPositionProbMap = new Map();
       sorted.forEach((t, idx) => {
         const probs = new Array(teamCount).fill(0);
@@ -95,7 +91,7 @@ export function estimateGroupPositionProbabilities(
       };
 
       const recalculated = recalculateGroupStats(clonedGroup);
-      const sorted = sortTeams(recalculated.teams);
+      const sorted = sortTeams(recalculated.teams, recalculated.matches);
 
       sorted.forEach((team, position) => {
         const teamCounts = counts.get(team.id);

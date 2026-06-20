@@ -1,5 +1,6 @@
 import { Group, Team, Match } from "@/data/types";
 import { recalculateGroupStats, predictMatchScore } from "@/utils/simulationUtils";
+import { sortGroupTeams } from "@/utils/groupSorting";
 
 // Number of Monte Carlo simulations to run per group analysis.
 // Higher = more accurate but slower. 1000 is a good balance for real-time UI.
@@ -245,13 +246,7 @@ function applyScenario(originalGroup: Group, scenarioMatches: Match[]): Group {
 }
 
 function getStandings(group: Group): Team[] {
-  // Use the same sort logic as GroupCard
-  return [...group.teams].sort((a, b) => {
-    if (b.pts !== a.pts) return b.pts - a.pts;
-    if (b.gf - b.ga !== a.gf - a.ga) return b.gf - b.ga - (a.gf - a.ga);
-    if (b.gf !== a.gf) return b.gf - a.gf;
-    return b.won - a.won; // 4th tiebreaker: wins
-  });
+  return sortGroupTeams(group.teams, group.matches);
 }
 
 function sortThirdPlaceTeams(teams: Team[]): Team[] {
