@@ -87,16 +87,21 @@ export async function GET(request: Request) {
     allMemberUids.add(uid);
     const memberUidsArray = Array.from(allMemberUids);
 
+    // Check if the current user is an admin
+    const currentUser = await User.findOne({ firebaseUid: uid });
+    const isAdmin = currentUser?.role === "admin";
+
     // 4. Fetch user profiles for these members
     const users = await User.find(
       { firebaseUid: { $in: memberUidsArray } },
-      { firebaseUid: 1, displayName: 1, nickname: 1, _id: 0 }
+      { firebaseUid: 1, displayName: 1, nickname: 1, excludeFromStats: 1, _id: 0 }
     );
-    const userMap = new Map<string, { displayName: string; nickname?: string }>();
+    const userMap = new Map<string, { displayName: string; nickname?: string; excludeFromStats?: boolean }>();
     for (const user of users) {
       userMap.set(user.firebaseUid, {
         displayName: user.displayName || user.firebaseUid,
         nickname: user.nickname,
+        excludeFromStats: user.excludeFromStats,
       });
     }
 
@@ -161,7 +166,15 @@ export async function GET(request: Request) {
 
     // 7. Construct response grouped by ProdeGroup
     const responseGroups = userGroups.map((group) => {
-      const membersData = group.members.map((memberUid) => formatMemberData(memberUid, group.createdAt));
+      // Filter out hidden members unless current user is admin, but always keep the current user
+      const filteredMembers = group.members.filter((memberUid) => {
+        if (memberUid === uid) return true;
+        if (isAdmin) return true;
+        const profile = userMap.get(memberUid);
+        return profile?.excludeFromStats !== true;
+      });
+
+      const membersData = filteredMembers.map((memberUid) => formatMemberData(memberUid, group.createdAt));
 
       // Sort group members: current user first, then others alphabetically by display name
       membersData.sort((a, b) => {
@@ -182,6 +195,12 @@ export async function GET(request: Request) {
     const allUsersUids = new Set<string>();
     allUsersUids.add(uid);
     for (const predictingUid of allPredictingUids) {
+      if (predictingUid !== uid && !isAdmin) {
+        const profile = userMap.get(predictingUid);
+        if (profile?.excludeFromStats === true) {
+          continue;
+        }
+      }
       allUsersUids.add(predictingUid);
     }
 

@@ -25,6 +25,7 @@ import { PageTransition } from "@/components/PageTransition";
 import { RivalPredictionsModal } from "@/components/RivalPredictionsModal";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { clsx } from "clsx";
+import { useCurrentTime } from "@/hooks/useCurrentTime";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Trophy,
@@ -1515,6 +1516,22 @@ function ProdeMatchCard({
     ? matchDate.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false })
     : "";
 
+  const now = useCurrentTime(false);
+  const relativeLabel = useMemo(() => {
+    if (!utcDate || !now) return null;
+    const mDate = new Date(utcDate);
+    const matchDayKey = mDate.toLocaleDateString("sv-SE");
+    const todayKey = now.toLocaleDateString("sv-SE");
+
+    const tom = new Date(now);
+    tom.setDate(now.getDate() + 1);
+    const tomorrowKey = tom.toLocaleDateString("sv-SE");
+
+    if (matchDayKey === todayKey) return "HOY";
+    if (matchDayKey === tomorrowKey) return "MAÑANA";
+    return null;
+  }, [utcDate, now]);
+
   const chipStyle = useMemo(() => {
     if (!modelPrediction || !modelPrediction.hasUserPred) return null;
     const { isExactMatch, ratio } = modelPrediction;
@@ -1633,6 +1650,16 @@ function ProdeMatchCard({
                 <span>{formattedDate}</span>
                 <span className="font-bold text-slate-500 dark:text-slate-400">{formattedTime}</span>
               </>
+            )}
+            {relativeLabel && (
+              <span className={clsx(
+                "px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide border shrink-0 select-none",
+                relativeLabel === "HOY"
+                  ? "bg-emerald-500/10 text-emerald-650 dark:text-emerald-400 border-emerald-500/20"
+                  : "bg-blue-500/10 text-blue-650 dark:text-blue-400 border-blue-500/20"
+              )}>
+                {relativeLabel}
+              </span>
             )}
             <span className="font-mono text-[9px] text-slate-350 dark:text-slate-650">#{matchId}</span>
           </div>

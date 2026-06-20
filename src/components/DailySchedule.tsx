@@ -476,7 +476,14 @@ export function DailySchedule({
         <div className="flex flex-col items-center gap-1">
           <div className="flex items-center gap-2">
             {relativeLabel && (
-              <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 bg-blue-600 text-white rounded shadow-sm">
+              <span className={clsx(
+                "text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded border select-none",
+                relativeLabel === "Hoy"
+                  ? "bg-emerald-500/10 text-emerald-650 dark:text-emerald-400 border-emerald-500/20"
+                  : relativeLabel === "Mañana"
+                    ? "bg-blue-500/10 text-blue-650 dark:text-blue-400 border-blue-500/20"
+                    : "bg-slate-100 text-slate-650 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700"
+              )}>
                 {relativeLabel}
               </span>
             )}
