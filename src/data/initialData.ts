@@ -151,7 +151,7 @@ const MATCH_DATA: Record<string, Match[]> = {
       homeTeamId: "C1",
       awayTeamId: "C4",
       finished: false,
-      utcDate: "2026-06-20T01:00:00Z",
+      utcDate: "2026-06-20T00:30:00Z",
       location: "Philadelphia Stadium - Filadelfia, USA",
     },
     {
