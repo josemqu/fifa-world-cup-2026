@@ -873,6 +873,12 @@ function PredictionsTab({
     };
   } | null>(null);
 
+  const [resettingMatch, setResettingMatch] = useState<{
+    matchId: string;
+    homeTeamName: string;
+    awayTeamName: string;
+  } | null>(null);
+
   // Load existing predictions
   useEffect(() => {
     const loadPredictions = async () => {
@@ -1002,7 +1008,7 @@ function PredictionsTab({
     }, 1500);
   }, [predictions, savePredictions]);
 
-  const handleResetMatch = useCallback((matchId: string) => {
+  const executeResetMatch = useCallback((matchId: string) => {
     setPredictions((prev) => {
       const newMap = new Map(prev);
       const existing = (newMap.get(matchId) || { matchId, homeScore: "", awayScore: "", homePenalties: "", awayPenalties: "" }) as PredictionEntry;
@@ -1208,6 +1214,14 @@ function PredictionsTab({
     }
     return map;
   }, [prodeMatches]);
+
+  const handleResetMatch = useCallback((matchId: string) => {
+    const resolved = resolvedTeamNames.get(matchId);
+    const info = MATCH_LOOKUP.get(matchId);
+    const homeTeamName = resolved?.home || info?.homeTeamName || "?";
+    const awayTeamName = resolved?.away || info?.awayTeamName || "?";
+    setResettingMatch({ matchId, homeTeamName, awayTeamName });
+  }, [resolvedTeamNames]);
 
   if (loadingPredictions) {
     return (
@@ -1444,6 +1458,60 @@ function PredictionsTab({
           userAwayPenalties={predictions.get(selectedModelPred.matchId)?.awayPenalties ?? ""}
           modelPrediction={selectedModelPred.modelPrediction}
         />
+      )}
+
+      {resettingMatch && (
+        <AnimatePresence>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-sm w-full p-6 flex flex-col items-center text-center gap-4 overflow-hidden"
+            >
+              {/* Icon Container */}
+              <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/20 text-amber-500">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+
+              {/* Title & Description */}
+              <div className="space-y-2">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  ¿Resetear pronóstico?
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Se borrará tu predicción para{" "}
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    {resettingMatch.homeTeamName} vs {resettingMatch.awayTeamName}
+                  </span>
+                  . Tendrás que guardarla de nuevo.
+                </p>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-3 w-full mt-2">
+                <button
+                  type="button"
+                  onClick={() => setResettingMatch(null)}
+                  className="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 hover:text-slate-950 dark:text-slate-200 dark:hover:text-white font-bold rounded-xl text-xs transition-all cursor-pointer active:scale-95"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    executeResetMatch(resettingMatch.matchId);
+                    setResettingMatch(null);
+                  }}
+                  className="flex-1 px-4 py-2.5 bg-rose-500 hover:bg-rose-600 dark:bg-rose-600 dark:hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition-all shadow-sm cursor-pointer active:scale-95"
+                >
+                  Resetear
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        </AnimatePresence>
       )}
     </div>
   );
