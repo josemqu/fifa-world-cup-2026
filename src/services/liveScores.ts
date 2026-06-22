@@ -89,7 +89,7 @@ export function parseScorerString(scorerStr: string | null): IScorer[] {
 
   return matches.map((s) => {
     // Regex matching minutes like 90' or 90'+5'
-    const scorerRegex = /^(.*?)\s+(\d+(?:\'\+\d+)?')\s*(?:\((p|OG)\))?$/i;
+    const scorerRegex = /^(.*?)\s+(\d+(?:'?\+\d+)?')\s*(?:\((p|OG)\))?$/i;
     const parts = s.match(scorerRegex);
     if (parts) {
       return {

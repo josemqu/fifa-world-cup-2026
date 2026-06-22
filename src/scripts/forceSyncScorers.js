@@ -19,7 +19,7 @@ function parseScorerString(scorerStr) {
   }
 
   return matches.map((s) => {
-    const scorerRegex = /^(.*?)\s+(\d+(?:\'\+\d+)?')\s*(?:\((p|OG)\))?$/i;
+    const scorerRegex = /^(.*?)\s+(\d+(?:'?\+\d+)?')\s*(?:\((p|OG)\))?$/i;
     const parts = s.match(scorerRegex);
     if (parts) {
       return {
