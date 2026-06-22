@@ -18,6 +18,7 @@ import {
   Search,
   ArrowUpDown,
   Filter,
+  ChevronLeft,
   ChevronRight,
   Loader2,
   Target,
@@ -320,6 +321,47 @@ function PredictionsPageContent() {
     const q = normalizeStr(searchQuery);
     return allTeams.filter((t) => normalizeStr(t.name).includes(q));
   }, [allTeams, searchQuery]);
+
+  // Ref and helper state for horizontal scrolling team list
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(true);
+
+  const scrollSelector = (direction: "left" | "right") => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 240;
+      scrollContainerRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  const updateArrowVisibility = useCallback(() => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      setShowLeftArrow(scrollLeft > 5);
+      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 5);
+    }
+  }, []);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener("scroll", updateArrowVisibility);
+      updateArrowVisibility();
+      
+      const resizeObserver = new ResizeObserver(() => {
+        updateArrowVisibility();
+      });
+      resizeObserver.observe(container);
+      
+      return () => {
+        container.removeEventListener("scroll", updateArrowVisibility);
+        resizeObserver.disconnect();
+      };
+    }
+  }, [filteredSelectorTeams, updateArrowVisibility]);
 
   const selectedData = useMemo(() => {
     if (!selectedTeamId) return null;
@@ -1108,22 +1150,58 @@ function PredictionsPageContent() {
                     )}
                   </div>
 
-                  <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
-                    {filteredSelectorTeams.map((team) => (
-                      <button
-                        key={team.id}
-                        onClick={() => setSelectedTeamId(team.id)}
-                        className={clsx(
-                          "shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 border cursor-pointer",
-                          selectedTeamId === team.id
-                            ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/25 scale-105"
-                            : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50/50 dark:hover:bg-blue-900/10"
-                        )}
-                      >
-                        <TeamFlag teamName={team.name} className="w-4 h-3 shadow-sm" />
-                        <span className="whitespace-nowrap">{team.name}</span>
-                      </button>
-                    ))}
+                  <div className="relative group/scroll px-6">
+                    {/* Left Scroll Button */}
+                    <AnimatePresence>
+                      {showLeftArrow && (
+                        <motion.button
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          onClick={() => scrollSelector("left")}
+                          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-xs border border-slate-200 dark:border-slate-700 shadow-md hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-600 dark:text-slate-300"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </motion.button>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Right Scroll Button */}
+                    <AnimatePresence>
+                      {showRightArrow && (
+                        <motion.button
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          onClick={() => scrollSelector("right")}
+                          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-xs border border-slate-200 dark:border-slate-700 shadow-md hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-600 dark:text-slate-300"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </motion.button>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Scrollable Selector Container */}
+                    <div
+                      ref={scrollContainerRef}
+                      className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1 scroll-smooth"
+                    >
+                      {filteredSelectorTeams.map((team) => (
+                        <button
+                          key={team.id}
+                          onClick={() => setSelectedTeamId(team.id)}
+                          className={clsx(
+                            "shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 border cursor-pointer",
+                            selectedTeamId === team.id
+                              ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/25 scale-105"
+                              : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50/50 dark:hover:bg-blue-900/10"
+                          )}
+                        >
+                          <TeamFlag teamName={team.name} className="w-4 h-3 shadow-sm" />
+                          <span className="whitespace-nowrap">{team.name}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
