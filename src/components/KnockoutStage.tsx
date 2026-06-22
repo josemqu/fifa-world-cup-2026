@@ -8,7 +8,7 @@ import { predictMatchScore } from "@/utils/simulationUtils";
 import { clsx } from "clsx";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { TeamFlag } from "@/components/ui/TeamFlag";
-import { Info, Trash2, Play, RotateCcw, Edit2 } from "lucide-react";
+import { Info, Trash2, Play, RotateCcw, Edit2, RefreshCw } from "lucide-react";
 import { useTournament } from "@/context/TournamentContext";
 import { useAuth } from "@/context/AuthContext";
 import { useMatchTime } from "@/hooks/useMatchTime";
@@ -35,6 +35,8 @@ interface KnockoutStageProps {
     finished?: boolean,
     status?: "scheduled" | "live" | "halftime" | "finished",
     elapsed?: number | null,
+    homeScorers?: any[],
+    awayScorers?: any[],
   ) => void;
 }
 
@@ -124,6 +126,8 @@ function MatchCard({
     finished?: boolean,
     status?: "scheduled" | "live" | "halftime" | "finished",
     elapsed?: number | null,
+    homeScorers?: any[],
+    awayScorers?: any[],
   ) => void;
   onSimulate?: (match: KnockoutMatch) => void;
   onReset?: (match: KnockoutMatch) => void;
@@ -132,6 +136,57 @@ function MatchCard({
   const { dbUser, user } = useAuth();
   const [dbScores, setDbScores] = useState<any[]>([]);
   const [showOverrideModal, setShowOverrideModal] = useState<boolean>(false);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+
+  const handleSyncMatch = async () => {
+    setIsSyncing(true);
+    try {
+      const email = dbUser?.email || user?.email;
+      const response = await fetch("/api/scores/sync-match", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-email": email || "",
+        },
+        body: JSON.stringify({ matchId: match.id }),
+      });
+
+      const resData = await response.json();
+      if (response.ok && resData.success && resData.score) {
+        const updatedScore = resData.score;
+        setDbScores((prev) => {
+          const existingIdx = prev.findIndex((s) => s.matchId === updatedScore.matchId);
+          if (existingIdx !== -1) {
+            const copy = [...prev];
+            copy[existingIdx] = updatedScore;
+            return copy;
+          } else {
+            return [...prev, updatedScore];
+          }
+        });
+
+        onUpdate(
+          updatedScore.matchId,
+          updatedScore.homeScore,
+          updatedScore.awayScore,
+          updatedScore.homePenalties,
+          updatedScore.awayPenalties,
+          updatedScore.status === "finished",
+          updatedScore.status,
+          updatedScore.elapsed,
+          updatedScore.homeScorers,
+          updatedScore.awayScorers
+        );
+      } else {
+        alert(resData.error || "Error al sincronizar el partido.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Error de red al intentar sincronizar.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const isAdmin = useMemo(() => {
     return dbUser?.role === "admin" ||
@@ -249,14 +304,25 @@ function MatchCard({
             #{match.id}
           </span>
           {isAdmin && (
-            <button
-              type="button"
-              onClick={() => setShowOverrideModal(true)}
-              className="p-0.5 rounded bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-650 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all cursor-pointer inline-flex items-center justify-center border border-slate-300/40 dark:border-slate-600/35"
-              title="Corregir score manualmente"
-            >
-              <Edit2 size={8} />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handleSyncMatch}
+                disabled={isSyncing}
+                className="p-0.5 rounded bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-650 text-slate-500 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 disabled:opacity-50 transition-all cursor-pointer inline-flex items-center justify-center border border-slate-300/40 dark:border-slate-600/35"
+                title="Forzar sincronización de API"
+              >
+                <RefreshCw size={8} className={isSyncing ? "animate-spin text-green-600 dark:text-green-400" : ""} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowOverrideModal(true)}
+                className="p-0.5 rounded bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-650 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all cursor-pointer inline-flex items-center justify-center border border-slate-300/40 dark:border-slate-600/35"
+                title="Corregir score manualmente"
+              >
+                <Edit2 size={8} />
+              </button>
+            </div>
           )}
         </div>
         <MatchDateTime

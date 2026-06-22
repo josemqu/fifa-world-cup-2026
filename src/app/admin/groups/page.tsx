@@ -604,7 +604,7 @@ export default function AdminGroupsPage() {
                                   )}
                                 </div>
                               </td>
-                              <td className="px-5 py-3.5 text-center font-semibold text-slate-905 dark:text-white">
+                              <td className="px-5 py-3.5 text-center font-semibold text-slate-900 dark:text-white">
                                 {m.predictionCount && m.predictionCount > 0 ? (
                                   <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-500/10 text-indigo-650 dark:text-indigo-400 text-xs">
                                     {m.predictionCount}
@@ -729,7 +729,7 @@ export default function AdminGroupsPage() {
                       if (deleteError) setDeleteError(null);
                     }}
                     placeholder="Código del grupo"
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-semibold text-slate-905 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-550/20 focus:border-rose-500 transition-all text-center uppercase tracking-wider"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all text-center uppercase tracking-wider"
                     disabled={isDeleting}
                   />
                 </div>

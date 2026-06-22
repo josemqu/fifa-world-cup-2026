@@ -124,7 +124,7 @@ export function MatchOverrideModal({
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {/* Match Teams representation */}
-          <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-905/10 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
             {/* Home Team */}
             <div className="flex flex-col items-center gap-1.5 w-5/12 text-center">
               <TeamFlag teamName={homeTeamName} className="w-10 h-7 rounded shadow-sm object-cover" />

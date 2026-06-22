@@ -3,7 +3,7 @@ import { clsx } from "clsx";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { getTeamAbbreviation } from "@/utils/teamAbbreviations";
-import { ChevronDown, ChevronUp, CheckCircle2, Lock, Info, Edit2 } from "lucide-react";
+import { ChevronDown, ChevronUp, CheckCircle2, Lock, Info, Edit2, RefreshCw } from "lucide-react";
 import { analyzeGroup, TeamAnalysis } from "@/utils/groupAnalysis";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { sortGroupTeams } from "@/utils/groupSorting";
@@ -24,6 +24,8 @@ interface GroupCardProps {
     finished?: boolean,
     status?: "scheduled" | "live" | "halftime" | "finished",
     elapsed?: number | null,
+    homeScorers?: any[],
+    awayScorers?: any[],
   ) => void;
   showMatches?: boolean;
   onToggleMatches?: () => void;
@@ -46,6 +48,58 @@ export function GroupCard({
   const { dbUser, user } = useAuth();
   const [dbScores, setDbScores] = useState<any[]>([]);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
+  const [syncingMatchId, setSyncingMatchId] = useState<string | null>(null);
+
+  const handleSyncMatch = async (matchId: string) => {
+    setSyncingMatchId(matchId);
+    try {
+      const email = dbUser?.email || user?.email;
+      const response = await fetch("/api/scores/sync-match", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-email": email || "",
+        },
+        body: JSON.stringify({ matchId }),
+      });
+
+      const resData = await response.json();
+      if (response.ok && resData.success && resData.score) {
+        const updatedScore = resData.score;
+        // Update local dbScores state
+        setDbScores((prev) => {
+          const existingIdx = prev.findIndex((s) => s.matchId === updatedScore.matchId);
+          if (existingIdx !== -1) {
+            const copy = [...prev];
+            copy[existingIdx] = updatedScore;
+            return copy;
+          } else {
+            return [...prev, updatedScore];
+          }
+        });
+
+        // Trigger context update
+        onMatchUpdate(
+          group.name,
+          updatedScore.matchId,
+          updatedScore.homeScore,
+          updatedScore.awayScore,
+          updatedScore.status === "finished",
+          updatedScore.status,
+          updatedScore.elapsed,
+          updatedScore.homeScorers,
+          updatedScore.awayScorers
+        );
+      } else {
+        alert(resData.error || "Error al sincronizar el partido.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Error de red al intentar sincronizar.");
+    } finally {
+      setSyncingMatchId(null);
+    }
+  };
 
   const isAdmin = useMemo(() => {
     return dbUser?.role === "admin" ||
@@ -514,39 +568,30 @@ export function GroupCard({
                     key={match.id}
                     className="text-xs border border-slate-200 dark:border-slate-700 rounded-md p-1.5 bg-white dark:bg-slate-800 shadow-sm"
                   >
-                    <div className="flex justify-between items-center text-[10px] text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-wide leading-none">
-                      <div className="flex items-center gap-1.5">
-                        <MatchDateTime
-                          utcDate={match.utcDate}
-                          matchId={match.id}
-                        />
-                        {isAdmin && (
+                    <div className="flex justify-between items-center text-[10px] text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-wide leading-none w-full">
+                      <MatchDateTime
+                        utcDate={match.utcDate}
+                        matchId={match.id}
+                      />
+                      {isAdmin && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleSyncMatch(match.id)}
+                            disabled={syncingMatchId === match.id}
+                            className="p-0.5 rounded bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 disabled:opacity-50 transition-all cursor-pointer inline-flex items-center justify-center border border-slate-300/40 dark:border-slate-600/30"
+                            title="Forzar sincronización de API"
+                          >
+                            <RefreshCw size={8} className={syncingMatchId === match.id ? "animate-spin text-green-550 dark:text-green-400" : ""} />
+                          </button>
                           <button
                             type="button"
                             onClick={() => setEditingMatch(match)}
-                            className="p-0.5 rounded bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-650 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all cursor-pointer inline-flex items-center justify-center border border-slate-300/40 dark:border-slate-600/35"
+                            className="p-0.5 rounded bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all cursor-pointer inline-flex items-center justify-center border border-slate-300/40 dark:border-slate-600/30"
                             title="Corregir score manualmente"
                           >
                             <Edit2 size={8} />
                           </button>
-                        )}
-                      </div>
-                      {match.location && (
-                        <div className="flex flex-col items-end max-w-[240px] leading-tight">
-                          <span
-                            className="truncate w-full text-right font-medium text-slate-500 dark:text-slate-400"
-                            title={match.location}
-                          >
-                            {match.location.split(" - ")[0]}
-                          </span>
-                          {match.location.includes(" - ") && (
-                            <span
-                              className="text-[9px] text-slate-400 dark:text-slate-500 truncate w-full text-right"
-                              title={match.location.split(" - ")[1]}
-                            >
-                              {match.location.split(" - ")[1]}
-                            </span>
-                          )}
                         </div>
                       )}
                     </div>
@@ -661,6 +706,23 @@ export function GroupCard({
                             </div>
                           ))}
                         </div>
+                      </div>
+                    )}
+
+                    {/* Location Footer */}
+                    {match.location && (
+                      <div className="mt-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-700/50">
+                        <Tooltip content={match.location} placement="bottom">
+                          <p className="text-[9px] text-slate-400 dark:text-slate-500 truncate cursor-help">
+                            📍 {match.location.split(" - ")[0]}
+                            {match.location.includes(" - ") && (
+                              <span className="text-slate-300 dark:text-slate-600">
+                                {" — "}
+                                {match.location.split(" - ")[1]}
+                              </span>
+                            )}
+                          </p>
+                        </Tooltip>
                       </div>
                     )}
                   </div>

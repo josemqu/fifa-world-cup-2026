@@ -9,7 +9,7 @@ import { MatchDateTime } from "@/components/ui/MatchDateTime";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { useTournament } from "@/context/TournamentContext";
 import { useAuth } from "@/context/AuthContext";
-import { ChevronLeft, ChevronRight, Calendar, Edit2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Edit2, X, RefreshCw } from "lucide-react";
 import { clsx } from "clsx";
 import { FlashScoreInput } from "@/components/ui/FlashScoreInput";
 import { getPlaceholderExplanation } from "@/utils/knockoutUtils";
@@ -203,6 +203,71 @@ export function DailySchedule({
   const { updateMatch, updateKnockoutMatch } = useTournament();
   const [dbScores, setDbScores] = useState<any[]>([]);
   const [editingMatch, setEditingMatch] = useState<NormalizedMatch | null>(null);
+  const [syncingMatchId, setSyncingMatchId] = useState<string | null>(null);
+
+  const handleSyncMatch = useCallback(async (matchId: string) => {
+    setSyncingMatchId(matchId);
+    try {
+      const email = dbUser?.email || user?.email;
+      const response = await fetch("/api/scores/sync-match", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-email": email || "",
+        },
+        body: JSON.stringify({ matchId }),
+      });
+
+      const resData = await response.json();
+      if (response.ok && resData.success && resData.score) {
+        const updatedScore = resData.score;
+        setDbScores((prev) => {
+          const existingIdx = prev.findIndex((s) => s.matchId === updatedScore.matchId);
+          if (existingIdx !== -1) {
+            const copy = [...prev];
+            copy[existingIdx] = updatedScore;
+            return copy;
+          } else {
+            return [...prev, updatedScore];
+          }
+        });
+
+        if (updatedScore.stage === "group" && updatedScore.groupId) {
+          updateMatch(
+            updatedScore.groupId,
+            updatedScore.matchId,
+            updatedScore.homeScore,
+            updatedScore.awayScore,
+            updatedScore.status === "finished",
+            updatedScore.status,
+            updatedScore.elapsed,
+            updatedScore.homeScorers,
+            updatedScore.awayScorers
+          );
+        } else if (updatedScore.stage === "knockout") {
+          updateKnockoutMatch(
+            updatedScore.matchId,
+            updatedScore.homeScore,
+            updatedScore.awayScore,
+            updatedScore.homePenalties,
+            updatedScore.awayPenalties,
+            updatedScore.status === "finished",
+            updatedScore.status,
+            updatedScore.elapsed,
+            updatedScore.homeScorers,
+            updatedScore.awayScorers
+          );
+        }
+      } else {
+        alert(resData.error || "Error al sincronizar el partido.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Error de red al intentar sincronizar.");
+    } finally {
+      setSyncingMatchId(null);
+    }
+  }, [dbUser, user, updateMatch, updateKnockoutMatch]);
 
   const isAdmin = useMemo(() => {
     return dbUser?.role === "admin" ||
@@ -572,6 +637,8 @@ export function DailySchedule({
                           highlightMatchId={activeHighlightId}
                           isAdmin={isAdmin}
                           onEdit={setEditingMatch}
+                          syncingMatchId={syncingMatchId}
+                          onSync={handleSyncMatch}
                         />
                       ))}
                     </div>
@@ -626,11 +693,15 @@ function ScheduleMatchCard({
   highlightMatchId,
   isAdmin,
   onEdit,
+  syncingMatchId,
+  onSync,
 }: { 
   match: NormalizedMatch; 
   highlightMatchId?: string | null;
   isAdmin: boolean;
   onEdit: (match: NormalizedMatch) => void;
+  syncingMatchId: string | null;
+  onSync: (matchId: string) => Promise<void>;
 }) {
   const { updateMatch, updateKnockoutMatch } = useTournament();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -697,13 +768,23 @@ function ScheduleMatchCard({
             timeClassName="text-[10px] font-bold text-slate-600 dark:text-slate-300"
           />
           {isAdmin && (
-            <button
-              onClick={() => onEdit(match)}
-              className="p-1 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all cursor-pointer inline-flex items-center justify-center border border-slate-300/40 dark:border-slate-600/40"
-              title="Corregir score manualmente"
-            >
-              <Edit2 size={10} />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => onSync(match.id)}
+                disabled={syncingMatchId === match.id}
+                className="p-1 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 disabled:opacity-50 transition-all cursor-pointer inline-flex items-center justify-center border border-slate-300/40 dark:border-slate-600/40"
+                title="Forzar sincronización de API"
+              >
+                <RefreshCw size={10} className={syncingMatchId === match.id ? "animate-spin text-green-600 dark:text-green-400" : ""} />
+              </button>
+              <button
+                onClick={() => onEdit(match)}
+                className="p-1 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all cursor-pointer inline-flex items-center justify-center border border-slate-300/40 dark:border-slate-600/40"
+                title="Corregir score manualmente"
+              >
+                <Edit2 size={10} />
+              </button>
+            </div>
           )}
         </div>
       </div>
