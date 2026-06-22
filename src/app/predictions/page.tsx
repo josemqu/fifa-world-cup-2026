@@ -315,8 +315,10 @@ function PredictionsPageContent() {
 
   const filteredSelectorTeams = useMemo(() => {
     if (!searchQuery) return allTeams;
-    const q = searchQuery.toLowerCase();
-    return allTeams.filter((t) => t.name.toLowerCase().includes(q));
+    const normalizeStr = (str: string) =>
+      str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const q = normalizeStr(searchQuery);
+    return allTeams.filter((t) => normalizeStr(t.name).includes(q));
   }, [allTeams, searchQuery]);
 
   const selectedData = useMemo(() => {
