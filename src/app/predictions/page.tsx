@@ -191,6 +191,13 @@ function PredictionsPageContent() {
   const [iterations, setIterations] = useState(simulationIterations);
   const [isMounted, setIsMounted] = useState(false);
   const isDark = isMounted && resolvedTheme === "dark";
+  const [showStaleWarningModal, setShowStaleWarningModal] = useState(false);
+
+  useEffect(() => {
+    if (isMounted && isSimulationStale && predictions.length > 0) {
+      setShowStaleWarningModal(true);
+    }
+  }, [isMounted, isSimulationStale, predictions.length]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -752,36 +759,48 @@ function PredictionsPageContent() {
           </div>
         </div>
 
-        {/* ─── Stale Simulation Warning Banner ─── */}
+        {/* ─── Stale Simulation Warning Modal ─── */}
         <AnimatePresence>
-          {isSimulationStale && predictions.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0, y: -10 }}
-              animate={{ opacity: 1, height: "auto", y: 0 }}
-              exit={{ opacity: 0, height: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="overflow-hidden"
-            >
-              <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border border-amber-200 dark:border-amber-900/60 rounded-2xl p-4 flex items-start sm:items-center gap-3 text-amber-800 dark:text-amber-300 shadow-xs">
-                <AlertTriangle className="w-5 h-5 shrink-0 text-amber-500" />
-                <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h4 className="text-sm font-bold">Simulación desactualizada</h4>
-                    <p className="text-xs text-amber-700/90 dark:text-amber-400/90 mt-0.5">
-                      Los resultados de los partidos cambiaron. Te recomendamos volver a ejecutar la simulación para obtener probabilidades actualizadas.
-                    </p>
+          {showStaleWarningModal && isSimulationStale && predictions.length > 0 && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-md w-full border border-slate-200 dark:border-slate-800 overflow-hidden"
+              >
+                <div className="p-6 flex flex-col items-center text-center">
+                  <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-4">
+                    <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-500" />
                   </div>
-                  <button
-                    onClick={() => handleRun()}
-                    disabled={isRunning || !canRunSimulation}
-                    className="shrink-0 text-xs font-bold px-3 py-1.5 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white rounded-lg transition-colors shadow-xs flex items-center gap-1.5 self-start sm:self-center"
-                  >
-                    <Swords className="w-3.5 h-3.5" />
-                    Simular ahora
-                  </button>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+                    Simulación Desactualizada
+                  </h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                    Los resultados de los partidos cambiaron desde tu última simulación masiva. Las probabilidades del Oráculo y el Explorador de Cruces no coinciden con la fase de grupos actual.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-2 w-full">
+                    <button
+                      onClick={() => {
+                        setShowStaleWarningModal(false);
+                        handleRun();
+                      }}
+                      disabled={isRunning || !canRunSimulation}
+                      className="flex-1 px-4 py-2.5 bg-amber-600 hover:bg-amber-500 disabled:bg-slate-400 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all shadow-md shadow-amber-500/25 flex justify-center items-center gap-1.5 cursor-pointer text-xs"
+                    >
+                      <Swords className="w-4 h-4" />
+                      Simular ahora
+                    </button>
+                    <button
+                      onClick={() => setShowStaleWarningModal(false)}
+                      className="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl transition-all border border-slate-200 dark:border-slate-700 cursor-pointer text-xs"
+                    >
+                      Ver de todas formas
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
           )}
         </AnimatePresence>
 
