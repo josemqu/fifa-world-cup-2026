@@ -23,6 +23,7 @@ import {
   Target,
   Trophy,
   Sparkles,
+  Crown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -58,7 +59,46 @@ const STAGE_LABELS: Record<string, string> = {
 const KNOCKOUT_STAGES = ["R32", "R16", "QF", "SF", "Final", "3rdPlace"] as const;
 
 type StageFilter = "all" | (typeof STAGE_ORDER)[number];
-type MatchupSortColumn = "opponentName" | "totalProb" | "Grupos" | "R32" | "R16" | "QF" | "SF" | "Final" | "3rdPlace";
+type MatchupSortColumn = "opponentName" | "totalProb" | "stage" | "Grupos" | "R32" | "R16" | "QF" | "SF" | "Final" | "3rdPlace";
+
+type OpponentRow = {
+  opponentId: string;
+  opponentName: string;
+  totalCount: number;
+  totalProb: number;
+  stageCounts: Record<string, number>;
+  stageProbs: Record<string, number>;
+};
+
+function getOpponentLogicalStageIndex(row: OpponentRow) {
+  let maxP = 0;
+  let maxStageIndex = 999;
+
+  KNOCKOUT_STAGES.forEach((stage, index) => {
+    const prob = row.stageProbs[stage] || 0;
+    if (prob > maxP) {
+      maxP = prob;
+      maxStageIndex = index;
+    }
+  });
+
+  return maxStageIndex;
+}
+
+function getMainStageLabel(row: OpponentRow) {
+  let maxP = 0;
+  let maxStage = "Grupos";
+
+  KNOCKOUT_STAGES.forEach((stage) => {
+    const prob = row.stageProbs[stage] || 0;
+    if (prob > maxP) {
+      maxP = prob;
+      maxStage = stage;
+    }
+  });
+
+  return STAGE_LABELS[maxStage] || maxStage;
+}
 
 function getHeatmapClasses(pct: number): string {
   if (pct >= 100) return "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 font-bold";
@@ -219,6 +259,18 @@ function PredictionsPageContent() {
   const [matchupSortDir, setMatchupSortDir] = useState<"asc" | "desc">("desc");
   const [hasInitializedMatchups, setHasInitializedMatchups] = useState(false);
 
+  // Sync onlyTopProbable filter state with URL query parameters for persistence
+  const onlyTopProbable = searchParams.get("top") === "true";
+  const setOnlyTopProbable = (val: boolean) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (val) {
+      params.set("top", "true");
+    } else {
+      params.delete("top");
+    }
+    router.replace(`/predictions?${params.toString()}`, { scroll: false });
+  };
+
   // Verification State
   const [showVerification, setShowVerification] = useState(false);
   const [sampleResult, setSampleResult] = useState<{
@@ -272,14 +324,7 @@ function PredictionsPageContent() {
     return matchupResults.find((d) => d.teamId === selectedTeamId) || null;
   }, [matchupResults, selectedTeamId]);
 
-  type OpponentRow = {
-    opponentId: string;
-    opponentName: string;
-    totalCount: number;
-    totalProb: number;
-    stageCounts: Record<string, number>;
-    stageProbs: Record<string, number>;
-  };
+
 
   const opponentRows: OpponentRow[] = useMemo(() => {
     if (!selectedData) return [];
@@ -325,8 +370,51 @@ function PredictionsPageContent() {
     return rows;
   }, [selectedData, iterations]);
 
+  const topOpponentIds = useMemo(() => {
+    const topIds = new Set<string>();
+    if (opponentRows.length === 0) return topIds;
+
+    KNOCKOUT_STAGES.forEach((stage) => {
+      let maxProb = 0;
+      let stageTopIds: string[] = [];
+
+      opponentRows.forEach((r) => {
+        const prob = r.stageProbs[stage] || 0;
+        if (prob > maxProb) {
+          maxProb = prob;
+          stageTopIds = [r.opponentId];
+        } else if (prob > 0 && prob === maxProb) {
+          stageTopIds.push(r.opponentId);
+        }
+      });
+
+      stageTopIds.forEach((id) => topIds.add(id));
+    });
+
+    return topIds;
+  }, [opponentRows]);
+
+  const maxProbPerStage = useMemo(() => {
+    const maxProbs: Record<string, number> = {};
+    KNOCKOUT_STAGES.forEach((stage) => {
+      let maxProb = 0;
+      opponentRows.forEach((r) => {
+        const prob = r.stageProbs[stage] || 0;
+        if (prob > maxProb) {
+          maxProb = prob;
+        }
+      });
+      maxProbs[stage] = maxProb;
+    });
+    return maxProbs;
+  }, [opponentRows]);
+
   const filteredAndSortedRows = useMemo(() => {
     let rows = [...opponentRows];
+
+    if (onlyTopProbable) {
+      rows = rows.filter((r) => topOpponentIds.has(r.opponentId));
+    }
 
     if (stageFilter !== "all") {
       rows = rows.filter((r) => (r.stageCounts[stageFilter] || 0) > 0);
@@ -338,6 +426,19 @@ function PredictionsPageContent() {
         cmp = a.opponentName.localeCompare(b.opponentName);
       } else if (matchupSortColumn === "totalProb") {
         cmp = a.totalProb - b.totalProb;
+      } else if (matchupSortColumn === "stage") {
+        const indexA = getOpponentLogicalStageIndex(a);
+        const indexB = getOpponentLogicalStageIndex(b);
+        if (indexA !== indexB) {
+          cmp = indexA - indexB;
+        } else {
+          // Within same stage, sort by probability descending in that stage
+          const stageA = KNOCKOUT_STAGES[indexA] || "Grupos";
+          const stageB = KNOCKOUT_STAGES[indexB] || "Grupos";
+          const probA = a.stageProbs[stageA] || 0;
+          const probB = b.stageProbs[stageB] || 0;
+          cmp = probB - probA;
+        }
       } else {
         cmp = (a.stageProbs[matchupSortColumn] || 0) - (b.stageProbs[matchupSortColumn] || 0);
       }
@@ -345,7 +446,7 @@ function PredictionsPageContent() {
     });
 
     return rows;
-  }, [opponentRows, stageFilter, matchupSortColumn, matchupSortDir]);
+  }, [opponentRows, stageFilter, matchupSortColumn, matchupSortDir, onlyTopProbable, topOpponentIds]);
 
   const summaryStats = useMemo(() => {
     if (opponentRows.length === 0) return null;
@@ -464,7 +565,7 @@ function PredictionsPageContent() {
       setMatchupSortDir((d) => (d === "asc" ? "desc" : "asc"));
     } else {
       setMatchupSortColumn(col);
-      setMatchupSortDir(col === "opponentName" ? "asc" : "desc");
+      setMatchupSortDir(col === "opponentName" || col === "stage" ? "asc" : "desc");
     }
   };
 
@@ -1130,10 +1231,24 @@ function PredictionsPageContent() {
 
                   {/* Stage Filtering & Table */}
                   <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-                    <div className="px-4 md:px-6 pt-4 md:pt-5 pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <Filter className="w-4 h-4 text-slate-400" />
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Filtrar por instancia</span>
+                    <div className="px-4 md:px-6 pt-4 md:pt-5 pb-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <Filter className="w-4 h-4 text-slate-400" />
+                          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Filtrar por instancia</span>
+                        </div>
+                        <button
+                          onClick={() => setOnlyTopProbable(!onlyTopProbable)}
+                          className={clsx(
+                            "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 border cursor-pointer select-none",
+                            onlyTopProbable
+                              ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700/80 shadow-xs"
+                              : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+                          )}
+                        >
+                          <Crown className={clsx("w-3.5 h-3.5", onlyTopProbable ? "text-amber-500 fill-amber-500/25 animate-pulse" : "text-slate-400")} />
+                          Más probables por instancia
+                        </button>
                       </div>
                       <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-1">
                         {(["all", ...STAGE_ORDER] as StageFilter[]).map((stage) => (
@@ -1157,7 +1272,7 @@ function PredictionsPageContent() {
                       <table className="w-full text-left border-collapse min-w-[700px]">
                         <thead>
                           <tr className="border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            <th className="px-2 md:px-3 py-3 w-8">#</th>
+                            <MatchupSortHeader column="stage" label="Ronda" align="left" />
                             <MatchupSortHeader column="opponentName" label="Oponente" align="left" />
                             <MatchupSortHeader
                               column="totalProb"
@@ -1174,7 +1289,7 @@ function PredictionsPageContent() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                          {filteredAndSortedRows.map((row, index) => {
+                          {filteredAndSortedRows.map((row) => {
                             const isGroupRival = (row.stageCounts["Grupos"] || 0) > 0;
                             return (
                               <tr
@@ -1182,8 +1297,8 @@ function PredictionsPageContent() {
                                 className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-sm group cursor-pointer"
                                 onClick={() => setSelectedTeamId(row.opponentId)}
                               >
-                                <td className="px-2 md:px-3 py-3 text-slate-400 dark:text-slate-600 font-mono text-xs">
-                                  {index + 1}
+                                <td className="px-2 md:px-3 py-3 font-semibold text-xs text-slate-500 dark:text-slate-400">
+                                  {getMainStageLabel(row)}
                                 </td>
                                 <td className="px-2 md:px-3 py-3">
                                   <div className="flex items-center gap-2">
@@ -1210,17 +1325,26 @@ function PredictionsPageContent() {
                                 </td>
                                 {STAGE_ORDER.map((stage) => {
                                   const pct = row.stageProbs[stage] || 0;
+                                  const isTopForStage = stage !== "Grupos" && pct > 0 && pct === maxProbPerStage[stage];
                                   return (
                                     <td key={stage} className="px-2 md:px-3 py-3 text-right">
                                       {pct > 0 ? (
-                                        <span
-                                          className={clsx(
-                                            "inline-block min-w-[48px] text-center text-xs px-1.5 py-0.5 rounded",
-                                            getHeatmapClasses(pct)
+                                        <div className="inline-flex items-center justify-end gap-1.5">
+                                          {isTopForStage && (
+                                            <Tooltip content={`Rival más probable en ${STAGE_LABELS[stage] || stage}`} className="mx-0">
+                                              <Crown className="w-3 h-3 text-amber-500 fill-amber-500/20 shrink-0" />
+                                            </Tooltip>
                                           )}
-                                        >
-                                          {pct >= 100 ? "100%" : `${pct.toFixed(1)}%`}
-                                        </span>
+                                          <span
+                                            className={clsx(
+                                              "inline-block min-w-[48px] text-center text-xs px-1.5 py-0.5 rounded",
+                                              getHeatmapClasses(pct),
+                                              isTopForStage && "ring-1 ring-amber-500/60 dark:ring-amber-500/40"
+                                            )}
+                                          >
+                                            {pct >= 100 ? "100%" : `${pct.toFixed(1)}%`}
+                                          </span>
+                                        </div>
                                       ) : (
                                         <span className="text-xs text-slate-300 dark:text-slate-750">—</span>
                                       )}
