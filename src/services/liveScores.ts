@@ -130,17 +130,28 @@ async function fetchWithRetry(
     headers: mergedHeaders,
   };
   for (let attempt = 1; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 seconds timeout
+
     try {
-      const res = await fetch(url, mergedOptions);
+      const res = await fetch(url, {
+        ...mergedOptions,
+        signal: controller.signal,
+      });
       return res;
     } catch (err: any) {
       lastError = err;
+      const isTimeout = err.name === "AbortError";
       console.warn(
-        `[liveScores] Fetch attempt ${attempt} failed for ${url}: ${err.message || err}. Retrying in ${delayMs}ms...`
+        `[liveScores] Fetch attempt ${attempt} failed for ${url}: ${
+          isTimeout ? "Request timed out after 5000ms" : err.message || err
+        }. Retrying in ${delayMs}ms...`
       );
       if (attempt < retries) {
         await new Promise((resolve) => setTimeout(resolve, delayMs));
       }
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
   throw lastError;

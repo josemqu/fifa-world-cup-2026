@@ -8,6 +8,9 @@ import {
   hasLiveMatches,
   getTodayUTC,
 } from "@/services/liveScores";
+// Track last sync attempt time and result to prevent rapid retries on failure (especially when offline or domain is blocked)
+let lastSyncAttemptTime = 0;
+let lastSyncFailed = false;
 
 /**
  * Shared sync logic — fetches from API-Football and upserts to MongoDB.
@@ -415,11 +418,23 @@ export async function GET(request: Request) {
     const today = getTodayUTC();
     const isDuringTournament = today >= "2026-06-10" && today <= "2026-07-20";
 
-    // Auto-sync if: data is stale AND (there are live matches OR we have no data OR we are during the tournament dates)
-    if (isStale && (liveOrHalftimeCount > 0 || hasNoData || isDuringTournament)) {
+    const isDev = process.env.NODE_ENV === "development";
+    // In local development, we don't want to auto-sync on GET requests by default unless explicitly allowed via env
+    const disableDevAutoSync = isDev && process.env.ENABLE_DEV_AUTO_SYNC !== "true";
+
+    const now = Date.now();
+    const cooldown = lastSyncFailed ? 300_000 : 25_000; // 5 minutes on failure, 25 seconds on success
+    const isCooldownActive = now - lastSyncAttemptTime < cooldown;
+
+    // Auto-sync if: data is stale AND not on cooldown AND auto-sync is not disabled in dev
+    // AND (there are live matches OR we have no data OR we are during the tournament dates)
+    if (!disableDevAutoSync && isStale && !isCooldownActive && (liveOrHalftimeCount > 0 || hasNoData || isDuringTournament)) {
+      lastSyncAttemptTime = now;
       try {
         await syncScores();
+        lastSyncFailed = false;
       } catch (syncError) {
+        lastSyncFailed = true;
         // Auto-sync failed — log and continue with stale data
         console.warn("[scores/sync] Auto-sync from API-Football failed:", syncError);
       }
