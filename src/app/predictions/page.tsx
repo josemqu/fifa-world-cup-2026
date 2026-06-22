@@ -192,6 +192,16 @@ function getLinearColorStyle(value: number, min: number, max: number, isDark: bo
   }
 }
 
+function formatProbability(pct: number, decimals: number = 1): string {
+  if (pct >= 100) return "100%";
+  if (pct <= 0) return "0%";
+  const formatted = pct.toFixed(decimals);
+  if (parseFloat(formatted) >= 100) {
+    return "~100%";
+  }
+  return `${formatted}%`;
+}
+
 function PredictionsPageContent() {
   const { user, dbUser, loading: authLoading } = useAuth();
   const { resolvedTheme } = useTheme();
@@ -709,7 +719,7 @@ function PredictionsPageContent() {
           style={style}
           className="inline-block min-w-[48px] text-center text-xs px-1.5 py-0.5 rounded font-medium transition-colors duration-200"
         >
-          {pct >= 100 ? "100%" : `${pct.toFixed(1)}%`}
+          {formatProbability(pct, 1)}
         </span>
       );
     }
@@ -1230,7 +1240,7 @@ function PredictionsPageContent() {
                         </div>
                         <div className="mt-1 flex items-center gap-2">
                           <span className="text-2xl font-black text-blue-600 dark:text-blue-400">
-                            {summaryStats.topRival.prob.toFixed(1)}%
+                            {formatProbability(summaryStats.topRival.prob, 1)}
                           </span>
                           <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                             en {summaryStats.topRival.stage}
@@ -1267,7 +1277,7 @@ function PredictionsPageContent() {
                                   />
                                 </div>
                                 <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 w-10 text-right">
-                                  {pct.toFixed(0)}%
+                                  {formatProbability(pct, 0)}
                                 </span>
                               </div>
                             );
@@ -1297,7 +1307,7 @@ function PredictionsPageContent() {
                                   {r.opponentName}
                                 </span>
                                 <span className="text-sm font-bold text-amber-600 dark:text-amber-400">
-                                  {(r.stageProbs["Final"] || 0).toFixed(1)}%
+                                  {formatProbability(r.stageProbs["Final"] || 0, 1)}
                                 </span>
                               </div>
                             ))}
@@ -1400,7 +1410,7 @@ function PredictionsPageContent() {
                                             : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                                     )}
                                   >
-                                    {isGroupRival ? "Grupo" : `${row.totalProb.toFixed(1)}%`}
+                                    {isGroupRival ? "Grupo" : formatProbability(row.totalProb, 1)}
                                   </span>
                                 </td>
                                 {STAGE_ORDER.map((stage) => {
@@ -1422,7 +1432,7 @@ function PredictionsPageContent() {
                                               isTopForStage && "ring-1 ring-amber-500/60 dark:ring-amber-500/40"
                                             )}
                                           >
-                                            {pct >= 100 ? "100%" : `${pct.toFixed(1)}%`}
+                                            {formatProbability(pct, 1)}
                                           </span>
                                         </div>
                                       ) : (
