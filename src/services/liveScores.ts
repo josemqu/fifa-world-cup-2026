@@ -68,8 +68,21 @@ export interface NormalizedScore {
 }
 
 /**
+ * Normalizes a player name for consistent storage and aggregation.
+ * Handles extra spaces, non-breaking spaces, and common formatting quirks.
+ */
+function normalizePlayerName(name: string): string {
+  return name
+    .trim()
+    .replace(/\u00A0/g, " ")  // replace non-breaking spaces
+    .replace(/\s+/g, " ");     // collapse multiple spaces into one
+}
+
+/**
  * Parses scorer string from worldcup26.ir.
- * Example input: {"Nestory Irankunda 27'","C. Metcalfe 75'"} or {“J. Quiñones 9'”,”R. Jiménez 67'”}
+ * Example input: {"Nestory Irankunda 27'","C. Metcalfe 75'"} or {"J. Quiñones 9'","R. Jiménez 67'"}
+ *
+ * Names are normalized to ensure consistent aggregation across matches.
  */
 export function parseScorerString(scorerStr: string | null): IScorer[] {
   if (!scorerStr || scorerStr === "null") return [];
@@ -93,14 +106,14 @@ export function parseScorerString(scorerStr: string | null): IScorer[] {
     const parts = s.match(scorerRegex);
     if (parts) {
       return {
-        name: parts[1].trim(),
+        name: normalizePlayerName(parts[1]),
         minute: parts[2],
         isPenalty: parts[3]?.toLowerCase() === "p",
         isOwnGoal: parts[3]?.toUpperCase() === "OG",
       };
     } else {
       return {
-        name: s,
+        name: normalizePlayerName(s),
         minute: "",
         isPenalty: false,
         isOwnGoal: false,

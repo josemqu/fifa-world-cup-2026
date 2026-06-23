@@ -5,6 +5,7 @@ import { Group, KnockoutMatch, Team } from "@/data/types";
 import { sortGroupTeams } from "@/utils/groupSorting";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { getTeamAbbreviation } from "@/utils/teamAbbreviations";
+import { useTopScorers, TopScorer } from "@/hooks/useTopScorers";
 import {
   BarChart3,
   Trophy,
@@ -16,6 +17,7 @@ import {
   Shield,
   Percent,
   Zap,
+  Loader2,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
@@ -311,6 +313,9 @@ export function TournamentStatsCard({
   const [historySortKey, setHistorySortKey] = useState<HistorySortKey>("year");
   const [historySortDir, setHistorySortDir] = useState<"asc" | "desc">("desc");
 
+  // Backend-powered top scorers (primary data source)
+  const { topScorers: backendScorers, isLoading: scorersLoading, meta: scorersMeta } = useTopScorers();
+
   const stats = useMemo(() => {
     // Collect all goals from group matches
     let totalGroupGoals = 0;
@@ -552,9 +557,24 @@ export function TournamentStatsCard({
       decidedPct,
       historicalRank,
       standings,
-      topScorers,
+      topScorersLocal: topScorers,
     };
   }, [groups, knockoutMatches]);
+
+  // Use backend scorers as primary, fall back to local computation
+  const effectiveScorers = useMemo(() => {
+    // Backend has data → use it
+    if (backendScorers.length > 0) {
+      return backendScorers.map((s: TopScorer) => ({
+        name: s.name,
+        team: s.team,
+        goals: s.goals,
+        penalties: s.penalties,
+      }));
+    }
+    // Fallback to local computation
+    return stats.topScorersLocal;
+  }, [backendScorers, stats.topScorersLocal]);
 
   // Combined History for Sorting
   const combinedHistory = useMemo(() => {
@@ -1083,6 +1103,14 @@ export function TournamentStatsCard({
           <span className="flex items-center gap-1.5">
             <Target size={13} className="text-rose-500" />
             Goleadores del Torneo
+            {scorersLoading && (
+              <Loader2 size={11} className="animate-spin text-slate-400" />
+            )}
+            {effectiveScorers.length > 0 && (
+              <span className="text-[10px] font-normal text-slate-400 dark:text-slate-500">
+                ({effectiveScorers.length})
+              </span>
+            )}
           </span>
           {showScorers ? (
             <ChevronUp size={14} />
@@ -1100,12 +1128,27 @@ export function TournamentStatsCard({
               className="overflow-hidden"
             >
               <div className="px-4 pb-4">
-                {stats.topScorers.length === 0 ? (
+                {effectiveScorers.length === 0 ? (
                   <div className="text-center text-slate-400 py-6 text-xs italic">
-                    Aún no se han registrado goles en el torneo.
+                    {scorersLoading
+                      ? "Cargando goleadores..."
+                      : "Aún no se han registrado goles en el torneo."}
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
+                    {/* Source indicator */}
+                    {scorersMeta && (
+                      <div className="flex items-center justify-between mb-2 text-[9px] text-slate-400 dark:text-slate-500">
+                        <span>
+                          {scorersMeta.totalGoals} goles en {scorersMeta.totalMatches} partidos
+                          {scorersMeta.totalOwnGoals > 0 && ` (${scorersMeta.totalOwnGoals} en contra)`}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          En vivo
+                        </span>
+                      </div>
+                    )}
                     <table className="w-full text-xs text-left">
                       <thead className="text-[10px] text-slate-500 dark:text-slate-400 uppercase bg-slate-50 dark:bg-slate-900/50">
                         <tr>
@@ -1118,14 +1161,16 @@ export function TournamentStatsCard({
                       <tbody>
                         {(() => {
                           let currentRank = 1;
-                          const rankedScorers = stats.topScorers.map((s, idx) => {
-                            if (idx > 0 && s.goals < stats.topScorers[idx - 1].goals) {
-                              currentRank += 1;
+                          let prevGoals = -1;
+                          const rankedScorers = effectiveScorers.map((s, idx) => {
+                            if (idx > 0 && s.goals < prevGoals) {
+                              currentRank++;
                             }
+                            prevGoals = s.goals;
                             return { ...s, rank: currentRank };
                           });
 
-                          return rankedScorers.slice(0, 10).map((s) => {
+                          return rankedScorers.slice(0, 20).map((s, idx) => {
                             const medal = 
                               s.rank === 1 ? "🥇" :
                               s.rank === 2 ? "🥈" :
@@ -1134,7 +1179,7 @@ export function TournamentStatsCard({
 
                             return (
                               <tr
-                                key={`${s.name}_${s.team}`}
+                                key={`${s.name}_${s.team}_${idx}`}
                                 className="border-b border-slate-100 dark:border-slate-700/50 last:border-none hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors"
                               >
                                 <td className="px-2 py-1.5 text-center font-bold text-slate-500 dark:text-slate-400">
