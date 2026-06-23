@@ -5,6 +5,7 @@ import {
   R32_MATCHES,
   ThirdPlaceCombination,
 } from "@/data/knockoutData";
+import { analyzeGroup } from "@/utils/groupAnalysis";
 
 interface R32MatchDefinition {
   id: string;
@@ -87,6 +88,32 @@ export function generateR32Matches(groups: Group[]) {
     return group ? group.matches.every((m) => m.finished) : false;
   };
 
+  // Helper to get a team if it has secured a specific rank in a group
+  const getSecuredTeamAtRank = (groupName: string, rank: number): Team | null => {
+    const group = groups.find((g) => g.name === groupName);
+    if (!group) return null;
+
+    if (isGroupFinished(groupName)) {
+      const groupBest = qualified.get(groupName);
+      if (groupBest) {
+        if (rank === 1) return groupBest.first;
+        if (rank === 2) return groupBest.second;
+        if (rank === 3) return groupBest.third;
+      }
+      return null;
+    }
+
+    // Run Monte Carlo analysis to see if any team has their position locked at `rank`
+    const analysis = analyzeGroup(group);
+    for (const team of group.teams) {
+      const teamAnalysis = analysis[team.id];
+      if (teamAnalysis && teamAnalysis.isPositionLocked && teamAnalysis.minRank === rank) {
+        return team;
+      }
+    }
+    return null;
+  };
+
   const allGroupsFinished = groups.every((g) =>
     g.matches.every((m) => m.finished)
   );
@@ -165,39 +192,23 @@ export function generateR32Matches(groups: Group[]) {
     let awayTeam: Team | { placeholder: string } = { placeholder: match.away };
 
     // Resolve Home Team
-    if (match.type === "fixed") {
-      // e.g. "2A"
-      const rank = match.home.charAt(0); // "2"
-      const groupName = match.home.charAt(1); // "A"
-      if (isGroupFinished(groupName)) {
-        const groupBest = qualified.get(groupName);
-        if (groupBest) {
-          if (rank === "1") homeTeam = groupBest.first;
-          else if (rank === "2") homeTeam = groupBest.second;
-        }
-      }
-    } else if (match.type === "variable") {
-      // e.g. "1E"
-      const rank = match.home.charAt(0);
+    if (match.type === "fixed" || match.type === "variable") {
+      // e.g. "2A" or "1E"
+      const rank = parseInt(match.home.charAt(0));
       const groupName = match.home.charAt(1);
-      if (isGroupFinished(groupName)) {
-        const groupBest = qualified.get(groupName);
-        if (groupBest && rank === "1") {
-          homeTeam = groupBest.first;
-        }
+      const secured = getSecuredTeamAtRank(groupName, rank);
+      if (secured) {
+        homeTeam = secured;
       }
     }
 
     // Resolve Away Team
     if (match.type === "fixed") {
-      const rank = match.away.charAt(0);
+      const rank = parseInt(match.away.charAt(0));
       const groupName = match.away.charAt(1);
-      if (isGroupFinished(groupName)) {
-        const groupBest = qualified.get(groupName);
-        if (groupBest) {
-          if (rank === "1") awayTeam = groupBest.first;
-          else if (rank === "2") awayTeam = groupBest.second;
-        }
+      const secured = getSecuredTeamAtRank(groupName, rank);
+      if (secured) {
+        awayTeam = secured;
       }
     } else if (match.type === "variable") {
       // match.away is "3?"
