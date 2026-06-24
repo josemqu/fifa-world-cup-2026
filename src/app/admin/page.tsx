@@ -16,6 +16,8 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
+  LineChart,
+  Line,
 } from "recharts";
 import {
   Users,
@@ -152,6 +154,7 @@ export default function AdminDashboard() {
   const { dbUser } = useAuth();
   const [kpis, setKpis] = useState<KPIs | null>(null);
   const [charts, setCharts] = useState<ChartData | null>(null);
+  const [accuracy, setAccuracy] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [includeAdmins, setIncludeAdmins] = useState(false);
@@ -166,6 +169,7 @@ export default function AdminDashboard() {
       if (json.success) {
         setKpis(json.data.kpis);
         setCharts(json.data.charts);
+        setAccuracy(json.data.accuracy || null);
       }
     } catch (e) {
       console.error(e);
@@ -471,6 +475,217 @@ export default function AdminDashboard() {
               </BarChart>
             </ResponsiveContainer>
           </ChartCard>
+        </div>
+      )}
+
+      {/* ── Accuracy Section (Model vs Community) ─────────────────────────────────── */}
+      {accuracy && (
+        <div className="space-y-6">
+          <div className="border-t border-slate-200 dark:border-slate-800 pt-6">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-indigo-500" />
+              Comparativa de Acierto (Accuracy): Modelo vs. Comunidad
+            </h2>
+            <p className="text-xs text-slate-550 dark:text-slate-400 mt-1">
+              Análisis comparativo de predicciones correctas sobre {accuracy.summary.totalFinishedMatches} partidos finalizados
+            </p>
+          </div>
+
+          {accuracy.summary.totalFinishedMatches > 0 ? (
+            <>
+              {/* KPI Comparison Summary Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* Outcome KPI Comparison */}
+                <div className="bg-slate-50/50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-350 flex items-center gap-2 mb-3">
+                      <span className="w-2.5 h-2.5 rounded bg-indigo-500" />
+                      Acierto de Ganador (Outcome 1X2)
+                    </h3>
+                    <p className="text-xs text-slate-500 leading-normal mb-4">
+                      Porcentaje de predicciones que acertaron el resultado general (Local, Empate o Visitante).
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 items-center">
+                    <div className="text-center p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800/80 shadow-2xs">
+                      <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider mb-1">Modelo</span>
+                      <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">
+                        {accuracy.summary.model.outcomeAccuracy.toFixed(1)}%
+                      </span>
+                      <span className="text-[9px] text-slate-400 block mt-1">
+                        ({accuracy.summary.model.correctOutcomes} / {accuracy.summary.totalFinishedMatches} part.)
+                      </span>
+                    </div>
+                    <div className="text-center p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800/80 shadow-2xs">
+                      <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider mb-1">Comunidad</span>
+                      <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                        {accuracy.summary.users.outcomeAccuracy.toFixed(1)}%
+                      </span>
+                      <span className="text-[9px] text-slate-400 block mt-1">
+                        ({accuracy.summary.users.correctOutcomes} / {accuracy.summary.totalUserPredictions} pron.)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Score KPI Comparison */}
+                <div className="bg-slate-50/50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-350 flex items-center gap-2 mb-3">
+                      <span className="w-2.5 h-2.5 rounded bg-violet-500" />
+                      Acierto de Marcador Exacto (Score)
+                    </h3>
+                    <p className="text-xs text-slate-500 leading-normal mb-4">
+                      Porcentaje de predicciones que acertaron la cantidad exacta de goles de ambos equipos.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 items-center">
+                    <div className="text-center p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800/80 shadow-2xs">
+                      <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider mb-1">Modelo</span>
+                      <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">
+                        {accuracy.summary.model.scoreAccuracy.toFixed(1)}%
+                      </span>
+                      <span className="text-[9px] text-slate-400 block mt-1">
+                        ({accuracy.summary.model.correctScores} / {accuracy.summary.totalFinishedMatches} part.)
+                      </span>
+                    </div>
+                    <div className="text-center p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800/80 shadow-2xs">
+                      <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider mb-1">Comunidad</span>
+                      <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                        {accuracy.summary.users.scoreAccuracy.toFixed(1)}%
+                      </span>
+                      <span className="text-[9px] text-slate-400 block mt-1">
+                        ({accuracy.summary.users.correctScores} / {accuracy.summary.totalUserPredictions} pron.)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Charts comparing accuracy by stage */}
+              {accuracy.byStage && accuracy.byStage.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  
+                  {/* Outcome Accuracy by Stage Line Chart */}
+                  <ChartCard title="Acierto de Ganador (1X2) por Etapa del Torneo (%)">
+                    <ResponsiveContainer width="100%" height={240}>
+                      <LineChart data={accuracy.byStage} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+                        <XAxis 
+                          dataKey="stageName" 
+                          tick={{ fill: "#64748b", fontSize: 10 }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis 
+                          unit="%" 
+                          domain={[0, 100]}
+                          tick={{ fill: "#64748b", fontSize: 10 }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <Tooltip 
+                          content={({ active, payload }: any) => {
+                            if (active && payload && payload.length) {
+                              return (
+                                <div className="bg-white border border-slate-200 dark:bg-slate-800 dark:border-slate-700 rounded-xl px-3 py-2 shadow-xl text-xs text-slate-900 dark:text-white">
+                                  <p className="font-bold text-slate-400 mb-1">{payload[0].payload.stageName}</p>
+                                  <p className="text-[10px] text-slate-500 mb-1.5">Partidos: {payload[0].payload.totalMatches}</p>
+                                  <p className="text-indigo-500 font-bold">Modelo: {payload[0].value.toFixed(1)}%</p>
+                                  <p className="text-emerald-500 font-bold">Comunidad: {payload[1].value.toFixed(1)}%</p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
+                        <Line 
+                          type="monotone" 
+                          dataKey="modelOutcomeAcc" 
+                          name="Modelo" 
+                          stroke="#6366f1" 
+                          strokeWidth={3} 
+                          activeDot={{ r: 6 }} 
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="usersOutcomeAcc" 
+                          name="Comunidad" 
+                          stroke="#10b981" 
+                          strokeWidth={3} 
+                          activeDot={{ r: 6 }} 
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </ChartCard>
+
+                  {/* Score Accuracy by Stage Line Chart */}
+                  <ChartCard title="Acierto de Marcador Exacto por Etapa del Torneo (%)">
+                    <ResponsiveContainer width="100%" height={240}>
+                      <LineChart data={accuracy.byStage} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+                        <XAxis 
+                          dataKey="stageName" 
+                          tick={{ fill: "#64748b", fontSize: 10 }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis 
+                          unit="%" 
+                          domain={[0, 100]}
+                          tick={{ fill: "#64748b", fontSize: 10 }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <Tooltip 
+                          content={({ active, payload }: any) => {
+                            if (active && payload && payload.length) {
+                              return (
+                                <div className="bg-white border border-slate-200 dark:bg-slate-800 dark:border-slate-700 rounded-xl px-3 py-2 shadow-xl text-xs text-slate-900 dark:text-white">
+                                  <p className="font-bold text-slate-400 mb-1">{payload[0].payload.stageName}</p>
+                                  <p className="text-[10px] text-slate-500 mb-1.5">Partidos: {payload[0].payload.totalMatches}</p>
+                                  <p className="text-indigo-500 font-bold">Modelo: {payload[0].value.toFixed(1)}%</p>
+                                  <p className="text-emerald-500 font-bold">Comunidad: {payload[1].value.toFixed(1)}%</p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
+                        <Line 
+                          type="monotone" 
+                          dataKey="modelScoreAcc" 
+                          name="Modelo" 
+                          stroke="#8b5cf6" 
+                          strokeWidth={3} 
+                          activeDot={{ r: 6 }} 
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="usersScoreAcc" 
+                          name="Comunidad" 
+                          stroke="#06b6d4" 
+                          strokeWidth={3} 
+                          activeDot={{ r: 6 }} 
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </ChartCard>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 text-center text-slate-500 dark:text-slate-400">
+              <p className="text-xs font-semibold">Aún no hay partidos finalizados en el fixture.</p>
+              <p className="text-[11px] mt-1 text-slate-400 leading-normal max-w-md mx-auto">
+                Las métricas comparativas del acierto (ganador y marcador exacto) entre el modelo matemático y los pronósticos de los usuarios se calcularán en tiempo real a medida que terminen los partidos.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
