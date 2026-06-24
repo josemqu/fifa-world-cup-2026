@@ -44,12 +44,72 @@ const POLL_IDLE = 5 * 60 * 1000; // 5 minutes when no live matches
  * - Every 5 min if no live matches (check if any started)
  * - Disabled if tournament hasn't started or is finished (unless in dev/mock mode)
  */
-export function useLiveScores(enabled: boolean = true) {
-  const { updateMatch, updateKnockoutMatch } = useTournament();
+export interface GoalNotificationInfo {
+  id: string;
+  matchId: string;
+  homeTeamName: string;
+  awayTeamName: string;
+  scoringTeam: "home" | "away";
+  newScore: { home: number; away: number };
+  scorerName?: string;
+  minute?: string;
+  isPenalty?: boolean;
+  isOwnGoal?: boolean;
+}
+
+// Helper to find the scorer that was just added
+const getNewScorer = (newScorers?: Scorer[], oldScorers?: Scorer[]): Scorer | undefined => {
+  if (!newScorers || newScorers.length === 0) return undefined;
+  if (!oldScorers || oldScorers.length === 0) return newScorers[newScorers.length - 1];
+  
+  const newOne = newScorers.find(ns => 
+    !oldScorers.some(os => os.name === ns.name && os.minute === ns.minute)
+  );
+  return newOne || newScorers[newScorers.length - 1];
+};
+
+function getTeamNameFromKnockout(team: any): string {
+  if (!team) return "Por definir";
+  if ("placeholder" in team) return team.placeholder;
+  return team.name;
+}
+
+/**
+ * Hook that polls /api/scores/sync for live match updates
+ * and applies them to the TournamentContext.
+ *
+ * Smart polling:
+ * - Every 3s if mock simulation is active
+ * - Every 30s if there are live matches
+ * - Every 5 min if no live matches (check if any started)
+ * - Disabled if tournament hasn't started or is finished (unless in dev/mock mode)
+ */
+export function useLiveScores(
+  enabled: boolean = true,
+  onGoalScored?: (info: GoalNotificationInfo) => void
+) {
+  const { updateMatch, updateKnockoutMatch, groups, knockoutMatches } = useTournament();
   const { dbUser, user } = useAuth();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const [hasLive, setHasLive] = useState(false);
   const [mockActiveState, setMockActiveState] = useState(false);
+
+  const stateRef = useRef({ groups, knockoutMatches });
+  useEffect(() => {
+    stateRef.current = { groups, knockoutMatches };
+  }, [groups, knockoutMatches]);
+
+  const onGoalScoredRef = useRef(onGoalScored);
+  useEffect(() => {
+    onGoalScoredRef.current = onGoalScored;
+  }, [onGoalScored]);
+
+  const previousScoresRef = useRef<Record<string, {
+    home: number;
+    away: number;
+    homeScorers: Scorer[];
+    awayScorers: Scorer[];
+  }>>({});
 
   const isAdmin = dbUser?.role === "admin";
   const isAllowedEmail = !!(
@@ -69,6 +129,30 @@ export function useLiveScores(enabled: boolean = true) {
       return () => clearTimeout(timer);
     }
   }, [isUserAuthorized]);
+
+  const findTeamNames = useCallback((matchId: string, stage: "group" | "knockout", groupId?: string) => {
+    let homeTeamName = "Local";
+    let awayTeamName = "Visitante";
+
+    if (stage === "group" && groupId) {
+      const group = stateRef.current.groups.find(g => g.name === groupId);
+      const match = group?.matches.find(m => m.id === matchId);
+      if (match) {
+        const homeTeam = group?.teams.find(t => t.id === match.homeTeamId);
+        const awayTeam = group?.teams.find(t => t.id === match.awayTeamId);
+        homeTeamName = homeTeam?.name || match.homeTeamId;
+        awayTeamName = awayTeam?.name || match.awayTeamId;
+      }
+    } else {
+      const match = stateRef.current.knockoutMatches.find(m => m.id === matchId);
+      if (match) {
+        homeTeamName = getTeamNameFromKnockout(match.homeTeam);
+        awayTeamName = getTeamNameFromKnockout(match.awayTeam);
+      }
+    }
+
+    return { homeTeamName, awayTeamName };
+  }, []);
 
   const fetchAndApply = useCallback(async () => {
     try {
@@ -96,6 +180,66 @@ export function useLiveScores(enabled: boolean = true) {
       for (const score of data.scores) {
         // Only apply if there's actual score data
         if (score.status === "scheduled") continue;
+
+        const currentHome = score.homeScore ?? 0;
+        const currentAway = score.awayScore ?? 0;
+        const prev = previousScoresRef.current[score.matchId];
+
+        if (!prev) {
+          // Initialize for this match
+          previousScoresRef.current[score.matchId] = {
+            home: currentHome,
+            away: currentAway,
+            homeScorers: score.homeScorers || [],
+            awayScorers: score.awayScorers || [],
+          };
+        } else {
+          const prevHome = prev.home;
+          const prevAway = prev.away;
+          
+          let goalScored = false;
+          let scoringTeam: "home" | "away" | null = null;
+          
+          if (currentHome > prevHome) {
+            goalScored = true;
+            scoringTeam = "home";
+          } else if (currentAway > prevAway) {
+            goalScored = true;
+            scoringTeam = "away";
+          }
+          
+          if (goalScored && scoringTeam) {
+            const { homeTeamName, awayTeamName } = findTeamNames(score.matchId, score.stage, score.groupId);
+            
+            // Get scorer info
+            const newScorers = scoringTeam === "home" ? score.homeScorers : score.awayScorers;
+            const oldScorers = scoringTeam === "home" ? prev.homeScorers : prev.awayScorers;
+            const newScorer = getNewScorer(newScorers, oldScorers);
+            
+            if (onGoalScoredRef.current) {
+              onGoalScoredRef.current({
+                id: `${score.matchId}-${Date.now()}-${Math.random()}`,
+                matchId: score.matchId,
+                homeTeamName,
+                awayTeamName,
+                scoringTeam,
+                newScore: { home: currentHome, away: currentAway },
+                scorerName: newScorer?.name,
+                minute: newScorer?.minute || (score.elapsed ? `${score.elapsed}'` : undefined),
+                isPenalty: newScorer?.isPenalty,
+                isOwnGoal: newScorer?.isOwnGoal,
+              });
+            }
+          }
+          
+          // Update ref
+          previousScoresRef.current[score.matchId] = {
+            home: currentHome,
+            away: currentAway,
+            homeScorers: score.homeScorers || [],
+            awayScorers: score.awayScorers || [],
+          };
+        }
 
         if (score.stage === "group" && score.groupId) {
           updateMatch(
@@ -128,7 +272,7 @@ export function useLiveScores(enabled: boolean = true) {
       // Silent fail — next poll will retry
       console.warn("[useLiveScores] Poll failed:", error);
     }
-  }, [updateMatch, updateKnockoutMatch, dbUser, user, isUserAuthorized]);
+  }, [updateMatch, updateKnockoutMatch, dbUser, user, isUserAuthorized, findTeamNames]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
