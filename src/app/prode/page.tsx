@@ -1446,6 +1446,9 @@ function PredictionsTab({
         <ModelPredictionModal
           isOpen={!!selectedModelPred}
           onClose={() => setSelectedModelPred(null)}
+          matchId={selectedModelPred.matchId}
+          isAdmin={isAdmin}
+          firebaseUid={firebaseUid}
           homeTeamName={selectedModelPred.homeTeamName}
           awayTeamName={selectedModelPred.awayTeamName}
           homeTeamObj={selectedModelPred.homeTeamObj}

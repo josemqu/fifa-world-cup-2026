@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
 
 import { Team } from "@/data/types";
+import { AdminSimulationChart } from "@/components/AdminSimulationChart";
 
 interface ExtendedTeam extends Team {
   es_anfitrion?: boolean;
@@ -17,6 +18,9 @@ interface ExtendedTeam extends Team {
 interface ModelPredictionModalProps {
   isOpen: boolean;
   onClose: () => void;
+  matchId: string;
+  isAdmin?: boolean;
+  firebaseUid?: string;
   homeTeamName: string;
   awayTeamName: string;
   homeTeamObj?: ExtendedTeam;
@@ -87,6 +91,9 @@ function getTopExactScores(lambdaA: number, lambdaB: number) {
 export function ModelPredictionModal({
   isOpen,
   onClose,
+  matchId,
+  isAdmin = false,
+  firebaseUid,
   homeTeamName,
   awayTeamName,
   homeTeamObj,
@@ -419,6 +426,22 @@ export function ModelPredictionModal({
                   })}
                 </div>
               </div>
+
+              {/* Admin Simulation Chart (Experimental Heatmap & community bubbles) */}
+              {isAdmin && firebaseUid && (
+                <div className="space-y-3 border-t border-slate-100 dark:border-slate-700/50 pt-4">
+                  <AdminSimulationChart
+                    matchId={matchId}
+                    firebaseUid={firebaseUid}
+                    homeTeamName={homeTeamName}
+                    awayTeamName={awayTeamName}
+                    lambdaA={lambdaA}
+                    lambdaB={lambdaB}
+                    userHomeScore={userHomeScore}
+                    userAwayScore={userAwayScore}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Footer */}
