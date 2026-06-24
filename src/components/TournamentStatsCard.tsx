@@ -828,7 +828,8 @@ export function TournamentStatsCard({
         className={clsx(
           "py-1.5 px-1 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors select-none group",
           align === "center" ? "text-center" : "text-left",
-          widthClass
+          widthClass,
+          isActive && "bg-blue-500/[0.04] dark:bg-blue-400/[0.02]"
         )}
         title={title}
       >
@@ -922,7 +923,7 @@ export function TournamentStatsCard({
             {standingsSearch && (
               <button
                 onClick={() => setStandingsSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-805 text-slate-400 dark:text-slate-500 transition-colors"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors"
               >
                 <X size={11} />
               </button>
@@ -951,7 +952,10 @@ export function TournamentStatsCard({
                 {renderStandingsHeader("pts", "Pts", "center", "w-12", "Puntos")}
                 <th
                   onClick={() => handleStandingsSort("knockoutRound")}
-                  className="py-2.5 px-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors select-none group hidden sm:table-cell text-center w-24"
+                  className={clsx(
+                    "py-1.5 px-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors select-none group hidden sm:table-cell text-center w-24",
+                    standingsSortKey === "knockoutRound" && "bg-blue-500/[0.04] dark:bg-blue-400/[0.02]"
+                  )}
                   title="Máxima Ronda"
                 >
                   <div className="flex items-center justify-center gap-0.5">
@@ -995,15 +999,19 @@ export function TournamentStatsCard({
                       )}
                     >
                       <td className={clsx(
-                        "px-2 py-2 text-center font-mono text-[10px] font-semibold",
+                        "px-2 py-2 text-center font-mono text-[10px] font-semibold transition-colors",
+                        standingsSortKey === "pos" && "bg-blue-500/[0.04] dark:bg-blue-400/[0.02]",
                         isTop1 && "text-amber-600 dark:text-amber-400",
-                        isTop2 && "text-slate-550 dark:text-slate-400",
+                        isTop2 && "text-slate-500 dark:text-slate-400",
                         isTop3 && "text-amber-800 dark:text-amber-600",
                         !isTop1 && !isTop2 && !isTop3 && "text-slate-400 dark:text-slate-500"
                       )}>
                         {s.defaultRank}
                       </td>
-                      <td className="px-3 py-2 font-medium text-slate-900 dark:text-slate-100">
+                      <td className={clsx(
+                        "px-3 py-2 font-medium transition-colors",
+                        standingsSortKey === "team" ? "bg-blue-500/[0.04] dark:bg-blue-400/[0.02] text-blue-600 dark:text-blue-400 font-semibold" : "text-slate-900 dark:text-slate-100"
+                      )}>
                         <div className="flex items-center gap-2">
                           <TeamFlag
                             teamName={s.team.name}
@@ -1017,37 +1025,67 @@ export function TournamentStatsCard({
                           </span>
                         </div>
                       </td>
-                      <td className="px-2 py-2 text-center text-slate-400 dark:text-slate-500 text-[10px] font-mono">
+                      <td className={clsx(
+                        "px-2 py-2 text-center text-[10px] font-mono transition-colors",
+                        standingsSortKey === "group" ? "bg-blue-500/[0.04] dark:bg-blue-400/[0.02] text-blue-600 dark:text-blue-400 font-semibold" : "text-slate-400 dark:text-slate-500"
+                      )}>
                         {s.team.group}
                       </td>
-                      <td className="px-2 py-2 text-center text-slate-650 dark:text-slate-450 font-medium">
+                      <td className={clsx(
+                        "px-2 py-2 text-center font-medium transition-colors",
+                        standingsSortKey === "played" ? "bg-blue-500/[0.04] dark:bg-blue-400/[0.02] text-blue-600 dark:text-blue-400 font-semibold" : "text-slate-600 dark:text-slate-400"
+                      )}>
                         {s.played}
                       </td>
-                      <td className="px-2 py-2 text-center text-slate-600 dark:text-slate-400">
+                      <td className={clsx(
+                        "px-2 py-2 text-center transition-colors",
+                        standingsSortKey === "won" ? "bg-blue-500/[0.04] dark:bg-blue-400/[0.02] text-blue-600 dark:text-blue-400 font-semibold" : "text-slate-600 dark:text-slate-400"
+                      )}>
                         {s.won}
                       </td>
-                      <td className="px-2 py-2 text-center text-slate-600 dark:text-slate-400">
+                      <td className={clsx(
+                        "px-2 py-2 text-center transition-colors",
+                        standingsSortKey === "drawn" ? "bg-blue-500/[0.04] dark:bg-blue-400/[0.02] text-blue-600 dark:text-blue-400 font-semibold" : "text-slate-600 dark:text-slate-400"
+                      )}>
                         {s.drawn}
                       </td>
-                      <td className="px-2 py-2 text-center text-slate-600 dark:text-slate-400">
+                      <td className={clsx(
+                        "px-2 py-2 text-center transition-colors",
+                        standingsSortKey === "lost" ? "bg-blue-500/[0.04] dark:bg-blue-400/[0.02] text-blue-600 dark:text-blue-400 font-semibold" : "text-slate-600 dark:text-slate-400"
+                      )}>
                         {s.lost}
                       </td>
-                      <td className="px-2 py-2 text-center text-slate-600 dark:text-slate-400 font-mono">
+                      <td className={clsx(
+                        "px-2 py-2 text-center font-mono transition-colors",
+                        standingsSortKey === "gf" ? "bg-blue-500/[0.04] dark:bg-blue-400/[0.02] text-blue-600 dark:text-blue-400 font-semibold" : "text-slate-600 dark:text-slate-400"
+                      )}>
                         {s.gf}
                       </td>
-                      <td className="px-2 py-2 text-center text-slate-600 dark:text-slate-400 font-mono">
+                      <td className={clsx(
+                        "px-2 py-2 text-center font-mono transition-colors",
+                        standingsSortKey === "ga" ? "bg-blue-500/[0.04] dark:bg-blue-400/[0.02] text-blue-600 dark:text-blue-400 font-semibold" : "text-slate-600 dark:text-slate-400"
+                      )}>
                         {s.ga}
                       </td>
                       <td className={clsx(
-                        "px-2 py-2 text-center font-mono font-medium",
+                        "px-2 py-2 text-center font-mono font-medium transition-colors",
+                        standingsSortKey === "gd" && "bg-blue-500/[0.04] dark:bg-blue-400/[0.02]",
                         s.gd > 0 ? "text-emerald-600 dark:text-emerald-400" : s.gd < 0 ? "text-rose-500 dark:text-rose-400" : "text-slate-400 dark:text-slate-500"
                       )}>
                         {s.gd > 0 ? `+${s.gd}` : s.gd}
                       </td>
-                      <td className="px-2 py-2 text-center font-extrabold text-slate-800 dark:text-slate-105 font-mono">
+                      <td className={clsx(
+                        "px-2 py-2 text-center font-mono transition-colors",
+                        standingsSortKey === "pts"
+                          ? "font-extrabold text-blue-600 dark:text-blue-400 bg-blue-500/[0.06] dark:bg-blue-400/[0.03]"
+                          : "font-extrabold text-slate-800 dark:text-slate-100 bg-slate-50/[0.3] dark:bg-slate-800/10"
+                      )}>
                         {s.pts}
                       </td>
-                      <td className="px-2 py-2 text-center text-[10px] text-slate-400 dark:text-slate-500 hidden sm:table-cell">
+                      <td className={clsx(
+                        "px-2 py-2 text-center text-[10px] hidden sm:table-cell transition-colors",
+                        standingsSortKey === "knockoutRound" ? "bg-blue-500/[0.04] dark:bg-blue-400/[0.02]" : "text-slate-400 dark:text-slate-500"
+                      )}>
                         <span
                           className={clsx(
                             "px-2 py-0.5 rounded-full text-[9px] font-semibold inline-block shadow-sm",
@@ -1059,7 +1097,7 @@ export function TournamentStatsCard({
                                 ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/50"
                                 : s.knockoutRound === "Octavos"
                                   ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border border-purple-200/50 dark:border-purple-900/50"
-                                  : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-450 border border-slate-200/20 dark:border-slate-700/50"
+                                  : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/20 dark:border-slate-700/50"
                           )}
                         >
                           {s.knockoutRound}
@@ -1078,7 +1116,7 @@ export function TournamentStatsCard({
           <div className="mt-3 flex justify-center">
             <button
               onClick={() => setShowAllStandings(!showAllStandings)}
-              className="flex items-center gap-1 px-4 py-1.5 text-[11px] font-bold text-blue-600 dark:text-blue-450 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl transition-all duration-200 border border-transparent hover:border-blue-100 dark:hover:border-blue-900/50 cursor-pointer select-none"
+              className="flex items-center gap-1 px-4 py-1.5 text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl transition-all duration-200 border border-transparent hover:border-blue-100 dark:hover:border-blue-900/50 cursor-pointer select-none"
             >
               {showAllStandings ? "Ver menos posiciones" : `Ver todas las posiciones (${sortedStandings.length})`}
               {showAllStandings ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
@@ -1170,16 +1208,16 @@ export function TournamentStatsCard({
                 <div className="absolute -top-4 bg-amber-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-lg border-2 border-white dark:border-slate-800 animate-pulse">
                   🏆
                 </div>
-                <div className="w-11 h-11 rounded-full bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center border border-amber-350 dark:border-amber-800 shadow-md mb-2 shrink-0">
+                <div className="w-11 h-11 rounded-full bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center border border-amber-300 dark:border-amber-800 shadow-md mb-2 shrink-0">
                   <TeamFlag teamName={first.team} className="w-6 h-4 rounded-sm" />
                 </div>
                 <div className="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 text-center truncate w-full" title={first.name}>
                   {first.name}
                 </div>
-                <div className="text-[9px] sm:text-[10px] text-amber-700 dark:text-amber-450 font-semibold truncate w-full text-center mt-0.5">
+                <div className="text-[9px] sm:text-[10px] text-amber-700 dark:text-amber-400 font-semibold truncate w-full text-center mt-0.5">
                   {first.team}
                 </div>
-                <div className="mt-2 text-xs sm:text-sm font-black text-amber-750 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/45 px-2.5 py-0.5 rounded-full border border-amber-200/50 dark:border-amber-900/50 shadow-sm font-mono flex items-center gap-0.5 shrink-0">
+                <div className="mt-2 text-xs sm:text-sm font-black text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/45 px-2.5 py-0.5 rounded-full border border-amber-200/50 dark:border-amber-900/50 shadow-sm font-mono flex items-center gap-0.5 shrink-0">
                   <span>⚽</span>
                   <span>{first.goals}</span>
                 </div>
@@ -1228,7 +1266,7 @@ export function TournamentStatsCard({
                     key={`${s.name}_${s.team}_${idx}`}
                     className="border-b border-slate-100 dark:border-slate-800/60 last:border-none hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
                   >
-                    <td className="px-3 py-1.5 text-center font-bold text-slate-400 dark:text-slate-550">
+                    <td className="px-3 py-1.5 text-center font-bold text-slate-400 dark:text-slate-500">
                       {s.rank}
                     </td>
                     <td className="px-3 py-1.5 font-semibold text-slate-900 dark:text-slate-100">
@@ -1241,7 +1279,7 @@ export function TournamentStatsCard({
                       </div>
                     </td>
                     <td className="px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 font-mono">
-                      <span className="inline-flex items-center justify-center gap-1 bg-slate-50 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-150 dark:border-slate-800">
+                      <span className="inline-flex items-center justify-center gap-1 bg-slate-50 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-800">
                         <span>⚽ {s.goals}</span>
                         {s.penalties > 0 && (
                           <span className="text-[9px] text-slate-400 dark:text-slate-500 font-normal">
@@ -1315,7 +1353,7 @@ export function TournamentStatsCard({
                     <td className="px-2 py-2 text-center text-slate-500 dark:text-slate-400 font-mono">
                       {s.matches}
                     </td>
-                    <td className="px-3 py-2 text-center font-extrabold text-slate-850 dark:text-slate-100 font-mono">
+                    <td className="px-3 py-2 text-center font-extrabold text-slate-800 dark:text-slate-100 font-mono">
                       ⚽ {s.goals}
                     </td>
                     <td className="px-2 py-2 text-center text-slate-500 dark:text-slate-500 font-mono text-[11px]">
@@ -1342,7 +1380,7 @@ export function TournamentStatsCard({
               className={clsx(
                 "px-4 py-1.5 rounded-lg text-[10px] font-extrabold transition-all duration-200 cursor-pointer select-none",
                 scorersTab === "current"
-                  ? "bg-white dark:bg-slate-850 text-blue-600 dark:text-blue-200 shadow-sm border border-slate-200/30 dark:border-slate-700/50"
+                  ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm border border-slate-200/50 dark:border-slate-600/50"
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
               )}
             >
@@ -1353,7 +1391,7 @@ export function TournamentStatsCard({
               className={clsx(
                 "px-4 py-1.5 rounded-lg text-[10px] font-extrabold transition-all duration-200 cursor-pointer select-none",
                 scorersTab === "historical"
-                  ? "bg-white dark:bg-slate-850 text-blue-600 dark:text-blue-200 shadow-sm border border-slate-200/30 dark:border-slate-700/50"
+                  ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm border border-slate-200/50 dark:border-slate-600/50"
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
               )}
             >
@@ -1399,10 +1437,10 @@ export function TournamentStatsCard({
                     <td className={clsx("px-3 py-2", h.isCurrent ? "text-blue-600 dark:text-blue-400" : "text-slate-500 dark:text-slate-400")}>
                       {h.host}
                     </td>
-                    <td className={clsx("px-2 py-2 text-center font-mono", h.isCurrent ? "text-blue-700 dark:text-blue-350" : "text-slate-550 dark:text-slate-450")}>
+                    <td className={clsx("px-2 py-2 text-center font-mono", h.isCurrent ? "text-blue-700 dark:text-blue-300" : "text-slate-500 dark:text-slate-400")}>
                       {h.matches}
                     </td>
-                    <td className={clsx("px-2 py-2 text-center font-mono", h.isCurrent ? "text-blue-700 dark:text-blue-350" : "text-slate-555 dark:text-slate-455")}>
+                    <td className={clsx("px-2 py-2 text-center font-mono", h.isCurrent ? "text-blue-700 dark:text-blue-300" : "text-slate-500 dark:text-slate-400")}>
                       {h.goals}
                     </td>
                     <td className={clsx("px-2 py-2 text-center font-mono", h.isCurrent ? "text-blue-700 dark:text-blue-300 font-extrabold" : "text-slate-700 dark:text-slate-400 font-medium")}>
@@ -1571,7 +1609,7 @@ export function TournamentStatsCard({
             "flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer select-none",
             activeTab === "standings"
               ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm border border-slate-200/50 dark:border-slate-600/50"
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-750 dark:hover:text-slate-200 hover:bg-slate-100/50 dark:hover:bg-slate-800/30"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100/50 dark:hover:bg-slate-800/30"
           )}
         >
           <Trophy size={14} className={clsx(activeTab === "standings" ? "text-blue-500" : "text-slate-400")} />
@@ -1583,7 +1621,7 @@ export function TournamentStatsCard({
             "flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer select-none",
             activeTab === "scorers"
               ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm border border-slate-200/50 dark:border-slate-600/50"
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-750 dark:hover:text-slate-200 hover:bg-slate-100/50 dark:hover:bg-slate-800/30"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100/50 dark:hover:bg-slate-800/30"
           )}
         >
           <Target size={14} className={clsx(activeTab === "scorers" ? "text-rose-500" : "text-slate-400")} />
@@ -1595,7 +1633,7 @@ export function TournamentStatsCard({
             "flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer select-none",
             activeTab === "history"
               ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm border border-slate-200/50 dark:border-slate-600/50"
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-750 dark:hover:text-slate-200 hover:bg-slate-100/50 dark:hover:bg-slate-800/30"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100/50 dark:hover:bg-slate-800/30"
           )}
         >
           <BarChart3 size={14} className={clsx(activeTab === "history" ? "text-emerald-500" : "text-slate-400")} />
