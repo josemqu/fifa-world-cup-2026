@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Info, Users, TrendingUp, Sparkles, Award } from "lucide-react";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { clsx } from "clsx";
+import { getTeamAbbreviation } from "@/utils/teamAbbreviations";
 
 interface MemberPrediction {
   firebaseUid: string;
@@ -276,21 +277,13 @@ export function AdminSimulationChart({
       {/* Main Graph Area */}
       <div className="flex flex-col items-center w-full">
         {/* Row container for vertical Y label and the grid */}
-        <div className="flex items-stretch justify-center gap-1.5 w-full max-w-[390px]">
-          {/* Y Axis Header (Local) rotated 90 degrees */}
-          <div className="w-10 relative flex items-center justify-center shrink-0 self-stretch">
-            <div 
-              className="absolute flex items-center gap-2 text-xs font-bold text-slate-200 bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-750/50 shadow-xs select-none whitespace-nowrap origin-center"
-              style={{ 
-                transform: "rotate(-90deg)",
-                left: "50%",
-                top: "50%",
-                translate: "-50% -50%",
-              }}
-            >
+        <div className="flex items-stretch justify-center gap-1.5 w-full max-w-[426px]">
+          {/* Y Axis Header (Local) horizontal on the left */}
+          <div className="w-20 shrink-0 flex items-center justify-end pr-1 self-stretch">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-200 bg-slate-800/60 px-2 py-1 rounded-xl border border-slate-750/50 shadow-xs select-none max-w-full" title={homeTeamName}>
               <TeamFlag teamName={homeTeamName} className="w-5 h-3.5 rounded-2xs shadow-md shrink-0" />
-              <span className="text-slate-100 font-black">
-                {homeTeamName} <span className="text-[10px] text-slate-400 font-normal ml-0.5">(Local)</span>
+              <span className="text-slate-100 font-black whitespace-nowrap">
+                {getTeamAbbreviation(homeTeamName)}
               </span>
             </div>
           </div>
@@ -417,14 +410,14 @@ export function AdminSimulationChart({
         </div>
 
         {/* X Axis Header (Away) aligned directly under grid */}
-        <div className="flex justify-center gap-1.5 w-full max-w-[390px] mt-1.5">
-          {/* spacer matching the width of Y Axis Label (w-10) */}
-          <div className="w-10 shrink-0" />
+        <div className="flex justify-center gap-1.5 w-full max-w-[426px] mt-1.5">
+          {/* spacer matching the width of Y Axis Label (w-20) */}
+          <div className="w-20 shrink-0" />
           <div className="flex-1 flex justify-center">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-200 bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-750/50 shadow-xs select-none">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-200 bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-750/50 shadow-xs select-none" title={awayTeamName}>
               <TeamFlag teamName={awayTeamName} className="w-5 h-3.5 rounded-2xs shadow-md shrink-0" />
-              <span className="text-slate-100 font-black">
-                {awayTeamName} <span className="text-[10px] text-slate-400 font-normal ml-0.5">(Visitante)</span>
+              <span className="text-slate-100 font-black whitespace-nowrap">
+                {getTeamAbbreviation(awayTeamName)}
               </span>
             </div>
           </div>
