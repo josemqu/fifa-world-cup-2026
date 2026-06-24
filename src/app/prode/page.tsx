@@ -1731,28 +1731,30 @@ function ProdeMatchCard({
             )}
             <span className="font-mono text-[9px] text-slate-350 dark:text-slate-650">#{matchId}</span>
           </div>
-          {!isLocked && (homeScore !== "" || awayScore !== "") && (
-            <button
-              type="button"
-              onClick={() => onResetMatch(matchId)}
-              className="flex items-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
-              title="Resetear pronóstico"
-            >
-              <RotateCcw className="w-3 h-3" />
-              <span>Resetear</span>
-            </button>
-          )}
-          {isLocked && onOpenRivalPredictions && (
-            <button
-              type="button"
-              onClick={onOpenRivalPredictions}
-              className="flex items-center gap-1.5 text-[10px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors cursor-pointer"
-              title="Ver pronósticos de tus rivales de grupo"
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span>Ver rivales</span>
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {!isLocked && (homeScore !== "" || awayScore !== "") && (
+              <button
+                type="button"
+                onClick={() => onResetMatch(matchId)}
+                className="flex items-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
+                title="Resetear pronóstico"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Resetear</span>
+              </button>
+            )}
+            {(isLocked || isAdmin) && onOpenRivalPredictions && (
+              <button
+                type="button"
+                onClick={onOpenRivalPredictions}
+                className="flex items-center gap-1.5 text-[10px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors cursor-pointer"
+                title="Ver pronósticos de tus rivales de grupo"
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Ver rivales</span>
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">

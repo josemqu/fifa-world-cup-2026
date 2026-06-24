@@ -57,10 +57,14 @@ export async function GET(request: Request) {
       );
     }
 
+    // Check if the current user is an admin
+    const currentUser = await User.findOne({ firebaseUid: uid });
+    const isAdmin = currentUser?.role === "admin";
+
     // Security: Check if match has started
     const utcDate = matchDateMap[matchId];
     const started = utcDate ? hasMatchStarted(utcDate) : true;
-    if (!started) {
+    if (!started && !isAdmin) {
       return NextResponse.json(
         { error: "El partido aún no ha comenzado. Los pronósticos se revelarán al inicio del encuentro." },
         { status: 403 }
@@ -86,10 +90,6 @@ export async function GET(request: Request) {
     }
     allMemberUids.add(uid);
     const memberUidsArray = Array.from(allMemberUids);
-
-    // Check if the current user is an admin
-    const currentUser = await User.findOne({ firebaseUid: uid });
-    const isAdmin = currentUser?.role === "admin";
 
     // 4. Fetch user profiles for these members
     const users = await User.find(
