@@ -8,11 +8,25 @@ interface FlashScoreInputProps extends React.InputHTMLAttributes<HTMLInputElemen
 export function FlashScoreInput({ className, value, ...props }: FlashScoreInputProps) {
   const [isFlashing, setIsFlashing] = useState(false);
   const prevValueRef = useRef(value);
+  const mountedTimeRef = useRef(Date.now());
 
   useEffect(() => {
-    // Only flash when the score value changes after the component has mounted
-    // and only if the input is read-only (which represents a live score display)
-    if (props.readOnly && value !== prevValueRef.current) {
+    const parseScore = (val: any): number | null => {
+      if (val === null || val === undefined || val === "") return null;
+      const num = Number(val);
+      return isNaN(num) ? null : num;
+    };
+
+    const currentVal = parseScore(value);
+    const prevVal = parseScore(prevValueRef.current);
+
+    // Only flash when the score value increases (new goal) in a read-only live score display
+    const hasIncreased = currentVal !== null && prevVal !== null && currentVal > prevVal;
+
+    // Filter out initial load synchronization by ignoring transitions within the first 3 seconds of component mount
+    const isInitialLoad = Date.now() - mountedTimeRef.current < 3000;
+
+    if (props.readOnly && hasIncreased && !isInitialLoad) {
       setIsFlashing(true);
       const timer = setTimeout(() => {
         setIsFlashing(false);
