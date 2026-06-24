@@ -1154,12 +1154,107 @@ export function TournamentStatsCard({
       return { ...s, rank: currentRank };
     });
 
-    const top3 = rankedScorers.slice(0, 3);
-    const restScorers = rankedScorers.slice(3, 20);
+    const firstScorers = rankedScorers.filter((s) => s.rank === 1);
+    const secondScorers = rankedScorers.filter((s) => s.rank === 2);
+    const thirdScorers = rankedScorers.filter((s) => s.rank === 3);
+    const restScorers = rankedScorers.filter((s) => s.rank > 3).slice(0, 20);
 
-    const first = top3[0];
-    const second = top3[1];
-    const third = top3[2];
+    const renderPodiumCard = (
+      rank: 1 | 2 | 3,
+      players: typeof rankedScorers
+    ) => {
+      if (players.length === 0) return null;
+
+      const config = {
+        1: {
+          cardClass: "bg-gradient-to-b from-amber-500/[0.12] to-transparent border border-amber-500/25 w-[130px] sm:w-[190px] shadow-md shadow-amber-500/[0.03] z-10 h-auto mt-0",
+          badgeClass: "absolute -top-4 bg-amber-500 text-white w-8 h-8 text-sm border-2 border-white dark:border-slate-800 rounded-full flex items-center justify-center font-black shadow-lg animate-pulse",
+          badgeText: "🏆",
+          avatarClass: "w-11 h-11 rounded-full bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center border border-amber-300 dark:border-amber-800 shadow-md mb-2 shrink-0",
+          flagClass: "w-6 h-4 rounded-sm",
+          nameClass: "text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 text-center truncate w-full",
+          teamClass: "text-[9px] sm:text-[10px] text-amber-700 dark:text-amber-400 font-semibold truncate w-full text-center mt-0.5",
+          goalsClass: "mt-2.5 text-xs sm:text-sm font-black text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/45 px-2.5 py-0.5 rounded-full border border-amber-200/50 dark:border-amber-900/50 shadow-sm font-mono flex items-center gap-0.5 shrink-0",
+          contentClass: "flex flex-col items-center justify-center w-full"
+        },
+        2: {
+          cardClass: "bg-gradient-to-b from-slate-400/[0.08] to-transparent border border-slate-400/20 w-[120px] sm:w-[170px] shadow-sm h-auto mt-4 sm:mt-6",
+          badgeClass: "absolute -top-3 bg-slate-400 text-white w-6 h-6 text-[10px] border-2 border-white dark:border-slate-800 rounded-full flex items-center justify-center font-black shadow-md",
+          badgeText: "2",
+          avatarClass: "w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-inner mb-2 shrink-0",
+          flagClass: "w-5 h-3.5 rounded-sm",
+          nameClass: "text-[10px] sm:text-xs font-bold text-slate-800 dark:text-slate-100 text-center truncate w-full",
+          teamClass: "text-[8px] sm:text-[9px] text-slate-400 dark:text-slate-500 truncate w-full text-center mt-0.5",
+          goalsClass: "mt-2 text-[10px] sm:text-xs font-black text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm font-mono flex items-center gap-0.5 shrink-0",
+          contentClass: "flex flex-col items-center justify-center w-full"
+        },
+        3: {
+          cardClass: "bg-gradient-to-b from-amber-700/[0.08] to-transparent border border-amber-700/20 w-[120px] sm:w-[170px] shadow-sm h-auto mt-8 sm:mt-12",
+          badgeClass: "absolute -top-3 bg-amber-700 text-white w-6 h-6 text-[10px] border-2 border-white dark:border-slate-800 rounded-full flex items-center justify-center font-black shadow-md",
+          badgeText: "3",
+          avatarClass: "w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-inner mb-2 shrink-0",
+          flagClass: "w-5 h-3.5 rounded-sm",
+          nameClass: "text-[10px] sm:text-xs font-bold text-slate-800 dark:text-slate-100 text-center truncate w-full",
+          teamClass: "text-[8px] sm:text-[9px] text-slate-400 dark:text-slate-500 truncate w-full text-center mt-0.5",
+          goalsClass: "mt-2 text-[10px] sm:text-xs font-black text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm font-mono flex items-center gap-0.5 shrink-0",
+          contentClass: "flex flex-col items-center justify-center w-full"
+        }
+      }[rank];
+
+      const isMultiple = players.length > 1;
+
+      return (
+        <div className={clsx("flex flex-col items-center rounded-2xl p-3 sm:p-4 shadow-sm relative justify-start", config.cardClass)}>
+          <div className={config.badgeClass}>
+            {config.badgeText}
+          </div>
+
+          <div className={config.contentClass}>
+            {!isMultiple ? (
+              <>
+                <div className={config.avatarClass}>
+                  <TeamFlag teamName={players[0].team} className={config.flagClass} />
+                </div>
+                <div className={config.nameClass} title={players[0].name}>
+                  {players[0].name}
+                </div>
+                <div className={config.teamClass}>
+                  {players[0].team}
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col gap-2 w-full my-2">
+                {players.slice(0, 3).map((p, pIdx) => (
+                  <div key={pIdx} className="flex items-center gap-1.5 w-full text-left px-1 justify-start min-w-0">
+                    <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-inner shrink-0">
+                      <TeamFlag teamName={p.team} className="w-3.5 h-2.5 rounded-sm" />
+                    </div>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-[10px] sm:text-xs font-bold truncate leading-tight text-slate-800 dark:text-slate-100" title={p.name}>
+                        {p.name}
+                      </span>
+                      <span className="text-[8px] sm:text-[9px] text-slate-400 dark:text-slate-500 truncate leading-none mt-0.5">
+                        {p.team}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {players.length > 3 && (
+                  <div className="text-[9px] sm:text-[10px] text-center font-medium text-slate-400 dark:text-slate-500 mt-0.5">
+                    + {players.length - 3} más
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className={config.goalsClass}>
+            <span>⚽</span>
+            <span>{players[0].goals}</span>
+          </div>
+        </div>
+      );
+    };
 
     return (
       <div className="space-y-6">
@@ -1178,75 +1273,14 @@ export function TournamentStatsCard({
         )}
 
         {/* Visual Podium for Top 3 */}
-        {top3.length > 0 && (
-          <div className="flex items-end justify-center gap-3 sm:gap-6 py-4 px-1 max-w-2xl mx-auto">
-            {/* 2ND PLACE */}
-            {second && (
-              <div className="flex flex-col items-center bg-gradient-to-b from-slate-400/[0.08] to-transparent border border-slate-400/20 rounded-2xl p-3 w-[110px] sm:w-[145px] shadow-sm relative h-32 sm:h-38 justify-end">
-                <div className="absolute -top-3 bg-slate-400 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shadow-md border-2 border-white dark:border-slate-800">
-                  2
-                </div>
-                <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-inner mb-2 shrink-0">
-                  <TeamFlag teamName={second.team} className="w-5 h-3.5 rounded-sm" />
-                </div>
-                <div className="text-[10px] sm:text-xs font-bold text-slate-800 dark:text-slate-100 text-center truncate w-full" title={second.name}>
-                  {second.name}
-                </div>
-                <div className="text-[8px] sm:text-[9px] text-slate-400 dark:text-slate-500 truncate w-full text-center mt-0.5">
-                  {second.team}
-                </div>
-                <div className="mt-2 text-[10px] sm:text-xs font-black text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm font-mono flex items-center gap-0.5 shrink-0">
-                  <span>⚽</span>
-                  <span>{second.goals}</span>
-                </div>
-              </div>
-            )}
-
-            {/* 1ST PLACE */}
-            {first && (
-              <div className="flex flex-col items-center bg-gradient-to-b from-amber-500/[0.12] to-transparent border border-amber-500/25 rounded-2xl p-3 sm:p-5 w-[120px] sm:w-[160px] shadow-md shadow-amber-500/[0.03] relative h-36 sm:h-44 justify-end z-10">
-                <div className="absolute -top-4 bg-amber-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-lg border-2 border-white dark:border-slate-800 animate-pulse">
-                  🏆
-                </div>
-                <div className="w-11 h-11 rounded-full bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center border border-amber-300 dark:border-amber-800 shadow-md mb-2 shrink-0">
-                  <TeamFlag teamName={first.team} className="w-6 h-4 rounded-sm" />
-                </div>
-                <div className="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 text-center truncate w-full" title={first.name}>
-                  {first.name}
-                </div>
-                <div className="text-[9px] sm:text-[10px] text-amber-700 dark:text-amber-400 font-semibold truncate w-full text-center mt-0.5">
-                  {first.team}
-                </div>
-                <div className="mt-2 text-xs sm:text-sm font-black text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/45 px-2.5 py-0.5 rounded-full border border-amber-200/50 dark:border-amber-900/50 shadow-sm font-mono flex items-center gap-0.5 shrink-0">
-                  <span>⚽</span>
-                  <span>{first.goals}</span>
-                </div>
-              </div>
-            )}
-
-            {/* 3RD PLACE */}
-            {third && (
-              <div className="flex flex-col items-center bg-gradient-to-b from-amber-700/[0.08] to-transparent border border-amber-700/20 rounded-2xl p-3 w-[110px] sm:w-[145px] shadow-sm relative h-28 sm:h-34 justify-end">
-                <div className="absolute -top-3 bg-amber-700 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shadow-md border-2 border-white dark:border-slate-800">
-                  3
-                </div>
-                <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-inner mb-2 shrink-0">
-                  <TeamFlag teamName={third.team} className="w-5 h-3.5 rounded-sm" />
-                </div>
-                <div className="text-[10px] sm:text-xs font-bold text-slate-800 dark:text-slate-100 text-center truncate w-full" title={third.name}>
-                  {third.name}
-                </div>
-                <div className="text-[8px] sm:text-[9px] text-slate-400 dark:text-slate-500 truncate w-full text-center mt-0.5">
-                  {third.team}
-                </div>
-                <div className="mt-2 text-[10px] sm:text-xs font-black text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm font-mono flex items-center gap-0.5 shrink-0">
-                  <span>⚽</span>
-                  <span>{third.goals}</span>
-                </div>
-              </div>
-            )}
+        {(firstScorers.length > 0 || secondScorers.length > 0 || thirdScorers.length > 0) && (
+          <div className="flex items-start justify-center gap-2 sm:gap-4 py-4 px-1 max-w-2xl mx-auto">
+            {secondScorers.length > 0 && renderPodiumCard(2, secondScorers)}
+            {firstScorers.length > 0 && renderPodiumCard(1, firstScorers)}
+            {thirdScorers.length > 0 && renderPodiumCard(3, thirdScorers)}
           </div>
         )}
+
 
         {/* Secondary Scorers List */}
         {restScorers.length > 0 && (
