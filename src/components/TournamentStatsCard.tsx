@@ -1333,6 +1333,16 @@ export function TournamentStatsCard({
   };
 
   const renderHistoricalScorers = () => {
+    let currentRank = 1;
+    let prevGoals = -1;
+    const rankedHistoricalScorers = updatedHistoricalScorers.map((s, idx) => {
+      if (idx > 0 && s.goals < prevGoals) {
+        currentRank++;
+      }
+      prevGoals = s.goals;
+      return { ...s, rank: currentRank };
+    });
+
     return (
       <div className="max-w-2xl mx-auto space-y-3">
         <div className="text-[10px] text-slate-400 dark:text-slate-500 px-1 italic">
@@ -1351,8 +1361,8 @@ export function TournamentStatsCard({
               </tr>
             </thead>
             <tbody>
-              {updatedHistoricalScorers.map((s, idx) => {
-                const rank = idx + 1;
+              {rankedHistoricalScorers.map((s, idx) => {
+                const rank = s.rank;
                 const medal =
                   rank === 1 ? "🥇" :
                   rank === 2 ? "🥈" :
@@ -1360,7 +1370,7 @@ export function TournamentStatsCard({
                   String(rank);
                 
                 const avg = s.goals / s.matches;
-
+ 
                 return (
                   <tr
                     key={`${s.name}_${s.team}`}
