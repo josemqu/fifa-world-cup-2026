@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Group, KnockoutMatch, Team } from "@/data/types";
+import { Group, KnockoutMatch, Team, Scorer } from "@/data/types";
 import { sortGroupTeams } from "@/utils/groupSorting";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import { getTeamAbbreviation } from "@/utils/teamAbbreviations";
@@ -18,6 +18,8 @@ import {
   Percent,
   Zap,
   Loader2,
+  Search,
+  X,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
@@ -48,6 +50,35 @@ const HISTORICAL_DATA = [
   { year: 1938, host: "Francia", matches: 18, goals: 84, gpg: 4.67 },
   { year: 1934, host: "Italia", matches: 17, goals: 70, gpg: 4.12 },
   { year: 1930, host: "Uruguay", matches: 18, goals: 70, gpg: 3.89 },
+];
+
+// ──────────────────────────────────────────────────
+// Historical Top Scorers (Goleadores Históricos)
+// ──────────────────────────────────────────────────
+interface HistoricalScorer {
+  name: string;
+  team: string;
+  goals: number;
+  matches: number;
+  years: string;
+}
+
+const HISTORICAL_SCORERS: HistoricalScorer[] = [
+  { name: "Miroslav Klose", team: "Alemania", goals: 16, matches: 24, years: "2002–2014" },
+  { name: "Ronaldo Nazário", team: "Brasil", goals: 15, matches: 19, years: "1998–2006" },
+  { name: "Gerd Müller", team: "Alemania Fed.", goals: 14, matches: 13, years: "1970–1974" },
+  { name: "Just Fontaine", team: "Francia", goals: 13, matches: 6, years: "1958" },
+  { name: "Lionel Messi", team: "Argentina", goals: 13, matches: 26, years: "2006–2022" },
+  { name: "Pelé", team: "Brasil", goals: 12, matches: 14, years: "1958–1970" },
+  { name: "Kylian Mbappé", team: "Francia", goals: 12, matches: 14, years: "2018–2022" },
+  { name: "Sándor Kocsis", team: "Hungría", goals: 11, matches: 5, years: "1954" },
+  { name: "Jürgen Klinsmann", team: "Alemania", goals: 11, matches: 17, years: "1990–1998" },
+  { name: "Helmut Rahn", team: "Alemania Fed.", goals: 10, matches: 10, years: "1954–1958" },
+  { name: "Gary Lineker", team: "Inglaterra", goals: 10, matches: 12, years: "1986–1990" },
+  { name: "Gabriel Batistuta", team: "Argentina", goals: 10, matches: 12, years: "1994–2002" },
+  { name: "Teófilo Cubillas", team: "Perú", goals: 10, matches: 13, years: "1970–1978" },
+  { name: "Thomas Müller", team: "Alemania", goals: 10, matches: 19, years: "2010–2022" },
+  { name: "Grzegorz Lato", team: "Polonia", goals: 10, matches: 20, years: "1974–1982" },
 ];
 
 // ──────────────────────────────────────────────────
@@ -302,9 +333,10 @@ export function TournamentStatsCard({
   groups,
   knockoutMatches,
 }: TournamentStatsCardProps) {
-  const [showStandings, setShowStandings] = useState(false);
-  const [showScorers, setShowScorers] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
+  const [activeTab, setActiveTab] = useState<"standings" | "scorers" | "history">("standings");
+  const [scorersTab, setScorersTab] = useState<"current" | "historical">("current");
+  const [standingsSearch, setStandingsSearch] = useState("");
+  const [showAllStandings, setShowAllStandings] = useState(false);
 
   // Sorting State
   const [standingsSortKey, setStandingsSortKey] = useState<StandingsSortKey>("pos");
@@ -398,7 +430,7 @@ export function TournamentStatsCard({
     // Knockout stats
     let totalKnockoutGoals = 0;
     let knockoutMatchesPlayed = 0;
-    let knockoutMatchesTotal = knockoutMatches.length;
+    const knockoutMatchesTotal = knockoutMatches.length;
     let penaltyShootouts = 0;
 
     for (const match of knockoutMatches) {
@@ -482,7 +514,7 @@ export function TournamentStatsCard({
     // Player-level top scorers computation
     const scorersMap = new Map<string, { name: string; team: string; goals: number; penalties: number }>();
 
-    const addScorerObj = (scorer: any, teamName: string) => {
+    const addScorerObj = (scorer: Scorer, teamName: string) => {
       if (!scorer || scorer.isOwnGoal) return;
       const key = `${scorer.name}_${teamName}`;
       const existing = scorersMap.get(key);
@@ -576,6 +608,37 @@ export function TournamentStatsCard({
     return stats.topScorersLocal;
   }, [backendScorers, stats.topScorersLocal]);
 
+  // Derived Historical Scorers updated with 2026 goals
+  const updatedHistoricalScorers = useMemo(() => {
+    const list = HISTORICAL_SCORERS.map((hs) => {
+      const currentScorer = effectiveScorers.find(
+        (s) => s.name.toLowerCase().trim() === hs.name.toLowerCase().trim()
+      );
+
+      if (currentScorer) {
+        const teamStanding = stats.standings.find(
+          (st) => st.team.name.toLowerCase().trim() === hs.team.toLowerCase().trim()
+        );
+        const currentMatches = teamStanding ? teamStanding.played : 0;
+        
+        return {
+          ...hs,
+          goals: hs.goals + currentScorer.goals,
+          matches: hs.matches + currentMatches,
+          years: hs.years.endsWith("2026") ? hs.years : `${hs.years.split("–")[0]}–2026`,
+        };
+      }
+      return hs;
+    });
+
+    list.sort((a, b) => {
+      if (b.goals !== a.goals) return b.goals - a.goals;
+      return a.matches - b.matches;
+    });
+
+    return list;
+  }, [effectiveScorers, stats.standings]);
+
   // Combined History for Sorting
   const combinedHistory = useMemo(() => {
     const currentTourney = {
@@ -599,10 +662,16 @@ export function TournamentStatsCard({
   const sortedStandings = useMemo(() => {
     let list = [...stats.standings];
 
+    // Apply search filter
+    if (standingsSearch.trim()) {
+      const query = standingsSearch.toLowerCase().trim();
+      list = list.filter((s) => s.team.name.toLowerCase().includes(query));
+    }
+
     // Apply sorting
     list.sort((a, b) => {
-      let valA: any;
-      let valB: any;
+      let valA: string | number;
+      let valB: string | number;
 
       switch (standingsSortKey) {
         case "pos":
@@ -675,15 +744,15 @@ export function TournamentStatsCard({
     });
 
     return list;
-  }, [stats.standings, standingsSortKey, standingsSortDir]);
+  }, [stats.standings, standingsSortKey, standingsSortDir, standingsSearch]);
 
   // Derived Sorted History
   const sortedHistory = useMemo(() => {
-    let list = [...combinedHistory];
+    const list = [...combinedHistory];
 
     list.sort((a, b) => {
-      let valA: any;
-      let valB: any;
+      let valA: string | number;
+      let valB: string | number;
 
       switch (historySortKey) {
         case "year":
@@ -825,6 +894,551 @@ export function TournamentStatsCard({
     );
   };
 
+    // ──────────────────────────────────────────────────
+  // Tab Renderers
+  // ──────────────────────────────────────────────────
+
+  const renderStandingsTab = () => {
+    const displayedStandings = showAllStandings
+      ? sortedStandings
+      : sortedStandings.slice(0, 12);
+
+    return (
+      <div className="max-w-5xl mx-auto">
+        {/* Search & Stats Header */}
+        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between mb-4 px-1">
+          <div className="relative w-full sm:max-w-xs">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+            <input
+              type="text"
+              placeholder="Buscar selección..."
+              value={standingsSearch}
+              onChange={(e) => {
+                setStandingsSearch(e.target.value);
+                setShowAllStandings(true); // Auto-expand when searching
+              }}
+              className="w-full pl-9 pr-8 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
+            />
+            {standingsSearch && (
+              <button
+                onClick={() => setStandingsSearch("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-805 text-slate-400 dark:text-slate-500 transition-colors"
+              >
+                <X size={11} />
+              </button>
+            )}
+          </div>
+          <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono self-end sm:self-center">
+            {sortedStandings.length === 0 ? "Sin resultados" : `Mostrando ${sortedStandings.length} de ${stats.standings.length} equipos`}
+          </div>
+        </div>
+
+        {/* Scrollable standig table container */}
+        <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm bg-white dark:bg-slate-900">
+          <table className="w-full text-xs text-left border-collapse">
+            <thead className="text-[10px] text-slate-500 dark:text-slate-400 uppercase bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 sticky top-0">
+              <tr>
+                {renderStandingsHeader("pos", "#", "center", "w-10")}
+                {renderStandingsHeader("team", "Equipo", "left")}
+                {renderStandingsHeader("group", "Gr", "center", "w-10", "Grupo")}
+                {renderStandingsHeader("played", "PJ", "center", "w-10", "Partidos Jugados")}
+                {renderStandingsHeader("won", "G", "center", "w-10", "Ganados")}
+                {renderStandingsHeader("drawn", "E", "center", "w-10", "Empatados")}
+                {renderStandingsHeader("lost", "P", "center", "w-10", "Perdidos")}
+                {renderStandingsHeader("gf", "GF", "center", "w-12", "Goles a Favor")}
+                {renderStandingsHeader("ga", "GC", "center", "w-12", "Goles en Contra")}
+                {renderStandingsHeader("gd", "DG", "center", "w-12", "Diferencia de Goles")}
+                {renderStandingsHeader("pts", "Pts", "center", "w-12", "Puntos")}
+                <th
+                  onClick={() => handleStandingsSort("knockoutRound")}
+                  className="py-2.5 px-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors select-none group hidden sm:table-cell text-center w-24"
+                  title="Máxima Ronda"
+                >
+                  <div className="flex items-center justify-center gap-0.5">
+                    <span className={clsx(standingsSortKey === "knockoutRound" && "text-blue-600 dark:text-blue-400 font-semibold")}>
+                      Ronda
+                    </span>
+                    {standingsSortKey === "knockoutRound" ? (
+                      standingsSortDir === "asc" ? (
+                        <ChevronUp size={11} className="text-blue-500 shrink-0" />
+                      ) : (
+                        <ChevronDown size={11} className="text-blue-500 shrink-0" />
+                      )
+                    ) : (
+                      <ChevronDown size={11} className="opacity-0 group-hover:opacity-40 transition-opacity shrink-0" />
+                    )}
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {displayedStandings.length === 0 ? (
+                <tr>
+                  <td colSpan={12} className="text-center text-slate-400 dark:text-slate-500 py-8 italic">
+                    No se encontraron selecciones con ese nombre.
+                  </td>
+                </tr>
+              ) : (
+                displayedStandings.map((s) => {
+                  const isTop1 = s.defaultRank === 1;
+                  const isTop2 = s.defaultRank === 2;
+                  const isTop3 = s.defaultRank === 3;
+
+                  return (
+                    <tr
+                      key={s.team.id}
+                      className={clsx(
+                        "border-b border-slate-100 dark:border-slate-800/60 last:border-none hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors",
+                        isTop1 && "bg-amber-500/[0.04] dark:bg-amber-500/[0.02]",
+                        isTop2 && "bg-slate-400/[0.04] dark:bg-slate-400/[0.02]",
+                        isTop3 && "bg-amber-700/[0.04] dark:bg-amber-700/[0.02]"
+                      )}
+                    >
+                      <td className={clsx(
+                        "px-2 py-2 text-center font-mono text-[10px] font-semibold",
+                        isTop1 && "text-amber-600 dark:text-amber-400",
+                        isTop2 && "text-slate-550 dark:text-slate-400",
+                        isTop3 && "text-amber-800 dark:text-amber-600",
+                        !isTop1 && !isTop2 && !isTop3 && "text-slate-400 dark:text-slate-500"
+                      )}>
+                        {s.defaultRank}
+                      </td>
+                      <td className="px-3 py-2 font-medium text-slate-900 dark:text-slate-100">
+                        <div className="flex items-center gap-2">
+                          <TeamFlag
+                            teamName={s.team.name}
+                            className="w-4 h-3 rounded-sm shrink-0 shadow-sm"
+                          />
+                          <span className="hidden md:inline truncate max-w-[165px]" title={s.team.name}>
+                            {s.team.name}
+                          </span>
+                          <span className="md:hidden truncate max-w-[85px]" title={s.team.name}>
+                            {getTeamAbbreviation(s.team.name)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-2 py-2 text-center text-slate-400 dark:text-slate-500 text-[10px] font-mono">
+                        {s.team.group}
+                      </td>
+                      <td className="px-2 py-2 text-center text-slate-650 dark:text-slate-450 font-medium">
+                        {s.played}
+                      </td>
+                      <td className="px-2 py-2 text-center text-slate-600 dark:text-slate-400">
+                        {s.won}
+                      </td>
+                      <td className="px-2 py-2 text-center text-slate-600 dark:text-slate-400">
+                        {s.drawn}
+                      </td>
+                      <td className="px-2 py-2 text-center text-slate-600 dark:text-slate-400">
+                        {s.lost}
+                      </td>
+                      <td className="px-2 py-2 text-center text-slate-600 dark:text-slate-400 font-mono">
+                        {s.gf}
+                      </td>
+                      <td className="px-2 py-2 text-center text-slate-600 dark:text-slate-400 font-mono">
+                        {s.ga}
+                      </td>
+                      <td className={clsx(
+                        "px-2 py-2 text-center font-mono font-medium",
+                        s.gd > 0 ? "text-emerald-600 dark:text-emerald-400" : s.gd < 0 ? "text-rose-500 dark:text-rose-400" : "text-slate-400 dark:text-slate-500"
+                      )}>
+                        {s.gd > 0 ? `+${s.gd}` : s.gd}
+                      </td>
+                      <td className="px-2 py-2 text-center font-extrabold text-slate-800 dark:text-slate-105 font-mono">
+                        {s.pts}
+                      </td>
+                      <td className="px-2 py-2 text-center text-[10px] text-slate-400 dark:text-slate-500 hidden sm:table-cell">
+                        <span
+                          className={clsx(
+                            "px-2 py-0.5 rounded-full text-[9px] font-semibold inline-block shadow-sm",
+                            s.knockoutRound === "Final"
+                              ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/50"
+                              : s.knockoutRound === "Semifinal"
+                              ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200/50 dark:border-blue-900/50"
+                              : s.knockoutRound === "Cuartos"
+                                ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/50"
+                                : s.knockoutRound === "Octavos"
+                                  ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border border-purple-200/50 dark:border-purple-900/50"
+                                  : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-450 border border-slate-200/20 dark:border-slate-700/50"
+                          )}
+                        >
+                          {s.knockoutRound}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Expand / Collapse Button */}
+        {!standingsSearch && sortedStandings.length > 12 && (
+          <div className="mt-3 flex justify-center">
+            <button
+              onClick={() => setShowAllStandings(!showAllStandings)}
+              className="flex items-center gap-1 px-4 py-1.5 text-[11px] font-bold text-blue-600 dark:text-blue-450 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl transition-all duration-200 border border-transparent hover:border-blue-100 dark:hover:border-blue-900/50 cursor-pointer select-none"
+            >
+              {showAllStandings ? "Ver menos posiciones" : `Ver todas las posiciones (${sortedStandings.length})`}
+              {showAllStandings ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderCurrentScorers = () => {
+    if (effectiveScorers.length === 0) {
+      return (
+        <div className="text-center text-slate-400 py-12 text-xs italic bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 shadow-sm max-w-2xl mx-auto">
+          {scorersLoading ? (
+            <div className="flex flex-col items-center gap-2 py-4">
+              <Loader2 size={20} className="animate-spin text-blue-500" />
+              <span>Cargando goleadores en vivo...</span>
+            </div>
+          ) : (
+            "Aún no se han registrado goles en el torneo."
+          )}
+        </div>
+      );
+    }
+
+    // Rank scorers sequentially handling ties
+    let currentRank = 1;
+    let prevGoals = -1;
+    const rankedScorers = effectiveScorers.map((s, idx) => {
+      if (idx > 0 && s.goals < prevGoals) {
+        currentRank++;
+      }
+      prevGoals = s.goals;
+      return { ...s, rank: currentRank };
+    });
+
+    const top3 = rankedScorers.slice(0, 3);
+    const restScorers = rankedScorers.slice(3, 20);
+
+    const first = top3[0];
+    const second = top3[1];
+    const third = top3[2];
+
+    return (
+      <div className="space-y-6">
+        {/* Source metadata indicators */}
+        {scorersMeta && (
+          <div className="flex items-center justify-between px-1 text-[9px] text-slate-400 dark:text-slate-500 max-w-2xl mx-auto">
+            <span>
+              {scorersMeta.totalGoals} goles en {scorersMeta.totalMatches} partidos
+              {scorersMeta.totalOwnGoals > 0 && ` (${scorersMeta.totalOwnGoals} en contra)`}
+            </span>
+            <span className="flex items-center gap-1 font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Sincronizado en vivo
+            </span>
+          </div>
+        )}
+
+        {/* Visual Podium for Top 3 */}
+        {top3.length > 0 && (
+          <div className="flex items-end justify-center gap-3 sm:gap-6 py-4 px-1 max-w-2xl mx-auto">
+            {/* 2ND PLACE */}
+            {second && (
+              <div className="flex flex-col items-center bg-gradient-to-b from-slate-400/[0.08] to-transparent border border-slate-400/20 rounded-2xl p-3 w-[110px] sm:w-[145px] shadow-sm relative h-32 sm:h-38 justify-end">
+                <div className="absolute -top-3 bg-slate-400 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shadow-md border-2 border-white dark:border-slate-800">
+                  2
+                </div>
+                <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-inner mb-2 shrink-0">
+                  <TeamFlag teamName={second.team} className="w-5 h-3.5 rounded-sm" />
+                </div>
+                <div className="text-[10px] sm:text-xs font-bold text-slate-800 dark:text-slate-100 text-center truncate w-full" title={second.name}>
+                  {second.name}
+                </div>
+                <div className="text-[8px] sm:text-[9px] text-slate-400 dark:text-slate-500 truncate w-full text-center mt-0.5">
+                  {second.team}
+                </div>
+                <div className="mt-2 text-[10px] sm:text-xs font-black text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm font-mono flex items-center gap-0.5 shrink-0">
+                  <span>⚽</span>
+                  <span>{second.goals}</span>
+                </div>
+              </div>
+            )}
+
+            {/* 1ST PLACE */}
+            {first && (
+              <div className="flex flex-col items-center bg-gradient-to-b from-amber-500/[0.12] to-transparent border border-amber-500/25 rounded-2xl p-3 sm:p-5 w-[120px] sm:w-[160px] shadow-md shadow-amber-500/[0.03] relative h-36 sm:h-44 justify-end z-10">
+                <div className="absolute -top-4 bg-amber-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-lg border-2 border-white dark:border-slate-800 animate-pulse">
+                  🏆
+                </div>
+                <div className="w-11 h-11 rounded-full bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center border border-amber-350 dark:border-amber-800 shadow-md mb-2 shrink-0">
+                  <TeamFlag teamName={first.team} className="w-6 h-4 rounded-sm" />
+                </div>
+                <div className="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 text-center truncate w-full" title={first.name}>
+                  {first.name}
+                </div>
+                <div className="text-[9px] sm:text-[10px] text-amber-700 dark:text-amber-450 font-semibold truncate w-full text-center mt-0.5">
+                  {first.team}
+                </div>
+                <div className="mt-2 text-xs sm:text-sm font-black text-amber-750 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/45 px-2.5 py-0.5 rounded-full border border-amber-200/50 dark:border-amber-900/50 shadow-sm font-mono flex items-center gap-0.5 shrink-0">
+                  <span>⚽</span>
+                  <span>{first.goals}</span>
+                </div>
+              </div>
+            )}
+
+            {/* 3RD PLACE */}
+            {third && (
+              <div className="flex flex-col items-center bg-gradient-to-b from-amber-700/[0.08] to-transparent border border-amber-700/20 rounded-2xl p-3 w-[110px] sm:w-[145px] shadow-sm relative h-28 sm:h-34 justify-end">
+                <div className="absolute -top-3 bg-amber-700 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shadow-md border-2 border-white dark:border-slate-800">
+                  3
+                </div>
+                <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-inner mb-2 shrink-0">
+                  <TeamFlag teamName={third.team} className="w-5 h-3.5 rounded-sm" />
+                </div>
+                <div className="text-[10px] sm:text-xs font-bold text-slate-800 dark:text-slate-100 text-center truncate w-full" title={third.name}>
+                  {third.name}
+                </div>
+                <div className="text-[8px] sm:text-[9px] text-slate-400 dark:text-slate-500 truncate w-full text-center mt-0.5">
+                  {third.team}
+                </div>
+                <div className="mt-2 text-[10px] sm:text-xs font-black text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm font-mono flex items-center gap-0.5 shrink-0">
+                  <span>⚽</span>
+                  <span>{third.goals}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Secondary Scorers List */}
+        {restScorers.length > 0 && (
+          <div className="max-w-2xl mx-auto rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
+            <table className="w-full text-xs text-left border-collapse">
+              <thead className="text-[10px] text-slate-500 dark:text-slate-400 uppercase bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
+                <tr>
+                  <th className="py-2 px-3 text-center w-12">#</th>
+                  <th className="py-2 px-3">Jugador</th>
+                  <th className="py-2 px-3">Equipo</th>
+                  <th className="py-2 px-3 text-center w-24">Goles</th>
+                </tr>
+              </thead>
+              <tbody>
+                {restScorers.map((s, idx) => (
+                  <tr
+                    key={`${s.name}_${s.team}_${idx}`}
+                    className="border-b border-slate-100 dark:border-slate-800/60 last:border-none hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+                  >
+                    <td className="px-3 py-1.5 text-center font-bold text-slate-400 dark:text-slate-550">
+                      {s.rank}
+                    </td>
+                    <td className="px-3 py-1.5 font-semibold text-slate-900 dark:text-slate-100">
+                      {s.name}
+                    </td>
+                    <td className="px-3 py-1.5 text-slate-700 dark:text-slate-350">
+                      <div className="flex items-center gap-2">
+                        <TeamFlag teamName={s.team} className="w-4 h-3 rounded-sm shadow-sm" />
+                        <span>{s.team}</span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 font-mono">
+                      <span className="inline-flex items-center justify-center gap-1 bg-slate-50 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-150 dark:border-slate-800">
+                        <span>⚽ {s.goals}</span>
+                        {s.penalties > 0 && (
+                          <span className="text-[9px] text-slate-400 dark:text-slate-500 font-normal">
+                            ({s.penalties} p.)
+                          </span>
+                        )}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderHistoricalScorers = () => {
+    return (
+      <div className="max-w-2xl mx-auto space-y-3">
+        <div className="text-[10px] text-slate-400 dark:text-slate-500 px-1 italic">
+          Máximos anotadores históricos en la historia de la Copa Mundial de la FIFA.
+        </div>
+        <div className="rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
+          <table className="w-full text-xs text-left border-collapse">
+            <thead className="text-[10px] text-slate-500 dark:text-slate-400 uppercase bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
+              <tr>
+                <th className="py-2 px-3 text-center w-12">Pos</th>
+                <th className="py-2 px-3">Jugador</th>
+                <th className="py-2 px-3">Selección</th>
+                <th className="py-2 px-2 text-center w-14">PJ</th>
+                <th className="py-2 px-3 text-center w-20">Goles</th>
+                <th className="py-2 px-2 text-center w-16">Prom</th>
+              </tr>
+            </thead>
+            <tbody>
+              {updatedHistoricalScorers.map((s, idx) => {
+                const rank = idx + 1;
+                const medal =
+                  rank === 1 ? "🥇" :
+                  rank === 2 ? "🥈" :
+                  rank === 3 ? "🥉" :
+                  String(rank);
+                
+                const avg = s.goals / s.matches;
+
+                return (
+                  <tr
+                    key={`${s.name}_${s.team}`}
+                    className={clsx(
+                      "border-b border-slate-100 dark:border-slate-800/60 last:border-none hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors",
+                      rank === 1 && "bg-amber-500/[0.03] dark:bg-amber-500/[0.01]",
+                      rank === 2 && "bg-slate-400/[0.03] dark:bg-slate-400/[0.01]",
+                      rank === 3 && "bg-amber-700/[0.03] dark:bg-amber-700/[0.01]"
+                    )}
+                  >
+                    <td className="px-3 py-2 text-center font-bold text-slate-500 dark:text-slate-400">
+                      {medal}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="font-semibold text-slate-900 dark:text-slate-100">{s.name}</div>
+                      <div className="text-[9px] text-slate-400 dark:text-slate-500">{s.years}</div>
+                    </td>
+                    <td className="px-3 py-2 text-slate-700 dark:text-slate-350 font-medium">
+                      <div className="flex items-center gap-2">
+                        <TeamFlag teamName={s.team} className="w-4 h-3 rounded-sm shadow-sm" />
+                        <span>{s.team}</span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-2 text-center text-slate-500 dark:text-slate-400 font-mono">
+                      {s.matches}
+                    </td>
+                    <td className="px-3 py-2 text-center font-extrabold text-slate-850 dark:text-slate-100 font-mono">
+                      ⚽ {s.goals}
+                    </td>
+                    <td className="px-2 py-2 text-center text-slate-500 dark:text-slate-500 font-mono text-[11px]">
+                      {avg.toFixed(2)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  const renderScorersTab = () => {
+    return (
+      <div className="max-w-4xl mx-auto">
+        {/* Toggle sub-pestañas: 2026 vs Todos los Tiempos */}
+        <div className="flex justify-center mb-5">
+          <div className="inline-flex p-0.5 bg-slate-100/90 dark:bg-slate-900/60 rounded-xl border border-slate-200/50 dark:border-slate-800/50 shadow-inner">
+            <button
+              onClick={() => setScorersTab("current")}
+              className={clsx(
+                "px-4 py-1.5 rounded-lg text-[10px] font-extrabold transition-all duration-200 cursor-pointer select-none",
+                scorersTab === "current"
+                  ? "bg-white dark:bg-slate-850 text-blue-600 dark:text-blue-200 shadow-sm border border-slate-200/30 dark:border-slate-700/50"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+              )}
+            >
+              Mundial 2026
+            </button>
+            <button
+              onClick={() => setScorersTab("historical")}
+              className={clsx(
+                "px-4 py-1.5 rounded-lg text-[10px] font-extrabold transition-all duration-200 cursor-pointer select-none",
+                scorersTab === "historical"
+                  ? "bg-white dark:bg-slate-850 text-blue-600 dark:text-blue-200 shadow-sm border border-slate-200/30 dark:border-slate-700/50"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+              )}
+            >
+              Todos los Tiempos
+            </button>
+          </div>
+        </div>
+
+        {scorersTab === "current" ? renderCurrentScorers() : renderHistoricalScorers()}
+      </div>
+    );
+  };
+
+  const renderHistoryTab = () => {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm bg-white dark:bg-slate-900">
+          <table className="w-full text-xs text-left border-collapse">
+            <thead className="text-[10px] text-slate-500 dark:text-slate-400 uppercase bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 sticky top-0">
+              <tr>
+                {renderHistoryHeader("year", "Edición", "left")}
+                {renderHistoryHeader("host", "Sede", "left")}
+                {renderHistoryHeader("matches", "Partidos", "center")}
+                {renderHistoryHeader("goals", "Goles", "center")}
+                {renderHistoryHeader("gpg", "GPP", "center")}
+                {renderHistoryHeader("diff", "vs 2026", "center")}
+              </tr>
+            </thead>
+            <tbody>
+              {sortedHistory.map((h) => {
+                const diff = h.gpg - stats.avgGoalsPerMatch;
+                return (
+                  <tr
+                    key={h.year}
+                    className={clsx(
+                      "border-b border-slate-100 dark:border-slate-800/60 last:border-none hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors",
+                      h.isCurrent && "bg-blue-500/[0.06] dark:bg-blue-500/[0.04] border-b border-blue-200 dark:border-blue-800/50 font-bold"
+                    )}
+                  >
+                    <td className={clsx("px-3 py-2 font-semibold", h.isCurrent ? "text-blue-600 dark:text-blue-400" : "text-slate-700 dark:text-slate-350")}>
+                      {h.year} {h.isCurrent && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 ml-1 border border-blue-200/50 dark:border-blue-900/50 font-normal">Actual</span>}
+                    </td>
+                    <td className={clsx("px-3 py-2", h.isCurrent ? "text-blue-600 dark:text-blue-400" : "text-slate-500 dark:text-slate-400")}>
+                      {h.host}
+                    </td>
+                    <td className={clsx("px-2 py-2 text-center font-mono", h.isCurrent ? "text-blue-700 dark:text-blue-350" : "text-slate-550 dark:text-slate-450")}>
+                      {h.matches}
+                    </td>
+                    <td className={clsx("px-2 py-2 text-center font-mono", h.isCurrent ? "text-blue-700 dark:text-blue-350" : "text-slate-555 dark:text-slate-455")}>
+                      {h.goals}
+                    </td>
+                    <td className={clsx("px-2 py-2 text-center font-mono", h.isCurrent ? "text-blue-700 dark:text-blue-300 font-extrabold" : "text-slate-700 dark:text-slate-400 font-medium")}>
+                      {h.gpg.toFixed(2)}
+                    </td>
+                    <td className="px-2 py-2 text-center font-mono text-[10px]">
+                      {h.isCurrent ? (
+                        "—"
+                      ) : stats.totalMatchesPlayed > 0 ? (
+                        <span
+                          className={clsx(
+                            "px-1.5 py-0.5 rounded-md font-bold inline-block shadow-sm",
+                            diff > 0
+                              ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100/30 dark:border-emerald-900/20"
+                              : diff < 0
+                              ? "text-rose-600 dark:text-rose-450 bg-rose-50 dark:bg-rose-950/20 border border-rose-100/30 dark:border-rose-900/20"
+                              : "text-slate-500 bg-slate-100 dark:bg-slate-800"
+                          )}
+                        >
+                          {diff > 0 ? "+" : ""}
+                          {diff.toFixed(2)}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
   if (stats.totalMatchesPlayed === 0) {
     return null; // Nothing to show if no matches played
   }
@@ -949,363 +1563,60 @@ export function TournamentStatsCard({
         )}
       </div>
 
-      {/* Expandable: General Standings Table */}
-      <div className="border-t border-slate-200 dark:border-slate-700">
+      {/* Tabs Navigation */}
+      <div className="flex border-t border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 p-1 gap-1 overflow-x-auto select-none scrollbar-none">
         <button
-          onClick={() => setShowStandings(!showStandings)}
-          className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+          onClick={() => setActiveTab("standings")}
+          className={clsx(
+            "flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer select-none",
+            activeTab === "standings"
+              ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm border border-slate-200/50 dark:border-slate-600/50"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-750 dark:hover:text-slate-200 hover:bg-slate-100/50 dark:hover:bg-slate-800/30"
+          )}
         >
-          <span className="flex items-center gap-1.5">
-            <Trophy size={13} className="text-blue-500" />
-            Tabla General de Puntos
-          </span>
-          {showStandings ? (
-            <ChevronUp size={14} />
-          ) : (
-            <ChevronDown size={14} />
-          )}
+          <Trophy size={14} className={clsx(activeTab === "standings" ? "text-blue-500" : "text-slate-400")} />
+          <span>Tabla General</span>
         </button>
-        <AnimatePresence>
-          {showStandings && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              className="overflow-hidden"
-            >
-
-
-              <div className="overflow-x-auto px-4 pb-4">
-                <table className="w-full text-xs text-left">
-                  <thead className="text-[10px] text-slate-500 dark:text-slate-400 uppercase bg-slate-50 dark:bg-slate-900/50 sticky top-0">
-                    <tr>
-                      {renderStandingsHeader("pos", "#", "center", "w-8")}
-                      {renderStandingsHeader("team", "Equipo", "left")}
-                      {renderStandingsHeader("group", "Gr", "center", "w-8", "Grupo")}
-                      {renderStandingsHeader("played", "PJ", "center", "w-8", "Partidos Jugados")}
-                      {renderStandingsHeader("won", "G", "center", "w-8", "Ganados")}
-                      {renderStandingsHeader("drawn", "E", "center", "w-8", "Empatados")}
-                      {renderStandingsHeader("lost", "P", "center", "w-8", "Perdidos")}
-                      {renderStandingsHeader("gf", "GF", "center", "w-10", "Goles a Favor")}
-                      {renderStandingsHeader("ga", "GC", "center", "w-10", "Goles en Contra")}
-                      {renderStandingsHeader("gd", "DG", "center", "w-10", "Diferencia de Goles")}
-                      {renderStandingsHeader("pts", "Pts", "center", "w-10", "Puntos")}
-                      <th
-                        onClick={() => handleStandingsSort("knockoutRound")}
-                        className="py-1.5 px-1 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors select-none group hidden sm:table-cell text-center w-20"
-                        title="Máxima Ronda"
-                      >
-                        <div className="flex items-center justify-center gap-0.5">
-                          <span className={clsx(standingsSortKey === "knockoutRound" && "text-blue-600 dark:text-blue-400 font-semibold")}>
-                            Ronda
-                          </span>
-                          {standingsSortKey === "knockoutRound" ? (
-                            standingsSortDir === "asc" ? (
-                              <ChevronUp size={11} className="text-blue-500 shrink-0" />
-                            ) : (
-                              <ChevronDown size={11} className="text-blue-500 shrink-0" />
-                            )
-                          ) : (
-                            <ChevronDown size={11} className="opacity-0 group-hover:opacity-40 transition-opacity shrink-0" />
-                          )}
-                        </div>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedStandings.map((s) => (
-                      <tr
-                        key={s.team.id}
-                        className={clsx(
-                          "border-b border-slate-100 dark:border-slate-700/50 last:border-none hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors",
-                          s.defaultRank <= 3 && "bg-amber-50/20 dark:bg-amber-900/5"
-                        )}
-                      >
-                        <td className="px-1 py-1 text-center text-slate-400 dark:text-slate-500 font-mono text-[10px]">
-                          {s.defaultRank}
-                        </td>
-                        <td className="px-2 py-1 font-medium text-slate-900 dark:text-slate-100">
-                          <div className="flex items-center gap-1.5">
-                            <TeamFlag
-                              teamName={s.team.name}
-                              className="w-4 h-3 shrink-0"
-                            />
-                            <span className="hidden md:inline truncate max-w-[150px]" title={s.team.name}>
-                              {s.team.name}
-                            </span>
-                            <span className="md:hidden truncate max-w-[85px]" title={s.team.name}>
-                              {getTeamAbbreviation(s.team.name)}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-1 py-1 text-center text-slate-400 dark:text-slate-500 text-[10px] font-mono">
-                          {s.team.group}
-                        </td>
-                        <td className="px-1 py-1 text-center text-slate-600 dark:text-slate-400">
-                          {s.played}
-                        </td>
-                        <td className="px-1 py-1 text-center text-slate-600 dark:text-slate-400">
-                          {s.won}
-                        </td>
-                        <td className="px-1 py-1 text-center text-slate-600 dark:text-slate-400">
-                          {s.drawn}
-                        </td>
-                        <td className="px-1 py-1 text-center text-slate-600 dark:text-slate-400">
-                          {s.lost}
-                        </td>
-                        <td className="px-1 py-1 text-center text-slate-600 dark:text-slate-400">
-                          {s.gf}
-                        </td>
-                        <td className="px-1 py-1 text-center text-slate-600 dark:text-slate-400">
-                          {s.ga}
-                        </td>
-                        <td className="px-1 py-1 text-center text-slate-600 dark:text-slate-400 font-medium">
-                          {s.gd > 0 ? `+${s.gd}` : s.gd}
-                        </td>
-                        <td className="px-1 py-1 text-center font-bold text-slate-800 dark:text-slate-100">
-                          {s.pts}
-                        </td>
-                        <td className="px-1 py-1 text-center text-[10px] text-slate-400 dark:text-slate-500 hidden sm:table-cell">
-                          <span
-                            className={clsx(
-                              "px-1.5 py-0.5 rounded-full text-[9px] font-medium inline-block",
-                              s.knockoutRound === "Final"
-                                ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
-                                : s.knockoutRound === "Semifinal"
-                                ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
-                                : s.knockoutRound === "Cuartos"
-                                  ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
-                                  : s.knockoutRound === "Octavos"
-                                    ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400"
-                                    : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
-                            )}
-                          >
-                            {s.knockoutRound}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </motion.div>
+        <button
+          onClick={() => setActiveTab("scorers")}
+          className={clsx(
+            "flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer select-none",
+            activeTab === "scorers"
+              ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm border border-slate-200/50 dark:border-slate-600/50"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-750 dark:hover:text-slate-200 hover:bg-slate-100/50 dark:hover:bg-slate-800/30"
           )}
-        </AnimatePresence>
+        >
+          <Target size={14} className={clsx(activeTab === "scorers" ? "text-rose-500" : "text-slate-400")} />
+          <span>Goleadores</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("history")}
+          className={clsx(
+            "flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer select-none",
+            activeTab === "history"
+              ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-100 shadow-sm border border-slate-200/50 dark:border-slate-600/50"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-750 dark:hover:text-slate-200 hover:bg-slate-100/50 dark:hover:bg-slate-800/30"
+          )}
+        >
+          <BarChart3 size={14} className={clsx(activeTab === "history" ? "text-emerald-500" : "text-slate-400")} />
+          <span>Comparación Histórica</span>
+        </button>
       </div>
 
-      {/* Expandable: Top Scorers (Goleadores) */}
-      <div className="border-t border-slate-200 dark:border-slate-700">
-        <button
-          onClick={() => setShowScorers(!showScorers)}
-          className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
-        >
-          <span className="flex items-center gap-1.5">
-            <Target size={13} className="text-rose-500" />
-            Goleadores del Torneo
-            {scorersLoading && (
-              <Loader2 size={11} className="animate-spin text-slate-400" />
-            )}
-            {effectiveScorers.length > 0 && (
-              <span className="text-[10px] font-normal text-slate-400 dark:text-slate-500">
-                ({effectiveScorers.length})
-              </span>
-            )}
-          </span>
-          {showScorers ? (
-            <ChevronUp size={14} />
-          ) : (
-            <ChevronDown size={14} />
-          )}
-        </button>
-        <AnimatePresence>
-          {showScorers && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              className="overflow-hidden"
-            >
-              <div className="px-4 pb-4">
-                {effectiveScorers.length === 0 ? (
-                  <div className="text-center text-slate-400 py-6 text-xs italic">
-                    {scorersLoading
-                      ? "Cargando goleadores..."
-                      : "Aún no se han registrado goles en el torneo."}
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    {/* Source indicator */}
-                    {scorersMeta && (
-                      <div className="flex items-center justify-between mb-2 text-[9px] text-slate-400 dark:text-slate-500">
-                        <span>
-                          {scorersMeta.totalGoals} goles en {scorersMeta.totalMatches} partidos
-                          {scorersMeta.totalOwnGoals > 0 && ` (${scorersMeta.totalOwnGoals} en contra)`}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          En vivo
-                        </span>
-                      </div>
-                    )}
-                    <table className="w-full text-xs text-left">
-                      <thead className="text-[10px] text-slate-500 dark:text-slate-400 uppercase bg-slate-50 dark:bg-slate-900/50">
-                        <tr>
-                          <th className="py-1.5 px-2 text-center w-10">#</th>
-                          <th className="py-1.5 px-2">Jugador</th>
-                          <th className="py-1.5 px-2">Equipo</th>
-                          <th className="py-1.5 px-2 text-center w-16">Goles</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(() => {
-                          let currentRank = 1;
-                          let prevGoals = -1;
-                          const rankedScorers = effectiveScorers.map((s, idx) => {
-                            if (idx > 0 && s.goals < prevGoals) {
-                              currentRank++;
-                            }
-                            prevGoals = s.goals;
-                            return { ...s, rank: currentRank };
-                          });
-
-                          return rankedScorers.slice(0, 20).map((s, idx) => {
-                            const medal = 
-                              s.rank === 1 ? "🥇" :
-                              s.rank === 2 ? "🥈" :
-                              s.rank === 3 ? "🥉" :
-                              String(s.rank);
-
-                            return (
-                              <tr
-                                key={`${s.name}_${s.team}_${idx}`}
-                                className="border-b border-slate-100 dark:border-slate-700/50 last:border-none hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors"
-                              >
-                                <td className="px-2 py-1.5 text-center font-bold text-slate-500 dark:text-slate-400">
-                                  {medal}
-                                </td>
-                                <td className="px-2 py-1.5 font-semibold text-slate-900 dark:text-slate-100">
-                                  {s.name}
-                                </td>
-                                <td className="px-2 py-1.5 text-slate-700 dark:text-slate-300">
-                                  <div className="flex items-center gap-1.5">
-                                    <TeamFlag teamName={s.team} className="w-4 h-3 shrink-0" />
-                                    <span>{s.team}</span>
-                                  </div>
-                                </td>
-                                <td className="px-2 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 font-mono">
-                                  <span className="flex items-center justify-center gap-1">
-                                    <span>⚽</span>
-                                    <span>{s.goals}</span>
-                                    {s.penalties > 0 && (
-                                      <span className="text-[9px] text-slate-400 dark:text-slate-500 font-normal normal-case">
-                                        ({s.penalties} p.)
-                                      </span>
-                                    )}
-                                  </span>
-                                </td>
-                              </tr>
-                            );
-                          });
-                        })()}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Expandable: Historical Comparison */}
-      <div className="border-t border-slate-200 dark:border-slate-700">
-        <button
-          onClick={() => setShowHistory(!showHistory)}
-          className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
-        >
-          <span className="flex items-center gap-1.5">
-            <BarChart3 size={13} className="text-emerald-500" />
-            Comparación Histórica (Goles x Partido)
-          </span>
-          {showHistory ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-        </button>
-        <AnimatePresence>
-          {showHistory && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              className="overflow-hidden"
-            >
-              <div className="overflow-x-auto px-4 pb-4">
-                <table className="w-full text-xs text-left">
-                  <thead className="text-[10px] text-slate-500 dark:text-slate-400 uppercase bg-slate-50 dark:bg-slate-900/50">
-                    <tr>
-                      {renderHistoryHeader("year", "Edición", "left")}
-                      {renderHistoryHeader("host", "Sede", "left")}
-                      {renderHistoryHeader("matches", "Partidos", "center")}
-                      {renderHistoryHeader("goals", "Goles", "center")}
-                      {renderHistoryHeader("gpg", "GPP", "center")}
-                      {renderHistoryHeader("diff", "vs 2026", "center")}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedHistory.map((h) => {
-                      const diff = h.gpg - stats.avgGoalsPerMatch;
-                      return (
-                        <tr
-                          key={h.year}
-                          className={clsx(
-                            "border-b border-slate-100 dark:border-slate-700/50 last:border-none hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors",
-                            h.isCurrent && "bg-blue-50/50 dark:bg-blue-950/20 border-b-2 border-blue-200 dark:border-blue-800/40 font-semibold"
-                          )}
-                        >
-                          <td className={clsx("px-2 py-1 text-slate-700 dark:text-slate-300 font-medium", h.isCurrent && "text-blue-700 dark:text-blue-300")}>
-                            {h.year}
-                          </td>
-                          <td className={clsx("px-2 py-1 text-slate-500 dark:text-slate-400", h.isCurrent && "text-blue-600 dark:text-blue-400")}>
-                            {h.host}
-                          </td>
-                          <td className={clsx("px-1 py-1 text-center text-slate-600 dark:text-slate-400", h.isCurrent && "text-blue-700 dark:text-blue-300")}>
-                            {h.matches}
-                          </td>
-                          <td className={clsx("px-1 py-1 text-center text-slate-600 dark:text-slate-400", h.isCurrent && "text-blue-700 dark:text-blue-300")}>
-                            {h.goals}
-                          </td>
-                          <td className={clsx("px-1 py-1 text-center text-slate-600 dark:text-slate-400 font-mono", h.isCurrent && "text-blue-700 dark:text-blue-300 font-bold")}>
-                            {h.gpg.toFixed(2)}
-                          </td>
-                          <td className="px-1 py-1 text-center font-mono text-[10px]">
-                            {h.isCurrent ? (
-                              "—"
-                            ) : stats.totalMatchesPlayed > 0 ? (
-                              <span
-                                className={clsx(
-                                  diff > 0
-                                    ? "text-emerald-600 dark:text-emerald-400"
-                                    : diff < 0
-                                    ? "text-red-500 dark:text-red-400"
-                                    : "text-slate-400"
-                                )}
-                              >
-                                {diff > 0 ? "+" : ""}
-                                {diff.toFixed(2)}
-                              </span>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </motion.div>
-          )}
+      {/* Tab Content Display */}
+      <div className="p-4 bg-slate-50/[0.15] dark:bg-slate-800/10">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {activeTab === "standings" && renderStandingsTab()}
+            {activeTab === "scorers" && renderScorersTab()}
+            {activeTab === "history" && renderHistoryTab()}
+          </motion.div>
         </AnimatePresence>
       </div>
     </motion.div>
