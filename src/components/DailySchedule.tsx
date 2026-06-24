@@ -192,6 +192,12 @@ export function DailySchedule({
   const [direction, setDirection] = useState<'left' | 'right' | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
+
+  const highlightMatchUtcDate = useMemo(() => {
+    if (!activeHighlightId) return null;
+    const found = allMatches.find((m) => m.id === activeHighlightId);
+    return found ? found.utcDate : null;
+  }, [activeHighlightId, allMatches]);
   
   const currentDayIndexRef = useRef(currentDayIndex);
   useEffect(() => {
@@ -635,6 +641,7 @@ export function DailySchedule({
                           key={match.id} 
                           match={match} 
                           highlightMatchId={activeHighlightId}
+                          highlightMatchUtcDate={highlightMatchUtcDate}
                           isAdmin={isAdmin}
                           onEdit={setEditingMatch}
                           syncingMatchId={syncingMatchId}
@@ -691,6 +698,7 @@ export function DailySchedule({
 function ScheduleMatchCard({ 
   match, 
   highlightMatchId,
+  highlightMatchUtcDate,
   isAdmin,
   onEdit,
   syncingMatchId,
@@ -698,6 +706,7 @@ function ScheduleMatchCard({
 }: { 
   match: NormalizedMatch; 
   highlightMatchId?: string | null;
+  highlightMatchUtcDate?: string | null;
   isAdmin: boolean;
   onEdit: (match: NormalizedMatch) => void;
   syncingMatchId: string | null;
@@ -705,17 +714,20 @@ function ScheduleMatchCard({
 }) {
   const { updateMatch, updateKnockoutMatch } = useTournament();
   const cardRef = useRef<HTMLDivElement>(null);
-  const isHighlighted = highlightMatchId === match.id;
+  const isScrollTarget = highlightMatchId === match.id;
+  const isHighlighted =
+    highlightMatchId === match.id ||
+    (highlightMatchUtcDate && match.utcDate === highlightMatchUtcDate);
 
   useEffect(() => {
-    if (isHighlighted && cardRef.current) {
+    if (isScrollTarget && cardRef.current) {
       // Small delay to allow the page to render first
       const timeout = setTimeout(() => {
         cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       }, 400);
       return () => clearTimeout(timeout);
     }
-  }, [isHighlighted]);
+  }, [isScrollTarget]);
 
   const handleScoreChange = (
     side: "home" | "away",
