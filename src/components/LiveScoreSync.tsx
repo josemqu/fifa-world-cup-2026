@@ -8,7 +8,7 @@ import { useLiveScores, GoalNotificationInfo } from "@/hooks/useLiveScores";
 
 /**
  * Component that activates live score polling and shows
- * animated toast notifications in the bottom-left when a goal is scored.
+ * animated toast notifications in the bottom-right when a goal is scored.
  */
 export function LiveScoreSync() {
   const [toasts, setToasts] = useState<GoalNotificationInfo[]>([]);
@@ -26,7 +26,7 @@ export function LiveScoreSync() {
   useLiveScores(true, handleGoalScored);
 
   return (
-    <div className="fixed bottom-5 left-5 z-[9999] flex flex-col gap-3 max-w-sm w-full pointer-events-none px-4 sm:px-0">
+    <div className="fixed bottom-5 right-5 z-[9999] flex flex-col gap-3 max-w-sm w-full pointer-events-none px-4 sm:px-0">
       <AnimatePresence>
         {toasts.map((toast) => (
           <motion.div
