@@ -66,7 +66,16 @@ export function GoogleOneTap() {
       }
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (window.google?.accounts?.id) {
+        try {
+          window.google.accounts.id.cancel();
+        } catch (error) {
+          console.error("Error al cancelar Google One Tap:", error);
+        }
+      }
+    };
   }, [user, loading, loginWithCredential]);
 
   return (

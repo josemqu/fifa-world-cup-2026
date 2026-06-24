@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useState,
   useMemo,
+  useCallback,
 } from "react";
 import {
   User,
@@ -151,25 +152,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = useCallback(async () => {
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (error) {
       console.error("Error signing in with Google", error);
       throw error;
     }
-  };
+  }, []);
 
-  const loginWithCredential = async (credential: any) => {
+  const loginWithCredential = useCallback(async (credential: any) => {
     try {
       await signInWithCredential(auth, credential);
     } catch (error) {
       console.error("Error signing in with credential", error);
       throw error;
     }
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await signOut(auth);
       setDbUser(null);
@@ -177,9 +178,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("Error signing out", error);
       throw error;
     }
-  };
+  }, []);
 
-  const updateProfile = async (data: Partial<DbUser>) => {
+  const updateProfile = useCallback(async (data: Partial<DbUser>) => {
     if (!user) return;
 
     try {
@@ -209,7 +210,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("Error updating profile:", error);
       throw error;
     }
-  };
+  }, [user]);
 
   return (
     <AuthContext.Provider
