@@ -48,10 +48,14 @@ interface ModelPredictionModalProps {
     isExactMatch: boolean;
     isOutcomeMatch: boolean;
   } | null;
+  actualStatus?: "scheduled" | "live" | "halftime" | "finished";
+  actualElapsed?: number | null;
+  actualHomeScore?: number | null;
+  actualAwayScore?: number | null;
 }
 
 // Helper to compute top 5 exact scores using Poisson PMF
-function getTopExactScores(lambdaA: number, lambdaB: number) {
+function getTopExactScores(lambdaA: number, lambdaB: number, currentHome: number = 0, currentAway: number = 0) {
   const factorial = (n: number): number => {
     let res = 1;
     for (let i = 2; i <= n; i++) res *= i;
@@ -78,8 +82,8 @@ function getTopExactScores(lambdaA: number, lambdaB: number) {
   for (let a = 0; a <= maxGoals; a++) {
     for (let b = 0; b <= maxGoals; b++) {
       scores.push({
-        homeGoals: a,
-        awayGoals: b,
+        homeGoals: currentHome + a,
+        awayGoals: currentAway + b,
         prob: normA[a] * normB[b],
       });
     }
@@ -105,6 +109,10 @@ export function ModelPredictionModal({
   userHomePenalties,
   userAwayPenalties,
   modelPrediction,
+  actualStatus,
+  actualElapsed,
+  actualHomeScore,
+  actualAwayScore,
 }: ModelPredictionModalProps) {
   const {
     lambdaA,
@@ -116,7 +124,14 @@ export function ModelPredictionModal({
     probAvanzaB = 0.5,
   } = predictionDetails;
 
-  const topScores = useMemo(() => getTopExactScores(lambdaA, lambdaB), [lambdaA, lambdaB]);
+  const isLive = actualStatus === "live" || actualStatus === "halftime";
+  const isFinished = actualStatus === "finished";
+
+  const topScores = useMemo(() => {
+    const currentHome = (isLive || isFinished) ? (actualHomeScore ?? 0) : 0;
+    const currentAway = (isLive || isFinished) ? (actualAwayScore ?? 0) : 0;
+    return getTopExactScores(lambdaA, lambdaB, currentHome, currentAway);
+  }, [lambdaA, lambdaB, isLive, isFinished, actualHomeScore, actualAwayScore]);
 
   // Determine user prediction outcome matching status
   const userPredictionText = useMemo(() => {
@@ -210,19 +225,41 @@ export function ModelPredictionModal({
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-5 space-y-6">
               {/* Matchup Header */}
-              <div className="flex items-center justify-center gap-4 bg-slate-50/50 dark:bg-slate-900/20 p-4 rounded-xl border border-slate-100 dark:border-slate-700/40">
-                <div className="flex flex-col items-center gap-1.5 flex-1 text-center min-w-0">
-                  <TeamFlag teamName={homeTeamName} className="w-10 h-7 rounded-sm shadow-sm" />
-                  <span className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-full">
-                    {homeTeamName}
-                  </span>
-                </div>
-                <div className="text-slate-400 dark:text-slate-650 font-bold text-sm">VS</div>
-                <div className="flex flex-col items-center gap-1.5 flex-1 text-center min-w-0">
-                  <TeamFlag teamName={awayTeamName} className="w-10 h-7 rounded-sm shadow-sm" />
-                  <span className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-full">
-                    {awayTeamName}
-                  </span>
+              <div className="flex flex-col items-center gap-2 bg-slate-50/50 dark:bg-slate-900/20 p-4 rounded-xl border border-slate-100 dark:border-slate-700/40">
+                <div className="flex items-center justify-center gap-4 w-full">
+                  <div className="flex flex-col items-center gap-1.5 flex-1 text-center min-w-0">
+                    <TeamFlag teamName={homeTeamName} className="w-10 h-7 rounded-sm shadow-sm" />
+                    <span className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-full">
+                      {homeTeamName}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center shrink-0 min-w-[80px]">
+                    {isLive || isFinished ? (
+                      <div className="flex flex-col items-center gap-0.5">
+                        <span className="text-base font-extrabold text-slate-850 dark:text-slate-200">
+                          {actualHomeScore} - {actualAwayScore}
+                        </span>
+                        {isLive && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 animate-pulse border border-amber-500/20 uppercase tracking-wide">
+                            {actualElapsed ? `En vivo ${actualElapsed}'` : "En vivo"}
+                          </span>
+                        )}
+                        {isFinished && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 uppercase tracking-wide">
+                            Finalizado
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 dark:text-slate-650 font-bold text-xs">VS</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col items-center gap-1.5 flex-1 text-center min-w-0">
+                    <TeamFlag teamName={awayTeamName} className="w-10 h-7 rounded-sm shadow-sm" />
+                    <span className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-full">
+                      {awayTeamName}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -257,7 +294,7 @@ export function ModelPredictionModal({
               <div className="space-y-2">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-550 flex items-center gap-1.5">
                   <Gauge className="w-3.5 h-3.5" />
-                  Probabilidad del Resultado (90 Min)
+                  {isLive ? "Probabilidad del Resultado Final (En Vivo)" : isFinished ? "Resultado Final" : "Probabilidad del Resultado (90 Min)"}
                 </h4>
                 
                 {/* Segmented Progress Bar */}
@@ -360,7 +397,7 @@ export function ModelPredictionModal({
                       <span className="font-bold text-slate-700 dark:text-slate-300">{esAnfitrionA ? "Sí (+0.35 λ)" : "No"}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400 dark:text-slate-550">λ (Goles exp.):</span>
+                      <span className="text-slate-400 dark:text-slate-550">{isLive ? "λ (Goles exp. rest.):" : "λ (Goles exp.):"}</span>
                       <span className="font-bold text-slate-700 dark:text-slate-300">{lambdaA.toFixed(3)}</span>
                     </div>
                   </div>
@@ -377,7 +414,7 @@ export function ModelPredictionModal({
                       <span className="font-bold text-slate-700 dark:text-slate-300">{esAnfitrionB ? "Sí (+0.35 λ)" : "No"}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400 dark:text-slate-550">λ (Goles exp.):</span>
+                      <span className="text-slate-400 dark:text-slate-550">{isLive ? "λ (Goles exp. rest.):" : "λ (Goles exp.):"}</span>
                       <span className="font-bold text-slate-700 dark:text-slate-300">{lambdaB.toFixed(3)}</span>
                     </div>
                   </div>

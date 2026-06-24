@@ -131,6 +131,41 @@ export const predictMatchScore = (
   };
 };
 
+export const predictMatchScoreRemaining = (
+  home: { id?: string; ranking?: number; fifaPoints?: number } = {},
+  away: { id?: string; ranking?: number; fifaPoints?: number } = {},
+  currentHome: number = 0,
+  currentAway: number = 0,
+  elapsed: number = 0,
+  formMap?: TournamentFormMap
+): { home: number; away: number } => {
+  const puntosA = getTeamFifaPoints(home);
+  const puntosB = getTeamFifaPoints(away);
+
+  const formA = (home as any)?.id && formMap?.get((home as any).id);
+  const formB = (away as any)?.id && formMap?.get((away as any).id);
+
+  const prediction = predictWorldCupMatch({
+    puntosA,
+    puntosB,
+    es_anfitrionA: getIsHost(home),
+    es_anfitrionB: getIsHost(away),
+    es_eliminacion_directa: false,
+    formOfensivaA: formA ? formA.formOfensiva : undefined,
+    formDefensivaA: formA ? formA.formDefensiva : undefined,
+    formOfensivaB: formB ? formB.formOfensiva : undefined,
+    formDefensivaB: formB ? formB.formDefensiva : undefined,
+  });
+
+  const elapsedClamped = Math.max(0, Math.min(90, elapsed));
+  const remainingFraction = (90 - elapsedClamped) / 90;
+
+  return {
+    home: currentHome + Math.min(6, poisson(prediction.lambdaA * remainingFraction)),
+    away: currentAway + Math.min(6, poisson(prediction.lambdaB * remainingFraction)),
+  };
+};
+
 export const recalculateGroupStats = (group: Group): Group => {
   // Reset stats for all teams
   const newTeams = group.teams.map((team) => ({
@@ -521,14 +556,29 @@ export const runKnockoutSimulation = (
 
     if (hasRealTeams) {
       winner = match.winner || null;
-      const isPlayed = match.homeScore != null && match.awayScore != null;
+      const isFinished = match.finished === true || match.status === "finished";
 
-      if (!isPlayed) {
+      if (!isFinished) {
         // Generate realistic scores based on ranking/form
         const hTeam = match.homeTeam as Team;
         const aTeam = match.awayTeam as Team;
 
-        const { home, away } = predictMatchScore(hTeam, aTeam, 0.35, formMap);
+        const isLive = match.status === "live" || match.status === "halftime";
+        let home: number;
+        let away: number;
+
+        if (isLive) {
+          const currentHome = match.homeScore ?? 0;
+          const currentAway = match.awayScore ?? 0;
+          const elapsed = match.elapsed ?? (match.status === "halftime" ? 45 : 0);
+          const remaining = predictMatchScoreRemaining(hTeam, aTeam, currentHome, currentAway, elapsed, formMap);
+          home = remaining.home;
+          away = remaining.away;
+        } else {
+          const simulated = predictMatchScore(hTeam, aTeam, 0.35, formMap);
+          home = simulated.home;
+          away = simulated.away;
+        }
 
         match.homeScore = home;
         match.awayScore = away;
@@ -558,6 +608,7 @@ export const runKnockoutSimulation = (
             : (match.awayTeam as Team);
         }
         match.winner = winner;
+        match.finished = true;
       } else {
         // If already played, safety check to resolve winner field
         if (!winner) {
@@ -804,7 +855,22 @@ export const simulateTournament = (
       const homeTeam = group.teams.find((t) => t.id === match.homeTeamId);
       const awayTeam = group.teams.find((t) => t.id === match.awayTeamId);
 
-      const { home, away } = predictMatchScore(homeTeam, awayTeam, 0.35, formMap);
+      const isLive = match.status === "live" || match.status === "halftime";
+      let home: number;
+      let away: number;
+
+      if (isLive) {
+        const currentHome = match.homeScore ?? 0;
+        const currentAway = match.awayScore ?? 0;
+        const elapsed = match.elapsed ?? (match.status === "halftime" ? 45 : 0);
+        const remaining = predictMatchScoreRemaining(homeTeam, awayTeam, currentHome, currentAway, elapsed, formMap);
+        home = remaining.home;
+        away = remaining.away;
+      } else {
+        const simulated = predictMatchScore(homeTeam, awayTeam, 0.35, formMap);
+        home = simulated.home;
+        away = simulated.away;
+      }
 
       return {
         ...match,

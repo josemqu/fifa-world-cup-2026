@@ -1,5 +1,5 @@
 import { Group, Team, Match } from "../data/types";
-import { predictMatchScore, recalculateGroupStats } from "../utils/simulationUtils";
+import { predictMatchScore, predictMatchScoreRemaining, recalculateGroupStats } from "../utils/simulationUtils";
 import { TeamAnalysis } from "../utils/groupAnalysis";
 import { sortGroupTeams } from "../utils/groupSorting";
 
@@ -22,10 +22,10 @@ self.onmessage = async (e: MessageEvent) => {
       });
       groupTeamMaps.set(g.name, teamMap);
 
-      const allPlayed = g.matches.every(
-        (m: Match) => m.homeScore != null && m.awayScore != null
+      const allFinished = g.matches.every(
+        (m: Match) => m.finished === true || m.status === "finished"
       );
-      groupFullyPlayed.set(g.name, allPlayed);
+      groupFullyPlayed.set(g.name, allFinished);
     });
 
     const teamMinRanks = new Map<string, number>();
@@ -56,15 +56,38 @@ self.onmessage = async (e: MessageEvent) => {
         if (groupFullyPlayed.get(group.name)) {
           simulatedGroup = group;
         } else {
-          // Find unplayed matches
-          const unplayedMatches = group.matches.filter(
-            (m: Match) => m.homeScore == null || m.awayScore == null
+          // Find incomplete matches (not finished)
+          const incompleteMatches = group.matches.filter(
+            (m: Match) => !(m.finished === true || m.status === "finished")
           );
-          // Simulate unplayed matches using Poisson
-          const scenarioMatches = unplayedMatches.map((m: Match) => {
+          // Simulate incomplete matches
+          const scenarioMatches = incompleteMatches.map((m: Match) => {
             const homeTeam = teamMap.get(m.homeTeamId);
             const awayTeam = teamMap.get(m.awayTeamId);
-            const { home, away } = predictMatchScore(homeTeam || {}, awayTeam || {});
+
+            const isLive = m.status === "live" || m.status === "halftime";
+            let home: number;
+            let away: number;
+
+            if (isLive) {
+              const currentHome = m.homeScore ?? 0;
+              const currentAway = m.awayScore ?? 0;
+              const elapsed = m.elapsed ?? (m.status === "halftime" ? 45 : 0);
+              const remaining = predictMatchScoreRemaining(
+                homeTeam || {},
+                awayTeam || {},
+                currentHome,
+                currentAway,
+                elapsed
+              );
+              home = remaining.home;
+              away = remaining.away;
+            } else {
+              const simulated = predictMatchScore(homeTeam || {}, awayTeam || {});
+              home = simulated.home;
+              away = simulated.away;
+            }
+
             return {
               ...m,
               homeScore: home,

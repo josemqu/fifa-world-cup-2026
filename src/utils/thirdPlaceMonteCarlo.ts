@@ -2,6 +2,7 @@ import { Group, Team, Match } from "@/data/types";
 import { sortGroupTeams } from "@/utils/groupSorting";
 import {
   predictMatchScore,
+  predictMatchScoreRemaining,
   recalculateGroupStats,
 } from "@/utils/simulationUtils";
 
@@ -29,18 +30,39 @@ export function estimateBestThirdQualificationProbabilities(
     const simulatedGroups = groups.map((group) => {
       // Copy matches and simulate unplayed ones
       const simulatedMatches = group.matches.map((m) => {
-        const isPlayed = m.homeScore != null && m.awayScore != null;
-        if (isPlayed) {
+        const isFinished = m.finished === true || m.status === "finished";
+        if (isFinished) {
           return { ...m, finished: true };
         }
 
         const homeTeam = group.teams.find((t) => t.id === m.homeTeamId);
         const awayTeam = group.teams.find((t) => t.id === m.awayTeamId);
 
-        const { home, away } = predictMatchScore(
-          homeTeam ?? {},
-          awayTeam ?? {}
-        );
+        const isLive = m.status === "live" || m.status === "halftime";
+        let home: number;
+        let away: number;
+
+        if (isLive) {
+          const currentHome = m.homeScore ?? 0;
+          const currentAway = m.awayScore ?? 0;
+          const elapsed = m.elapsed ?? (m.status === "halftime" ? 45 : 0);
+          const remaining = predictMatchScoreRemaining(
+            homeTeam ?? {},
+            awayTeam ?? {},
+            currentHome,
+            currentAway,
+            elapsed
+          );
+          home = remaining.home;
+          away = remaining.away;
+        } else {
+          const simulated = predictMatchScore(
+            homeTeam ?? {},
+            awayTeam ?? {}
+          );
+          home = simulated.home;
+          away = simulated.away;
+        }
 
         return {
           ...m,

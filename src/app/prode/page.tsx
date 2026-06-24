@@ -680,7 +680,11 @@ function getPredictionChance(
   userAwayScore: number | "",
   userHomePenalties?: number | "",
   userAwayPenalties?: number | "",
-  formMap?: Map<string, { formOfensiva: number; formDefensiva: number }>
+  formMap?: Map<string, { formOfensiva: number; formDefensiva: number }>,
+  actualStatus?: "scheduled" | "live" | "halftime" | "finished",
+  actualElapsed?: number | null,
+  currentHomeScore?: number | null,
+  currentAwayScore?: number | null
 ) {
   if (!homeTeam || !awayTeam) return null;
 
@@ -707,90 +711,142 @@ function getPredictionChance(
 
   const hasUserPred = userHomeScore !== "" && userAwayScore !== "";
 
-  // Calculate user chosen outcome chance
+  // Adjust lambdas if live/finished
+  const isFinished = actualStatus === "finished";
+  const isLive = actualStatus === "live" || actualStatus === "halftime";
+
+  let lambdaA_eff = res.lambdaA;
+  let lambdaB_eff = res.lambdaB;
+  let currentHome = 0;
+  let currentAway = 0;
+
+  if (isLive || isFinished) {
+    currentHome = currentHomeScore ?? 0;
+    currentAway = currentAwayScore ?? 0;
+    
+    if (isFinished) {
+      lambdaA_eff = 0;
+      lambdaB_eff = 0;
+    } else {
+      const elapsedClamped = Math.max(0, Math.min(90, actualElapsed ?? (actualStatus === "halftime" ? 45 : 0)));
+      const remainingFraction = (90 - elapsedClamped) / 90;
+      lambdaA_eff = res.lambdaA * remainingFraction;
+      lambdaB_eff = res.lambdaB * remainingFraction;
+    }
+  }
+
+  // Factorial helper
+  const factorial = (n: number): number => {
+    let output = 1;
+    for (let i = 2; i <= n; i++) output *= i;
+    return output;
+  };
+
+  // Poisson PMF helper
+  const poissonPMF = (k: number, lambda: number): number => {
+    if (k < 0) return 0;
+    if (lambda <= 0) return k === 0 ? 1 : 0;
+    return (Math.pow(lambda, k) * Math.exp(-lambda)) / factorial(k);
+  };
+
+  // Calculate user chosen outcome chance & ratio
   let chance = 0;
   let ratio = 0;
   let isExactMatch = false;
   let isOutcomeMatch = false;
 
-  if (hasUserPred) {
-    const userHomeNum = Number(userHomeScore);
-    const userAwayNum = Number(userAwayScore);
+  const userHomeNum = Number(userHomeScore);
+  const userAwayNum = Number(userAwayScore);
 
-    if (userHomeNum > userAwayNum) {
-      chance = isKnockout ? (res.probAvanzaA ?? res.probA) : res.probA;
-    } else if (userAwayNum > userHomeNum) {
-      chance = isKnockout ? (res.probAvanzaB ?? res.probB) : res.probB;
-    } else {
-      // Draw
-      if (isKnockout) {
-        const userHomeAdvances = userHomePenalties === 1 && userAwayPenalties === 0;
-        const userAwayAdvances = userAwayPenalties === 1 && userHomePenalties === 0;
-        if (userHomeAdvances) {
-          chance = res.probAvanzaA ?? (res.probA + res.probX * res.we);
-        } else if (userAwayAdvances) {
-          chance = res.probAvanzaB ?? (res.probB + res.probX * (1 - res.we));
-        } else {
-          chance = res.probX; // Tie chosen, but penalties winner not selected yet. Show tie probability.
-        }
+  // Remaining time probabilities (probA, probX, probB)
+  let liveProbA = 0;
+  let liveProbX = 0;
+  let liveProbB = 0;
+
+  const maxGoals = 8;
+  const probsA = Array.from({ length: maxGoals + 1 }, (_, k) => poissonPMF(k, lambdaA_eff));
+  const probsB = Array.from({ length: maxGoals + 1 }, (_, k) => poissonPMF(k, lambdaB_eff));
+
+  const sumA = probsA.reduce((sum, v) => sum + v, 0);
+  const sumB = probsB.reduce((sum, v) => sum + v, 0);
+
+  const normProbsA = probsA.map((v) => v / (sumA || 1));
+  const normProbsB = probsB.map((v) => v / (sumB || 1));
+
+  // Compute live match probabilities for full outcomes
+  for (let a = 0; a <= maxGoals; a++) {
+    for (let b = 0; b <= maxGoals; b++) {
+      const p = normProbsA[a] * normProbsB[b];
+      const finalHome = currentHome + a;
+      const finalAway = currentAway + b;
+      if (finalHome > finalAway) {
+        liveProbA += p;
+      } else if (finalAway > finalHome) {
+        liveProbB += p;
       } else {
-        chance = res.probX;
+        liveProbX += p;
+      }
+    }
+  }
+
+  // Find modal score of the remaining time + current score
+  let best = { golesA: currentHome, golesB: currentAway, prob: -1 };
+  const scoresList: { homeGoals: number; awayGoals: number; prob: number }[] = [];
+  for (let a = 0; a <= maxGoals; a++) {
+    for (let b = 0; b <= maxGoals; b++) {
+      const p = normProbsA[a] * normProbsB[b];
+      const finalHome = currentHome + a;
+      const finalAway = currentAway + b;
+      scoresList.push({
+        homeGoals: finalHome,
+        awayGoals: finalAway,
+        prob: p
+      });
+      if (p > best.prob) {
+        best = { golesA: finalHome, golesB: finalAway, prob: p };
+      }
+    }
+  }
+
+  scoresList.sort((s1, s2) => s2.prob - s1.prob);
+
+  if (hasUserPred) {
+    // Calculate chance of user score
+    if (isFinished) {
+      chance = (userHomeNum === currentHome && userAwayNum === currentAway) ? 1.0 : 0.0;
+    } else {
+      const neededHome = userHomeNum - currentHome;
+      const neededAway = userAwayNum - currentAway;
+      if (neededHome >= 0 && neededAway >= 0) {
+        chance = normProbsA[neededHome] * normProbsB[neededAway];
+      } else {
+        chance = 0;
       }
     }
 
-    // Calculate match closeness metrics
-    const factorial = (n: number): number => {
-      let output = 1;
-      for (let i = 2; i <= n; i++) output *= i;
-      return output;
-    };
-
-    const poissonPMF = (k: number, lambda: number): number => {
-      if (k < 0) return 0;
-      if (lambda <= 0) return k === 0 ? 1 : 0;
-      return (Math.pow(lambda, k) * Math.exp(-lambda)) / factorial(k);
-    };
-
-    const userPMF = poissonPMF(userHomeNum, res.lambdaA) * poissonPMF(userAwayNum, res.lambdaB);
-
-    const modalHome = res.marcadorMasProbable.golesA;
-    const modalAway = res.marcadorMasProbable.golesB;
-    const modalPMF = poissonPMF(modalHome, res.lambdaA) * poissonPMF(modalAway, res.lambdaB);
-
+    // Closeness ratio compared to modal score
+    const userPMF = chance;
+    const modalPMF = best.prob;
     ratio = modalPMF > 0 ? userPMF / modalPMF : 0;
-    isExactMatch = userHomeNum === modalHome && userAwayNum === modalAway;
+
+    isExactMatch = userHomeNum === best.golesA && userAwayNum === best.golesB;
 
     const userOutcome = userHomeNum > userAwayNum ? "A" : userHomeNum < userAwayNum ? "B" : "X";
-    const modalOutcome = modalHome > modalAway ? "A" : modalHome < modalAway ? "B" : "X";
+    const modalOutcome = best.golesA > best.golesB ? "A" : best.golesA < best.golesB ? "B" : "X";
     isOutcomeMatch = userOutcome === modalOutcome;
 
-    // Calculate rank of user's score among top scores
-    const maxGoals = 5;
-    const probsA = Array.from({ length: maxGoals + 1 }, (_, k) => poissonPMF(k, res.lambdaA));
-    const probsB = Array.from({ length: maxGoals + 1 }, (_, k) => poissonPMF(k, res.lambdaB));
-
-    const sumA = probsA.reduce((sum, v) => sum + v, 0);
-    const sumB = probsB.reduce((sum, v) => sum + v, 0);
-
-    const normA = probsA.map((v) => v / (sumA || 1));
-    const normB = probsB.map((v) => v / (sumB || 1));
-
-    const scoresList: { homeGoals: number; awayGoals: number; prob: number }[] = [];
-    for (let a = 0; a <= maxGoals; a++) {
-      for (let b = 0; b <= maxGoals; b++) {
-        scoresList.push({
-          homeGoals: a,
-          awayGoals: b,
-          prob: normA[a] * normB[b],
-        });
-      }
-    }
-    scoresList.sort((s1, s2) => s2.prob - s1.prob);
-
-    const userScoreIndex = scoresList.findIndex(
+    const userIndex = scoresList.findIndex(
       (s) => s.homeGoals === userHomeNum && s.awayGoals === userAwayNum
     );
-    const rankText = userScoreIndex !== -1 ? `#${userScoreIndex + 1}` : "#5+";
+    const rankText = userIndex !== -1 ? `#${userIndex + 1}` : "#81+";
+
+    // Adjust for knockout penalties if tie chosen/expected
+    let adjustedProbAvanzaA = liveProbA;
+    let adjustedProbAvanzaB = liveProbB;
+    if (isKnockout) {
+      adjustedProbAvanzaA = liveProbA + liveProbX * res.we;
+      adjustedProbAvanzaB = liveProbB + liveProbX * (1 - res.we);
+    }
 
     return {
       chance: Math.round(chance * 100),
@@ -799,8 +855,27 @@ function getPredictionChance(
       isOutcomeMatch,
       hasUserPred,
       rankText,
-      predictionDetails: res,
+      predictionDetails: {
+        we: res.we,
+        lambdaA: lambdaA_eff,
+        lambdaB: lambdaB_eff,
+        probA: liveProbA,
+        probX: liveProbX,
+        probB: liveProbB,
+        probAvanzaA: isKnockout ? adjustedProbAvanzaA : undefined,
+        probAvanzaB: isKnockout ? adjustedProbAvanzaB : undefined,
+        marcadorMasProbable: { golesA: best.golesA, golesB: best.golesB, prob: best.prob },
+        ganadorEsperado: adjustedProbAvanzaA >= adjustedProbAvanzaB ? ("A" as const) : ("B" as const)
+      },
     };
+  }
+
+  // Adjust for knockout penalties if tie chosen/expected
+  let adjustedProbAvanzaA = liveProbA;
+  let adjustedProbAvanzaB = liveProbB;
+  if (isKnockout) {
+    adjustedProbAvanzaA = liveProbA + liveProbX * res.we;
+    adjustedProbAvanzaB = liveProbB + liveProbX * (1 - res.we);
   }
 
   return {
@@ -809,7 +884,18 @@ function getPredictionChance(
     isExactMatch,
     isOutcomeMatch,
     hasUserPred,
-    predictionDetails: res,
+    predictionDetails: {
+      we: res.we,
+      lambdaA: lambdaA_eff,
+      lambdaB: lambdaB_eff,
+      probA: liveProbA,
+      probX: liveProbX,
+      probB: liveProbB,
+      probAvanzaA: isKnockout ? adjustedProbAvanzaA : undefined,
+      probAvanzaB: isKnockout ? adjustedProbAvanzaB : undefined,
+      marcadorMasProbable: { golesA: best.golesA, golesB: best.golesB, prob: best.prob },
+      ganadorEsperado: adjustedProbAvanzaA >= adjustedProbAvanzaB ? ("A" as const) : ("B" as const)
+    },
   };
 }
 
@@ -862,7 +948,7 @@ function PredictionsTab({
     homeTeamObj: ExtendedTeam | undefined;
     awayTeamObj: ExtendedTeam | undefined;
     isKnockout: boolean;
-    predictionDetails: MatchPredictionResult;
+    predictionDetails: any;
     modelPrediction: {
       chance: number;
       ratio: number;
@@ -871,6 +957,10 @@ function PredictionsTab({
       hasUserPred: boolean;
       rankText?: string;
     };
+    actualStatus?: "scheduled" | "live" | "halftime" | "finished";
+    actualElapsed?: number | null;
+    actualHomeScore?: number | null;
+    actualAwayScore?: number | null;
   } | null>(null);
 
   const [resettingMatch, setResettingMatch] = useState<{
@@ -1332,7 +1422,8 @@ function PredictionsTab({
             actualMatch = knockoutMatches.find((m: KnockoutMatch) => m.id === matchId);
           }
 
-          const actualFinished = actualMatch?.finished || false;
+          const isLive = actualMatch?.status === "live" || actualMatch?.status === "halftime";
+          const actualFinished = actualMatch?.finished || actualMatch?.status === "finished" || false;
           const actualHomeScore = actualMatch?.homeScore ?? null;
           const actualAwayScore = actualMatch?.awayScore ?? null;
           const actualHomePenalties = (actualMatch as KnockoutMatch)?.homePenalties ?? null;
@@ -1341,7 +1432,7 @@ function PredictionsTab({
           const hasPrediction = pred && pred.homeScore !== "" && pred.awayScore !== "";
           let pointsEarned: number | null = null;
 
-          if (actualFinished) {
+          if (actualFinished || isLive) {
             if (hasPrediction) {
               pointsEarned = calculatePoints(
                 Number(pred.homeScore),
@@ -1369,7 +1460,11 @@ function PredictionsTab({
             pred?.awayScore ?? "",
             pred?.homePenalties ?? "",
             pred?.awayPenalties ?? "",
-            formMap
+            formMap,
+            actualMatch?.status,
+            actualMatch?.elapsed,
+            actualHomeScore,
+            actualAwayScore
           );
 
           return (
@@ -1395,6 +1490,8 @@ function PredictionsTab({
                 utcDate
               })}
               actualFinished={actualFinished}
+              actualStatus={actualMatch?.status}
+              actualElapsed={actualMatch?.elapsed}
               actualHomeScore={actualHomeScore}
               actualAwayScore={actualAwayScore}
               actualHomePenalties={actualHomePenalties}
@@ -1418,7 +1515,11 @@ function PredictionsTab({
                   isOutcomeMatch: modelPrediction.isOutcomeMatch,
                   hasUserPred: modelPrediction.hasUserPred,
                   rankText: modelPrediction.rankText
-                }
+                },
+                actualStatus: actualMatch?.status,
+                actualElapsed: actualMatch?.elapsed,
+                actualHomeScore,
+                actualAwayScore
               }) : undefined}
             />
           );
@@ -1460,6 +1561,10 @@ function PredictionsTab({
           userHomePenalties={predictions.get(selectedModelPred.matchId)?.homePenalties ?? ""}
           userAwayPenalties={predictions.get(selectedModelPred.matchId)?.awayPenalties ?? ""}
           modelPrediction={selectedModelPred.modelPrediction}
+          actualStatus={selectedModelPred.actualStatus}
+          actualElapsed={selectedModelPred.actualElapsed}
+          actualHomeScore={selectedModelPred.actualHomeScore}
+          actualAwayScore={selectedModelPred.actualAwayScore}
         />
       )}
 
@@ -1536,6 +1641,8 @@ function ProdeMatchCard({
   label,
   onOpenRivalPredictions,
   actualFinished,
+  actualStatus,
+  actualElapsed,
   actualHomeScore,
   actualAwayScore,
   actualHomePenalties,
@@ -1561,6 +1668,8 @@ function ProdeMatchCard({
   label?: string;
   onOpenRivalPredictions?: () => void;
   actualFinished?: boolean;
+  actualStatus?: "scheduled" | "live" | "halftime" | "finished";
+  actualElapsed?: number | null;
   actualHomeScore?: number | null;
   actualAwayScore?: number | null;
   actualHomePenalties?: number | null;
@@ -1575,7 +1684,7 @@ function ProdeMatchCard({
     isOutcomeMatch: boolean;
     hasUserPred: boolean;
     rankText?: string;
-    predictionDetails: MatchPredictionResult;
+    predictionDetails: any;
   } | null;
   onOpenModelPrediction?: () => void;
 }) {
@@ -1587,6 +1696,7 @@ function ProdeMatchCard({
     ? matchDate.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false })
     : "";
 
+  const isLive = actualStatus === "live" || actualStatus === "halftime";
   const now = useCurrentTime(false);
   const relativeLabel = useMemo(() => {
     if (!utcDate || !now) return null;
@@ -1887,10 +1997,10 @@ function ProdeMatchCard({
           </div>
         )}
 
-        {actualFinished && (
+        {(actualFinished || isLive) && (
           <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-              <span className="font-medium">Resultado real:</span>
+              <span className="font-medium">{actualFinished ? "Resultado real:" : "Resultado parcial:"}</span>
               <span className="font-bold text-slate-800 dark:text-slate-200">
                 {actualHomeScore} - {actualAwayScore}
                 {actualHomePenalties !== null && actualAwayPenalties !== null && (
@@ -1899,8 +2009,20 @@ function ProdeMatchCard({
                   </span>
                 )}
               </span>
+              {isLive && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 animate-pulse ml-1 border border-amber-500/20">
+                  En vivo
+                </span>
+              )}
             </div>
-            {renderPointsBadge()}
+            <div className="flex flex-col items-end gap-0.5">
+              {renderPointsBadge()}
+              {isLive && (
+                <span className="text-[9px] text-slate-450 dark:text-slate-500 italic">
+                  (Provisional)
+                </span>
+              )}
+            </div>
           </div>
         )}
 

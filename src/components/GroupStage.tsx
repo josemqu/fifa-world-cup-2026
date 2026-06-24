@@ -95,7 +95,7 @@ export function GroupStage({
       const { thirdPlaceTeams } = getGroupStandings(groups);
       const sorted = getSortedThirdPlaceTeams(thirdPlaceTeams);
       const stageComplete = groups.every((g) =>
-        g.matches.every((m) => m.homeScore != null && m.awayScore != null)
+        g.matches.every((m) => m.finished === true || m.status === "finished")
       );
       return {
         sortedThirds: sorted,

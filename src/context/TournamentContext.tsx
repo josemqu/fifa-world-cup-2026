@@ -24,6 +24,7 @@ import {
   runKnockoutSimulation,
   recalculateGroupStats,
   predictMatchScore,
+  predictMatchScoreRemaining,
   simulateTournament,
   propagateKnockoutTeams,
 } from "@/utils/simulationUtils";
@@ -519,19 +520,33 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const simulateGroups = () => {
-    const now = getEffectiveNow();
     setGroups((currentGroups) => {
       return currentGroups.map((group) => {
         const updatedMatches = group.matches.map((match) => {
-          const isStartedOrFinished = now >= new Date(match.utcDate);
-          if (isStartedOrFinished) {
+          const isFinished = match.finished === true || match.status === "finished";
+          if (isFinished) {
             return match;
           }
 
           const homeTeam = group.teams.find((t) => t.id === match.homeTeamId);
           const awayTeam = group.teams.find((t) => t.id === match.awayTeamId);
 
-          const { home, away } = predictMatchScore(homeTeam, awayTeam);
+          const isLive = match.status === "live" || match.status === "halftime";
+          let home: number;
+          let away: number;
+
+          if (isLive) {
+            const currentHome = match.homeScore ?? 0;
+            const currentAway = match.awayScore ?? 0;
+            const elapsed = match.elapsed ?? (match.status === "halftime" ? 45 : 0);
+            const remaining = predictMatchScoreRemaining(homeTeam, awayTeam, currentHome, currentAway, elapsed);
+            home = remaining.home;
+            away = remaining.away;
+          } else {
+            const simulated = predictMatchScore(homeTeam, awayTeam);
+            home = simulated.home;
+            away = simulated.away;
+          }
 
           return {
             ...match,
@@ -569,12 +584,15 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   };
 
   const simulateAll = () => {
-    const now = getEffectiveNow();
     const resetGroups = groups.map((group) => ({
       ...group,
       matches: group.matches.map((match) => {
-        const isStartedOrFinished = now >= new Date(match.utcDate);
-        if (isStartedOrFinished) {
+        const isFinished = match.finished === true || match.status === "finished";
+        if (isFinished) {
+          return match;
+        }
+        const isLive = match.status === "live" || match.status === "halftime";
+        if (isLive) {
           return match;
         }
         return {
@@ -587,7 +605,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     }));
 
     const preservedKnockouts = knockoutMatches.filter((match) => {
-      return now >= new Date(match.utcDate);
+      const isFinished = match.finished === true || match.status === "finished";
+      const isLive = match.status === "live" || match.status === "halftime";
+      return isFinished || isLive;
     });
 
     const result = simulateTournament(resetGroups, preservedKnockouts);

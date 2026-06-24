@@ -1,5 +1,5 @@
 import { Group, Team, Match } from "@/data/types";
-import { recalculateGroupStats, predictMatchScore } from "@/utils/simulationUtils";
+import { recalculateGroupStats, predictMatchScore, predictMatchScoreRemaining } from "@/utils/simulationUtils";
 import { sortGroupTeams } from "@/utils/groupSorting";
 
 // Number of Monte Carlo simulations to run per group analysis.
@@ -19,7 +19,7 @@ export const analyzeGroup = (
   iterations: number = MONTE_CARLO_ITERATIONS
 ): Record<string, TeamAnalysis> => {
   const playedMatches = group.matches.filter(
-    (m) => m.homeScore != null && m.awayScore != null
+    (m) => m.finished === true || m.status === "finished"
   );
 
   if (playedMatches.length === 0) {
@@ -37,9 +37,9 @@ export const analyzeGroup = (
     return result;
   }
 
-  // Find unplayed matches
+  // Find unplayed matches (including live ones)
   const unplayedMatches = group.matches.filter(
-    (m) => m.homeScore == null || m.awayScore == null
+    (m) => !(m.finished === true || m.status === "finished")
   );
 
   // If no matches are unplayed, the current standing is the final result
@@ -143,7 +143,7 @@ export function analyzeQualifiedThirds(
   const groupFullyPlayed = new Map<string, boolean>();
   groups.forEach((g) => {
     const allPlayed = g.matches.every(
-      (m) => m.homeScore != null && m.awayScore != null
+      (m) => m.finished === true || m.status === "finished"
     );
     groupFullyPlayed.set(g.name, allPlayed);
   });
@@ -161,7 +161,7 @@ export function analyzeQualifiedThirds(
         simulatedGroup = group;
       } else {
         const unplayedMatches = group.matches.filter(
-          (m) => m.homeScore == null || m.awayScore == null
+          (m) => !(m.finished === true || m.status === "finished")
         );
         const scenarioMatches = generateMonteCarloScenario(unplayedMatches, teamMap);
         simulatedGroup = applyScenario(group, scenarioMatches);
@@ -214,16 +214,36 @@ function generateMonteCarloScenario(
     const homeTeam = teamMap.get(match.homeTeamId);
     const awayTeam = teamMap.get(match.awayTeamId);
 
-    // predictMatchScore returns Poisson-sampled goals based on FIFA points
-    const score = predictMatchScore(
-      homeTeam || {},
-      awayTeam || {}
-    );
+    const isLive = match.status === "live" || match.status === "halftime";
+    let home: number;
+    let away: number;
+
+    if (isLive) {
+      const currentHome = match.homeScore ?? 0;
+      const currentAway = match.awayScore ?? 0;
+      const elapsed = match.elapsed ?? (match.status === "halftime" ? 45 : 0);
+      const remaining = predictMatchScoreRemaining(
+        homeTeam || {},
+        awayTeam || {},
+        currentHome,
+        currentAway,
+        elapsed
+      );
+      home = remaining.home;
+      away = remaining.away;
+    } else {
+      const simulated = predictMatchScore(
+        homeTeam || {},
+        awayTeam || {}
+      );
+      home = simulated.home;
+      away = simulated.away;
+    }
 
     return {
       ...match,
-      homeScore: score.home,
-      awayScore: score.away,
+      homeScore: home,
+      awayScore: away,
       finished: true,
     };
   });
