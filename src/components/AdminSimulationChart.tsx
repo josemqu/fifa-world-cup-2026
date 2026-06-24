@@ -274,139 +274,160 @@ export function AdminSimulationChart({
       </div>
 
       {/* Main Graph Area */}
-      <div className="flex flex-col items-center">
-        {/* Y Axis Header (Local) */}
-        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-300 mb-1 border bg-slate-800/40 px-2 py-0.5 rounded border-slate-700/50">
-          <span>Y-Axis: Goles Local</span>
-          <TeamFlag teamName={homeTeamName} className="w-4 h-2.5 rounded-2xs" />
-          <span className="text-slate-100 font-extrabold">{homeTeamName}</span>
-        </div>
-
-        {/* 2D Grid with margins */}
-        <div className="w-full max-w-[340px] aspect-square flex flex-col gap-1.5 pt-1 relative">
-          
-          {/* Axis Labels and Grid */}
-          <div className="flex-1 grid grid-cols-7 gap-1">
-            {/* We map from top to bottom (Y-axis: 5 down to 0) */}
-            {Array.from({ length: 6 }, (_, idx) => 5 - idx).map((y) => {
-              return (
-                <React.Fragment key={y}>
-                  {/* Y-Axis Label */}
-                  <div className="flex items-center justify-end pr-2 text-[10px] font-black text-slate-400 select-none">
-                    {y === 5 ? "5+" : y}
-                  </div>
-
-                  {/* 6 Grid Cells for this row (x = 0..5) */}
-                  {Array.from({ length: 6 }, (_, x) => {
-                    const poissonProb = poissonGrid.grid[x][y];
-                    const userCount = userStats.counts[x][y];
-                    const userPct = userStats.totalCount > 0 ? userCount / userStats.totalCount : 0;
-                    
-                    const isMaxProb = x === poissonGrid.bestScore.away && y === poissonGrid.bestScore.home;
-                    
-                    // Bubble sizing logic
-                    const bubbleSize = userCount > 0
-                      ? Math.max(12, Math.min(38, 10 + (userCount / (userStats.maxCount || 1)) * 26))
-                      : 0;
-
-                    const isOwnPrediction = ownH !== null && ownA !== null && ownH === y && ownA === x;
-                    const isActualResult = actualH !== null && actualA !== null && actualH === y && actualA === x;
-
-                    // Compute background color glow (purple/indigo gradient opacity based on poisson probability)
-                    const relProb = poissonProb / (poissonGrid.maxProb || 1);
-                    const bgStyle = {
-                      background: poissonProb > 0.005 
-                        ? `radial-gradient(circle, rgba(139, 92, 246, ${relProb * 0.75}) 0%, rgba(99, 102, 241, ${relProb * 0.35}) 100%)`
-                        : "transparent",
-                    };
-
-                    return (
-                      <div
-                        key={x}
-                        style={bgStyle}
-                        onMouseEnter={() =>
-                          setHoveredCell({
-                            x,
-                            y,
-                            poissonProb,
-                            userCount,
-                            userPct: userPct * 100,
-                          })
-                        }
-                        onMouseLeave={() => setHoveredCell(null)}
-                        className={clsx(
-                          "aspect-square rounded-lg border border-slate-800/40 relative flex items-center justify-center transition-all duration-150 cursor-pointer select-none hover:border-slate-400 hover:scale-105 active:scale-95 hover:z-10",
-                          poissonProb <= 0.005 && "bg-slate-950/20",
-                          isMaxProb && "border-indigo-500/20"
-                        )}
-                      >
-                        {/* User Prediction Bubble */}
-                        {userCount > 0 && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            style={{
-                              width: `${bubbleSize}px`,
-                              height: `${bubbleSize}px`,
-                            }}
-                            className={clsx(
-                              "absolute rounded-full flex items-center justify-center text-white shadow-md z-5 text-[9px] font-black leading-none shrink-0 pointer-events-none select-none",
-                              userCount === userStats.maxCount 
-                                ? "bg-gradient-to-br from-cyan-400 to-emerald-500 animate-pulse shadow-cyan-500/30" 
-                                : "bg-gradient-to-br from-emerald-500/90 to-teal-600/90 shadow-emerald-500/20"
-                            )}
-                            title={`${userCount} usuarios pronosticaron ${y}-${x}`}
-                          >
-                            {bubbleSize >= 18 && <span>{userCount}</span>}
-                          </motion.div>
-                        )}
-
-                        {/* Own Prediction marker (Target Ring) */}
-                        {isOwnPrediction && (
-                          <div 
-                            className="absolute inset-0.5 rounded-[5px] border-2 border-dashed border-white/80 z-20 pointer-events-none shadow-[0_0_6px_rgba(255,255,255,0.4)]"
-                            title="Tu predicción actual"
-                          />
-                        )}
-
-                        {/* Actual Score marker (Pulsing Gold Border) */}
-                        {isActualResult && (
-                          <div 
-                            className="absolute inset-0 rounded-lg border-2 border-amber-400 z-20 pointer-events-none animate-pulse shadow-[0_0_12px_rgba(245,158,11,0.8)]"
-                            title="Resultado Real Final"
-                          >
-                            <Award className="w-3.5 h-3.5 text-amber-400 absolute -top-1.5 -right-1.5 bg-slate-900 rounded-full" />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </React.Fragment>
-              );
-            })}
-
-            {/* Bottom-left corner */}
-            <div className="flex items-center justify-end pr-2 text-[9px] font-bold text-slate-550 select-none">
-              L \ V
+      <div className="flex flex-col items-center w-full">
+        {/* Row container for vertical Y label and the grid */}
+        <div className="flex items-stretch justify-center gap-1.5 w-full max-w-[390px]">
+          {/* Y Axis Header (Local) rotated 90 degrees */}
+          <div className="w-10 relative flex items-center justify-center shrink-0 self-stretch">
+            <div 
+              className="absolute flex items-center gap-2 text-xs font-bold text-slate-200 bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-750/50 shadow-xs select-none whitespace-nowrap origin-center"
+              style={{ 
+                transform: "rotate(-90deg)",
+                left: "50%",
+                top: "50%",
+                translate: "-50% -50%",
+              }}
+            >
+              <TeamFlag teamName={homeTeamName} className="w-5 h-3.5 rounded-2xs shadow-md shrink-0" />
+              <span className="text-slate-100 font-black">
+                {homeTeamName} <span className="text-[10px] text-slate-400 font-normal ml-0.5">(Local)</span>
+              </span>
             </div>
+          </div>
 
-            {/* X-Axis labels (Away goals) */}
-            {axisLabels.map((val) => (
-              <div
-                key={val}
-                className="flex items-center justify-center text-[10px] font-black text-slate-400 select-none"
-              >
-                {val}
+          {/* 2D Grid with margins */}
+          <div className="flex-1 max-w-[340px] aspect-square flex flex-col gap-1.5 pt-1 relative">
+            
+            {/* Axis Labels and Grid */}
+            <div className="flex-1 grid grid-cols-7 gap-1">
+              {/* We map from top to bottom (Y-axis: 5 down to 0) */}
+              {Array.from({ length: 6 }, (_, idx) => 5 - idx).map((y) => {
+                return (
+                  <React.Fragment key={y}>
+                    {/* Y-Axis Label */}
+                    <div className="flex items-center justify-end pr-2 text-[10px] font-black text-slate-400 select-none">
+                      {y === 5 ? "5+" : y}
+                    </div>
+
+                    {/* 6 Grid Cells for this row (x = 0..5) */}
+                    {Array.from({ length: 6 }, (_, x) => {
+                      const poissonProb = poissonGrid.grid[x][y];
+                      const userCount = userStats.counts[x][y];
+                      const userPct = userStats.totalCount > 0 ? userCount / userStats.totalCount : 0;
+                      
+                      const isMaxProb = x === poissonGrid.bestScore.away && y === poissonGrid.bestScore.home;
+                      
+                      // Bubble sizing logic
+                      const bubbleSize = userCount > 0
+                        ? Math.max(12, Math.min(38, 10 + (userCount / (userStats.maxCount || 1)) * 26))
+                        : 0;
+
+                      const isOwnPrediction = ownH !== null && ownA !== null && ownH === y && ownA === x;
+                      const isActualResult = actualH !== null && actualA !== null && actualH === y && actualA === x;
+
+                      // Compute background color glow (purple/indigo gradient opacity based on poisson probability)
+                      const relProb = poissonProb / (poissonGrid.maxProb || 1);
+                      const bgStyle = {
+                        background: poissonProb > 0.005 
+                          ? `radial-gradient(circle, rgba(139, 92, 246, ${relProb * 0.75}) 0%, rgba(99, 102, 241, ${relProb * 0.35}) 100%)`
+                          : "transparent",
+                      };
+
+                      return (
+                        <div
+                          key={x}
+                          style={bgStyle}
+                          onMouseEnter={() =>
+                            setHoveredCell({
+                              x,
+                              y,
+                              poissonProb,
+                              userCount,
+                              userPct: userPct * 100,
+                            })
+                          }
+                          onMouseLeave={() => setHoveredCell(null)}
+                          className={clsx(
+                            "aspect-square rounded-lg border border-slate-800/40 relative flex items-center justify-center transition-all duration-150 cursor-pointer select-none hover:border-slate-400 hover:scale-105 active:scale-95 hover:z-10",
+                            poissonProb <= 0.005 && "bg-slate-950/20",
+                            isMaxProb && "border-indigo-500/20"
+                          )}
+                        >
+                          {/* User Prediction Bubble */}
+                          {userCount > 0 && (
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              style={{
+                                width: `${bubbleSize}px`,
+                                height: `${bubbleSize}px`,
+                              }}
+                              className={clsx(
+                                "absolute rounded-full flex items-center justify-center text-white shadow-md z-5 text-[9px] font-black leading-none shrink-0 pointer-events-none select-none",
+                                userCount === userStats.maxCount 
+                                  ? "bg-gradient-to-br from-cyan-400 to-emerald-500 animate-pulse shadow-cyan-500/30" 
+                                  : "bg-gradient-to-br from-emerald-500/90 to-teal-600/90 shadow-emerald-500/20"
+                              )}
+                              title={`${userCount} usuarios pronosticaron ${y}-${x}`}
+                            >
+                              {bubbleSize >= 18 && <span>{userCount}</span>}
+                            </motion.div>
+                          )}
+
+                          {/* Own Prediction marker (Target Ring) */}
+                          {isOwnPrediction && (
+                            <div 
+                              className="absolute inset-0.5 rounded-[5px] border-2 border-dashed border-white/80 z-20 pointer-events-none shadow-[0_0_6px_rgba(255,255,255,0.4)]"
+                              title="Tu predicción actual"
+                            />
+                          )}
+
+                          {/* Actual Score marker (Pulsing Gold Border) */}
+                          {isActualResult && (
+                            <div 
+                              className="absolute inset-0 rounded-lg border-2 border-amber-400 z-20 pointer-events-none animate-pulse shadow-[0_0_12px_rgba(245,158,11,0.8)]"
+                              title="Resultado Real Final"
+                            >
+                              <Award className="w-3.5 h-3.5 text-amber-400 absolute -top-1.5 -right-1.5 bg-slate-900 rounded-full" />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </React.Fragment>
+                );
+              })}
+
+              {/* Bottom-left corner */}
+              <div className="flex items-center justify-end pr-2 text-[9px] font-bold text-slate-550 select-none">
+                L \ V
               </div>
-            ))}
+
+              {/* X-Axis labels (Away goals) */}
+              {axisLabels.map((val) => (
+                <div
+                  key={val}
+                  className="flex items-center justify-center text-[10px] font-black text-slate-400 select-none"
+                >
+                  {val}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* X Axis Header (Away) */}
-        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-300 mt-2 border bg-slate-800/40 px-2 py-0.5 rounded border-slate-700/50">
-          <span>X-Axis: Goles Visitante</span>
-          <TeamFlag teamName={awayTeamName} className="w-4 h-2.5 rounded-2xs" />
-          <span className="text-slate-100 font-extrabold">{awayTeamName}</span>
+        {/* X Axis Header (Away) aligned directly under grid */}
+        <div className="flex justify-center gap-1.5 w-full max-w-[390px] mt-1.5">
+          {/* spacer matching the width of Y Axis Label (w-10) */}
+          <div className="w-10 shrink-0" />
+          <div className="flex-1 flex justify-center">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-200 bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-750/50 shadow-xs select-none">
+              <TeamFlag teamName={awayTeamName} className="w-5 h-3.5 rounded-2xs shadow-md shrink-0" />
+              <span className="text-slate-100 font-black">
+                {awayTeamName} <span className="text-[10px] text-slate-400 font-normal ml-0.5">(Visitante)</span>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
