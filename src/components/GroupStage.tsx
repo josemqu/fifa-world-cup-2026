@@ -107,16 +107,26 @@ export function GroupStage({
     // 1. Immediately perform a quick synchronous simulation (200 iterations) for instant UI feedback
     const fastThirdProbs = estimateBestThirdQualificationProbabilities(groups, 200);
     const fastGroupPosProbs = estimateGroupPositionProbabilities(groups, 200);
-    const fastQualifiedThirdIds = analyzeQualifiedThirds(groups, 200);
-    const fastGroupAnalysis: Record<string, Record<string, TeamAnalysis>> = {};
-    groups.forEach((g) => {
-      fastGroupAnalysis[g.name] = analyzeGroup(g, 200);
-    });
 
+    // Always update probability-related state (numeric values, no visual flicker)
     setThirdQualificationProbabilities(fastThirdProbs);
     setGroupPositionProbs(fastGroupPosProbs);
-    setQualifiedThirdIds(fastQualifiedThirdIds);
-    setGroupAnalysis(fastGroupAnalysis);
+
+    // Only update analysis indicators (tick/lock icons) on initial load.
+    // On subsequent recalculations, keep previous icons visible to avoid flickering;
+    // they'll be replaced atomically when the high-precision worker finishes.
+    setQualifiedThirdIds((prev) => {
+      if (prev.size > 0) return prev; // Keep previous indicators
+      return analyzeQualifiedThirds(groups, 200);
+    });
+    setGroupAnalysis((prev) => {
+      if (prev !== null) return prev; // Keep previous indicators
+      const fastGroupAnalysis: Record<string, Record<string, TeamAnalysis>> = {};
+      groups.forEach((g) => {
+        fastGroupAnalysis[g.name] = analyzeGroup(g, 200);
+      });
+      return fastGroupAnalysis;
+    });
 
     // 2. Terminate previous worker if running
     if (workerRef.current) {
