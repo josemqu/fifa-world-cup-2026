@@ -114,7 +114,7 @@ export function MatchDateTime({
     return 90;
   })();
 
-  const isCoolingBreak = isPlaying && (
+  const isHydrationBreak = isPlaying && (
     (displayedMinute >= 22 && displayedMinute <= 25) ||
     (displayedMinute >= 67 && displayedMinute <= 70)
   );
@@ -192,14 +192,14 @@ export function MatchDateTime({
         </Tooltip>
       )}
 
-      {now && isPlaying && isCoolingBreak && (
-        <Tooltip content="Cooling Break (Pausa de hidratación)" placement="top">
+      {now && isPlaying && isHydrationBreak && (
+        <Tooltip content="Hydration Break (Pausa de hidratación)" placement="top">
           <div className="flex items-center gap-1 bg-sky-50 dark:bg-sky-950/40 text-sky-650 dark:text-sky-400 px-1.5 py-0.5 rounded text-[10px] font-extrabold border border-sky-200/30 dark:border-sky-800/30">
             <span className="relative flex h-1 w-1 mr-0.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-1 w-1 bg-sky-550"></span>
             </span>
-            <span>CB</span>
+            <span>HB</span>
           </div>
         </Tooltip>
       )}
