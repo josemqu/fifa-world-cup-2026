@@ -4,42 +4,7 @@ import ProdeGroup from "@/models/ProdeGroup";
 import ProdePrediction from "@/models/ProdePrediction";
 import LiveScore from "@/models/LiveScore";
 import User from "@/models/User";
-import { calculatePoints } from "@/utils/prodeUtils";
-import { INITIAL_GROUPS } from "@/data/initialData";
-import {
-  R32_MATCHES,
-  R16_MATCHES,
-  QF_MATCHES,
-  SF_MATCHES,
-  FINAL_MATCHES,
-} from "@/data/knockoutData";
-
-function buildMatchDateMap(): Record<string, string> {
-  const map: Record<string, string> = {};
-
-  for (const group of INITIAL_GROUPS) {
-    for (const match of group.matches) {
-      map[match.id] = match.utcDate;
-    }
-  }
-
-  const knockoutArrays = [
-    R32_MATCHES,
-    R16_MATCHES,
-    QF_MATCHES,
-    SF_MATCHES,
-    FINAL_MATCHES,
-  ];
-  for (const arr of knockoutArrays) {
-    for (const match of arr) {
-      if (match.utcDate) {
-        map[match.id] = match.utcDate;
-      }
-    }
-  }
-
-  return map;
-}
+import { calculatePoints, buildMatchDateMap } from "@/utils/prodeUtils";
 
 const matchDateMap = buildMatchDateMap();
 
@@ -134,11 +99,17 @@ export async function GET(
       };
     }
 
+    const today = new Date();
+    const todayStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+
     const leaderboard = group.members.map((uid: string) => {
       const preds = predictionsByUser[uid] || [];
       let totalPoints = 0;
       let exactCount = 0;
       let correctCount = 0;
+      let yesterdayPoints = 0;
+      let yesterdayExact = 0;
+      let yesterdayCorrect = 0;
       const exactMatches: LeaderboardMatchInfo[] = [];
       const correctMatches: LeaderboardMatchInfo[] = [];
 
@@ -176,6 +147,17 @@ export async function GET(
           correctCount++;
           correctMatches.push(matchInfo);
         }
+
+        // Calculate yesterday stats
+        const utcDateStr = matchDateMap[pred.matchId];
+        if (utcDateStr && new Date(utcDateStr) < todayStart) {
+          yesterdayPoints += pts;
+          if (pts === 3) {
+            yesterdayExact++;
+          } else if (pts === 1) {
+            yesterdayCorrect++;
+          }
+        }
       }
 
       const profile = userMap[uid] || {};
@@ -186,25 +168,61 @@ export async function GET(
         totalPoints,
         exactCount,
         correctCount,
+        yesterdayPoints,
+        yesterdayExact,
+        yesterdayCorrect,
         totalPredictions: preds.length,
         exactMatches,
         correctMatches,
       };
     });
 
-    leaderboard.sort(
-      (
-        a: { totalPoints: number; exactCount: number; correctCount: number },
-        b: { totalPoints: number; exactCount: number; correctCount: number }
-      ) =>
+    // Sort for current standings
+    const todaySorted = [...leaderboard].sort(
+      (a, b) =>
         b.totalPoints - a.totalPoints ||
         b.exactCount - a.exactCount ||
         b.correctCount - a.correctCount
     );
 
+    const todayPosMap: Record<string, number> = {};
+    todaySorted.forEach((user, idx) => {
+      todayPosMap[user.firebaseUid] = idx + 1;
+    });
+
+    // Sort for yesterday standings
+    const yesterdaySorted = [...leaderboard].sort(
+      (a, b) =>
+        b.yesterdayPoints - a.yesterdayPoints ||
+        b.yesterdayExact - a.yesterdayExact ||
+        b.yesterdayCorrect - a.yesterdayCorrect
+    );
+
+    const yesterdayPosMap: Record<string, number> = {};
+    yesterdaySorted.forEach((user, idx) => {
+      yesterdayPosMap[user.firebaseUid] = idx + 1;
+    });
+
+    const finalLeaderboard = todaySorted.map((user) => {
+      const posToday = todayPosMap[user.firebaseUid];
+      const posYesterday = yesterdayPosMap[user.firebaseUid];
+      return {
+        firebaseUid: user.firebaseUid,
+        displayName: user.displayName,
+        nickname: user.nickname,
+        totalPoints: user.totalPoints,
+        exactCount: user.exactCount,
+        correctCount: user.correctCount,
+        totalPredictions: user.totalPredictions,
+        exactMatches: user.exactMatches,
+        correctMatches: user.correctMatches,
+        positionChange: posYesterday - posToday,
+      };
+    });
+
     return NextResponse.json({
       success: true,
-      data: { group, leaderboard },
+      data: { group, leaderboard: finalLeaderboard },
     });
   } catch (error) {
     console.error("Error fetching prode group:", error);

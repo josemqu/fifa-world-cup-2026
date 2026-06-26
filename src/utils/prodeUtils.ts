@@ -72,6 +72,15 @@ export function calculatePoints(
   return 0;
 }
 
+import { INITIAL_GROUPS } from "@/data/initialData";
+import {
+  R32_MATCHES,
+  R16_MATCHES,
+  QF_MATCHES,
+  SF_MATCHES,
+  FINAL_MATCHES,
+} from "@/data/knockoutData";
+
 export function hasMatchStarted(utcDateStr: string): boolean {
   return new Date() >= new Date(utcDateStr);
 }
@@ -84,3 +93,31 @@ export function generateGroupCode(): string {
   }
   return code;
 }
+
+export function buildMatchDateMap(): Record<string, string> {
+  const map: Record<string, string> = {};
+
+  for (const group of INITIAL_GROUPS) {
+    for (const match of group.matches) {
+      map[match.id] = match.utcDate;
+    }
+  }
+
+  const knockoutArrays = [
+    R32_MATCHES,
+    R16_MATCHES,
+    QF_MATCHES,
+    SF_MATCHES,
+    FINAL_MATCHES,
+  ];
+  for (const arr of knockoutArrays) {
+    for (const match of arr) {
+      if (match.utcDate) {
+        map[match.id] = match.utcDate;
+      }
+    }
+  }
+
+  return map;
+}
+

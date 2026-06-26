@@ -3,7 +3,7 @@ import connectDB from "@/lib/mongodb";
 import ProdePrediction from "@/models/ProdePrediction";
 import LiveScore from "@/models/LiveScore";
 import User from "@/models/User";
-import { calculatePoints } from "@/utils/prodeUtils";
+import { calculatePoints, buildMatchDateMap } from "@/utils/prodeUtils";
 
 interface LeaderboardMatchInfo {
   matchId: string;
@@ -20,6 +20,10 @@ interface LeaderboardMatchInfo {
 export async function GET() {
   try {
     await connectDB();
+
+    const matchDateMap = buildMatchDateMap();
+    const today = new Date();
+    const todayStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
 
     const finishedMatches = await LiveScore.find({ status: "finished" });
     const finishedMatchIds = finishedMatches.map((m) => m.matchId);
@@ -73,6 +77,9 @@ export async function GET() {
       let totalPoints = 0;
       let exactCount = 0;
       let correctCount = 0;
+      let yesterdayPoints = 0;
+      let yesterdayExact = 0;
+      let yesterdayCorrect = 0;
       const exactMatches: LeaderboardMatchInfo[] = [];
       const correctMatches: LeaderboardMatchInfo[] = [];
 
@@ -110,6 +117,17 @@ export async function GET() {
           correctCount++;
           correctMatches.push(matchInfo);
         }
+
+        // Calculate yesterday stats
+        const utcDateStr = matchDateMap[pred.matchId];
+        if (utcDateStr && new Date(utcDateStr) < todayStart) {
+          yesterdayPoints += pts;
+          if (pts === 3) {
+            yesterdayExact++;
+          } else if (pts === 1) {
+            yesterdayCorrect++;
+          }
+        }
       }
 
       return {
@@ -119,22 +137,61 @@ export async function GET() {
         totalPoints,
         exactCount,
         correctCount,
+        yesterdayPoints,
+        yesterdayExact,
+        yesterdayCorrect,
         totalPredictions: preds.length,
         exactMatches,
         correctMatches,
       };
     });
 
-    leaderboard.sort(
+    // Sort for current standings
+    const todaySorted = [...leaderboard].sort(
       (a, b) =>
         b.totalPoints - a.totalPoints ||
         b.exactCount - a.exactCount ||
         b.correctCount - a.correctCount
     );
 
+    const todayPosMap: Record<string, number> = {};
+    todaySorted.forEach((user, idx) => {
+      todayPosMap[user.firebaseUid] = idx + 1;
+    });
+
+    // Sort for yesterday standings
+    const yesterdaySorted = [...leaderboard].sort(
+      (a, b) =>
+        b.yesterdayPoints - a.yesterdayPoints ||
+        b.yesterdayExact - a.yesterdayExact ||
+        b.yesterdayCorrect - a.yesterdayCorrect
+    );
+
+    const yesterdayPosMap: Record<string, number> = {};
+    yesterdaySorted.forEach((user, idx) => {
+      yesterdayPosMap[user.firebaseUid] = idx + 1;
+    });
+
+    const finalLeaderboard = todaySorted.map((user) => {
+      const posToday = todayPosMap[user.firebaseUid];
+      const posYesterday = yesterdayPosMap[user.firebaseUid];
+      return {
+        firebaseUid: user.firebaseUid,
+        displayName: user.displayName,
+        nickname: user.nickname,
+        totalPoints: user.totalPoints,
+        exactCount: user.exactCount,
+        correctCount: user.correctCount,
+        totalPredictions: user.totalPredictions,
+        exactMatches: user.exactMatches,
+        correctMatches: user.correctMatches,
+        positionChange: posYesterday - posToday,
+      };
+    });
+
     return NextResponse.json({
       success: true,
-      data: leaderboard.slice(0, 100),
+      data: finalLeaderboard.slice(0, 100),
     });
   } catch (error) {
     console.error("Error fetching global leaderboard:", error);
