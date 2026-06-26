@@ -177,22 +177,87 @@ function buildMatchLookup() {
 
 const MATCH_LOOKUP = buildMatchLookup();
 
-const renderMatchesTooltip = (matches: PredictionMatchInfo[] | undefined, title: string) => {
-  if (!matches || matches.length === 0) {
+const getTodayPointsAndMatches = (entry: LeaderboardEntry, nowTime: Date | null) => {
+  const referenceDate = nowTime || new Date();
+  const todayKey = referenceDate.toLocaleDateString("sv-SE");
+
+  const todayMatches: { match: PredictionMatchInfo; points: number }[] = [];
+  let totalTodayPoints = 0;
+
+  if (entry.exactMatches) {
+    for (const m of entry.exactMatches) {
+      const detail = MATCH_LOOKUP.get(m.matchId);
+      if (detail && detail.utcDate) {
+        const mDate = new Date(detail.utcDate);
+        if (mDate.toLocaleDateString("sv-SE") === todayKey) {
+          const pts = calculatePoints(
+            m.homeScore,
+            m.awayScore,
+            m.actualHomeScore,
+            m.actualAwayScore,
+            m.homePenalties,
+            m.awayPenalties,
+            m.actualHomePenalties ?? undefined,
+            m.actualAwayPenalties ?? undefined
+          );
+          todayMatches.push({ match: m, points: pts });
+          totalTodayPoints += pts;
+        }
+      }
+    }
+  }
+
+  if (entry.correctMatches) {
+    for (const m of entry.correctMatches) {
+      const detail = MATCH_LOOKUP.get(m.matchId);
+      if (detail && detail.utcDate) {
+        const mDate = new Date(detail.utcDate);
+        if (mDate.toLocaleDateString("sv-SE") === todayKey) {
+          const pts = calculatePoints(
+            m.homeScore,
+            m.awayScore,
+            m.actualHomeScore,
+            m.actualAwayScore,
+            m.homePenalties,
+            m.awayPenalties,
+            m.actualHomePenalties ?? undefined,
+            m.actualAwayPenalties ?? undefined
+          );
+          todayMatches.push({ match: m, points: pts });
+          totalTodayPoints += pts;
+        }
+      }
+    }
+  }
+
+  todayMatches.sort((a, b) => {
+    const timeA = MATCH_LOOKUP.get(a.match.matchId)?.utcDate ? new Date(MATCH_LOOKUP.get(a.match.matchId)!.utcDate).getTime() : 0;
+    const timeB = MATCH_LOOKUP.get(b.match.matchId)?.utcDate ? new Date(MATCH_LOOKUP.get(b.match.matchId)!.utcDate).getTime() : 0;
+    return timeA - timeB;
+  });
+
+  return { todayMatches, totalTodayPoints };
+};
+
+const renderTodayMatchesTooltip = (entry: LeaderboardEntry, nowTime: Date | null = null) => {
+  const { todayMatches, totalTodayPoints } = getTodayPointsAndMatches(entry, nowTime);
+
+  if (todayMatches.length === 0) {
     return (
       <div className="p-2 text-xs text-slate-350 dark:text-slate-400 font-medium">
-        {title}: Ninguno
+        Hoy: Sin puntos sumados
       </div>
     );
   }
+
   return (
     <div className="flex flex-col max-w-[280px] p-1 text-left">
       <p className="text-xs font-bold text-slate-200 mb-1.5 border-b border-slate-700/50 pb-1 flex justify-between gap-4">
-        <span>{title}</span>
-        <span className="text-slate-400 font-normal">({matches.length})</span>
+        <span>Puntos de Hoy</span>
+        <span className="text-emerald-400 font-bold font-mono">+{totalTodayPoints} pts</span>
       </p>
       <div className="flex flex-col gap-1.5 max-h-[180px] overflow-y-auto scrollbar-hide pr-1">
-        {matches.map((m) => {
+        {todayMatches.map(({ match: m, points }) => {
           const detail = MATCH_LOOKUP.get(m.matchId);
           const homeName = detail?.homeTeamName || `Partido #${m.matchId}`;
           const awayName = detail?.awayTeamName || '';
@@ -210,16 +275,14 @@ const renderMatchesTooltip = (matches: PredictionMatchInfo[] | undefined, title:
             actualScoreText += ` (${m.actualHomePenalties}-${m.actualAwayPenalties} pen)`;
           }
 
-          const matchdayInfo = detail?.matchday ? `${detail.stage} - Fecha ${detail.matchday}` : detail?.stage || '';
-
           return (
             <div key={m.matchId} className="flex flex-col py-0.5 border-b border-slate-800/30 last:border-0 text-[10px] gap-0.5">
-              <div className="flex justify-between font-semibold text-slate-300">
-                <span className="truncate max-w-[170px]">{homeName} - {awayName}</span>
-                <span className="text-white shrink-0 font-mono ml-2">{predScoreText}</span>
+              <div className="flex justify-between font-semibold text-slate-300 gap-2">
+                <span className="truncate max-w-[155px]">{homeName} - {awayName}</span>
+                <span className="text-emerald-400 shrink-0 font-bold">+{points} {points === 1 ? 'pt' : 'pts'}</span>
               </div>
               <div className="flex justify-between items-center text-[9px] text-slate-500 font-mono">
-                <span>{matchdayInfo}</span>
+                <span>Pronóstico: {predScoreText}</span>
                 <span>Real: {actualScoreText}</span>
               </div>
             </div>
@@ -2132,6 +2195,7 @@ function GroupsTab({
   const [groupDetail, setGroupDetail] = useState<GroupDetailData | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [selectedUserForDetails, setSelectedUserForDetails] = useState<LeaderboardEntry | null>(null);
+  const nowTime = useCurrentTime(false);
 
   // Create group state
   const [newGroupName, setNewGroupName] = useState("");
@@ -2366,6 +2430,7 @@ function GroupsTab({
                         currentRank += 1;
                       }
                       const isCurrentUser = firebaseUid === entry.firebaseUid;
+                      const { totalTodayPoints: todayPoints } = getTodayPointsAndMatches(entry, nowTime);
                       return (
                         <div
                           key={entry.firebaseUid}
@@ -2398,18 +2463,26 @@ function GroupsTab({
                               {isCurrentUser && <span className="ml-2 text-[10px] text-blue-500 font-normal">(Vos)</span>}
                             </button>
                             <div className="flex gap-3 text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                              <Tooltip content={renderMatchesTooltip(entry.exactMatches, "Resultados Exactos")} interactive={true} placement="top">
-                                <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{entry.exactCount} exactos</span>
-                              </Tooltip>
-                              <Tooltip content={renderMatchesTooltip(entry.correctMatches, "Aciertos de Tendencia")} interactive={true} placement="top">
-                                <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" />{entry.correctCount} aciertos</span>
-                              </Tooltip>
+                              <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{entry.exactCount} exactos</span>
+                              <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" />{entry.correctCount} aciertos</span>
                               <span>{entry.totalPredictions} pronósticos</span>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <span className="text-lg font-bold text-slate-900 dark:text-white">{entry.totalPoints}</span>
-                            <span className="text-[10px] text-slate-400 ml-1">pts</span>
+                          <div className="text-right flex flex-col items-end justify-center shrink-0">
+                            <div className="flex items-baseline">
+                              <span className="text-lg font-bold text-slate-900 dark:text-white">{entry.totalPoints}</span>
+                              <span className="text-[10px] text-slate-400 ml-1">pts</span>
+                            </div>
+                            <Tooltip content={renderTodayMatchesTooltip(entry, nowTime)} interactive={true} placement="top">
+                              <span className={clsx(
+                                "text-[9px] font-bold px-1.5 py-0.5 rounded-full cursor-pointer transition-colors mt-0.5 select-none",
+                                todayPoints > 0
+                                  ? "text-emerald-600 dark:text-emerald-450 bg-emerald-500/10 hover:bg-emerald-500/20"
+                                  : "text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700/50"
+                              )}>
+                                {todayPoints > 0 ? `+${todayPoints}` : '0'} hoy
+                              </span>
+                            </Tooltip>
                           </div>
                         </div>
                       );
@@ -2614,6 +2687,7 @@ function LeaderboardTab() {
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
   const { user } = useAuth();
   const [selectedUserForDetails, setSelectedUserForDetails] = useState<LeaderboardEntry | null>(null);
+  const nowTime = useCurrentTime(false);
 
   useEffect(() => {
     const loadLeaderboard = async () => {
@@ -2670,6 +2744,7 @@ function LeaderboardTab() {
               currentRank += 1;
             }
             const isCurrentUser = user?.uid === entry.firebaseUid;
+            const { totalTodayPoints: todayPoints } = getTodayPointsAndMatches(entry, nowTime);
             return (
               <div
                 key={entry.firebaseUid}
@@ -2702,18 +2777,26 @@ function LeaderboardTab() {
                     {isCurrentUser && <span className="ml-2 text-[10px] text-blue-500 font-normal">(Vos)</span>}
                   </button>
                   <div className="flex gap-3 text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                    <Tooltip content={renderMatchesTooltip(entry.exactMatches, "Resultados Exactos")} interactive={true} placement="top">
-                      <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{entry.exactCount} exactos</span>
-                    </Tooltip>
-                    <Tooltip content={renderMatchesTooltip(entry.correctMatches, "Aciertos de Tendencia")} interactive={true} placement="top">
-                      <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" />{entry.correctCount} aciertos</span>
-                    </Tooltip>
+                    <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{entry.exactCount} exactos</span>
+                    <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" />{entry.correctCount} aciertos</span>
                     <span>{entry.totalPredictions} pronósticos</span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-lg font-bold text-slate-900 dark:text-white">{entry.totalPoints}</span>
-                  <span className="text-[10px] text-slate-400 ml-1">pts</span>
+                <div className="text-right flex flex-col items-end justify-center shrink-0">
+                  <div className="flex items-baseline">
+                    <span className="text-lg font-bold text-slate-900 dark:text-white">{entry.totalPoints}</span>
+                    <span className="text-[10px] text-slate-400 ml-1">pts</span>
+                  </div>
+                  <Tooltip content={renderTodayMatchesTooltip(entry, nowTime)} interactive={true} placement="top">
+                    <span className={clsx(
+                      "text-[9px] font-bold px-1.5 py-0.5 rounded-full cursor-pointer transition-colors mt-0.5 select-none",
+                      todayPoints > 0
+                        ? "text-emerald-600 dark:text-emerald-450 bg-emerald-500/10 hover:bg-emerald-500/20"
+                        : "text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700/50"
+                    )}>
+                      {todayPoints > 0 ? `+${todayPoints}` : '0'} hoy
+                    </span>
+                  </Tooltip>
                 </div>
               </div>
             );
@@ -2735,8 +2818,16 @@ function UserPredictionStatsModal({ entry, onClose }: UserPredictionStatsModalPr
 
   if (!entry) return null;
 
-  const exacts = entry.exactMatches || [];
-  const aciertos = entry.correctMatches || [];
+  const exacts = [...(entry.exactMatches || [])].sort((a, b) => {
+    const timeA = MATCH_LOOKUP.get(a.matchId)?.utcDate ? new Date(MATCH_LOOKUP.get(a.matchId)!.utcDate).getTime() : 0;
+    const timeB = MATCH_LOOKUP.get(b.matchId)?.utcDate ? new Date(MATCH_LOOKUP.get(b.matchId)!.utcDate).getTime() : 0;
+    return timeA - timeB;
+  });
+  const aciertos = [...(entry.correctMatches || [])].sort((a, b) => {
+    const timeA = MATCH_LOOKUP.get(a.matchId)?.utcDate ? new Date(MATCH_LOOKUP.get(a.matchId)!.utcDate).getTime() : 0;
+    const timeB = MATCH_LOOKUP.get(b.matchId)?.utcDate ? new Date(MATCH_LOOKUP.get(b.matchId)!.utcDate).getTime() : 0;
+    return timeA - timeB;
+  });
 
   return (
     <AnimatePresence>
