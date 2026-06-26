@@ -189,7 +189,8 @@ const getTodayPointsAndMatches = (entry: LeaderboardEntry, nowTime: Date | null)
       const detail = MATCH_LOOKUP.get(m.matchId);
       if (detail && detail.utcDate) {
         const mDate = new Date(detail.utcDate);
-        if (mDate.toLocaleDateString("sv-SE") === todayKey) {
+        const matchEnd = new Date(mDate.getTime() + 2 * 60 * 60 * 1000);
+        if (matchEnd.toLocaleDateString("sv-SE") === todayKey) {
           const pts = calculatePoints(
             m.homeScore,
             m.awayScore,
@@ -212,7 +213,8 @@ const getTodayPointsAndMatches = (entry: LeaderboardEntry, nowTime: Date | null)
       const detail = MATCH_LOOKUP.get(m.matchId);
       if (detail && detail.utcDate) {
         const mDate = new Date(detail.utcDate);
-        if (mDate.toLocaleDateString("sv-SE") === todayKey) {
+        const matchEnd = new Date(mDate.getTime() + 2 * 60 * 60 * 1000);
+        if (matchEnd.toLocaleDateString("sv-SE") === todayKey) {
           const pts = calculatePoints(
             m.homeScore,
             m.awayScore,
