@@ -128,10 +128,11 @@ export function ModelPredictionModal({
   const isFinished = actualStatus === "finished";
 
   const topScores = useMemo(() => {
-    const currentHome = (isLive || isFinished) ? (actualHomeScore ?? 0) : 0;
-    const currentAway = (isLive || isFinished) ? (actualAwayScore ?? 0) : 0;
+    // For finished matches, we show the pre-match top scores.
+    const currentHome = isLive ? (actualHomeScore ?? 0) : 0;
+    const currentAway = isLive ? (actualAwayScore ?? 0) : 0;
     return getTopExactScores(lambdaA, lambdaB, currentHome, currentAway);
-  }, [lambdaA, lambdaB, isLive, isFinished, actualHomeScore, actualAwayScore]);
+  }, [lambdaA, lambdaB, isLive, actualHomeScore, actualAwayScore]);
 
   // Determine user prediction outcome matching status
   const userPredictionText = useMemo(() => {
@@ -294,7 +295,7 @@ export function ModelPredictionModal({
               <div className="space-y-2">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-550 flex items-center gap-1.5">
                   <Gauge className="w-3.5 h-3.5" />
-                  {isLive ? "Probabilidad del Resultado Final (En Vivo)" : isFinished ? "Resultado Final" : "Probabilidad del Resultado (90 Min)"}
+                  {isLive ? "Probabilidad del Resultado Final (En Vivo)" : isFinished ? "Probabilidad del Resultado (Pre-Partido)" : "Probabilidad del Resultado (90 Min)"}
                 </h4>
                 
                 {/* Segmented Progress Bar */}

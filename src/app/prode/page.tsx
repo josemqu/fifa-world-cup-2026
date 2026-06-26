@@ -774,7 +774,9 @@ function getPredictionChance(
 
   const hasUserPred = userHomeScore !== "" && userAwayScore !== "";
 
-  // Adjust lambdas if live/finished
+  // Adjust lambdas if live.
+  // Note: We do NOT adjust lambdas for finished matches, as we want to preserve
+  // the pre-match simulation probabilities and stats for admins.
   const isFinished = actualStatus === "finished";
   const isLive = actualStatus === "live" || actualStatus === "halftime";
 
@@ -783,19 +785,14 @@ function getPredictionChance(
   let currentHome = 0;
   let currentAway = 0;
 
-  if (isLive || isFinished) {
+  if (isLive) {
     currentHome = currentHomeScore ?? 0;
     currentAway = currentAwayScore ?? 0;
     
-    if (isFinished) {
-      lambdaA_eff = 0;
-      lambdaB_eff = 0;
-    } else {
-      const elapsedClamped = Math.max(0, Math.min(90, actualElapsed ?? (actualStatus === "halftime" ? 45 : 0)));
-      const remainingFraction = (90 - elapsedClamped) / 90;
-      lambdaA_eff = res.lambdaA * remainingFraction;
-      lambdaB_eff = res.lambdaB * remainingFraction;
-    }
+    const elapsedClamped = Math.max(0, Math.min(90, actualElapsed ?? (actualStatus === "halftime" ? 45 : 0)));
+    const remainingFraction = (90 - elapsedClamped) / 90;
+    lambdaA_eff = res.lambdaA * remainingFraction;
+    lambdaB_eff = res.lambdaB * remainingFraction;
   }
 
   // Factorial helper
@@ -875,16 +872,14 @@ function getPredictionChance(
 
   if (hasUserPred) {
     // Calculate chance of user score
-    if (isFinished) {
-      chance = (userHomeNum === currentHome && userAwayNum === currentAway) ? 1.0 : 0.0;
+    // Note: We do NOT use the finished match score logic here either,
+    // to preserve pre-match simulation stats for admins.
+    const neededHome = userHomeNum - currentHome;
+    const neededAway = userAwayNum - currentAway;
+    if (neededHome >= 0 && neededAway >= 0) {
+      chance = normProbsA[neededHome] * normProbsB[neededAway];
     } else {
-      const neededHome = userHomeNum - currentHome;
-      const neededAway = userAwayNum - currentAway;
-      if (neededHome >= 0 && neededAway >= 0) {
-        chance = normProbsA[neededHome] * normProbsB[neededAway];
-      } else {
-        chance = 0;
-      }
+      chance = 0;
     }
 
     // Closeness ratio compared to modal score
