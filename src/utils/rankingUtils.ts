@@ -80,3 +80,35 @@ export const getRankingDataForTeam = (
 
   return undefined;
 };
+
+export interface FairPlayData {
+  teamId: string;
+  yellow: number;
+  red: number;
+  indirectRed: number;
+  fairPlay: number;
+}
+
+export const fetchFairPlayScores = async (): Promise<
+  Map<string, FairPlayData>
+> => {
+  try {
+    const response = await fetch("/api/scores/discipline");
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch fair play data");
+    }
+
+    const data: Record<string, FairPlayData> = await response.json();
+    const fairPlayMap = new Map<string, FairPlayData>();
+
+    Object.entries(data).forEach(([teamName, item]) => {
+      fairPlayMap.set(teamName, item);
+    });
+
+    return fairPlayMap;
+  } catch (error) {
+    console.error("Error fetching Fair Play scores:", error);
+    return new Map();
+  }
+};

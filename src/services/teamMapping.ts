@@ -13,8 +13,10 @@ export const API_TEAM_TO_ID: Record<string, string> = {
   // Group A
   Mexico: "A1",
   "South Korea": "A2",
+  "Korea Republic": "A2",
   "South Africa": "A3",
   "Czech Republic": "A4",
+  "Czechia": "A4",
 
   // Group B
   Canada: "B1",
@@ -43,6 +45,7 @@ export const API_TEAM_TO_ID: Record<string, string> = {
   Ecuador: "E2",
   "Ivory Coast": "E3",
   "Cote D'Ivoire": "E3",
+  "Côte d'Ivoire": "E3",
   Curacao: "E4",
   Curaçao: "E4",
 

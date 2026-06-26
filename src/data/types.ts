@@ -6,6 +6,7 @@ export type Team = {
   isPlaceholder?: boolean;
   ranking?: number; // FIFA Ranking
   fifaPoints?: number; // FIFA Ranking Points (Total Points)
+  fairPlay?: number; // Fair Play Disciplinary Points (negative, e.g. -2)
   // Stats for group stage
   played: number;
   won: number;

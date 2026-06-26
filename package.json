@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sync-discipline": "npx tsx src/scripts/syncDiscipline.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^1.6.1",

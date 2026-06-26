@@ -12,7 +12,7 @@ import React, {
 import { Group, Team, KnockoutMatch, MatchupData, Scorer } from "@/data/types";
 import { INITIAL_GROUPS } from "@/data/initialData";
 import { generateR32Matches } from "@/utils/knockoutUtils";
-import { fetchFifaRankings, getRankingDataForTeam } from "@/utils/rankingUtils";
+import { fetchFifaRankings, getRankingDataForTeam, fetchFairPlayScores } from "@/utils/rankingUtils";
 import {
   R16_MATCHES,
   QF_MATCHES,
@@ -274,6 +274,27 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       }
     };
     loadRankings();
+  }, []);
+
+  // Fetch live fair play scores
+  useEffect(() => {
+    const loadFairPlay = async () => {
+      const fairPlayMap = await fetchFairPlayScores();
+      if (fairPlayMap.size > 0) {
+        setGroups((currentGroups) => {
+          return currentGroups.map((group) => ({
+            ...group,
+            teams: group.teams.map((team) => {
+              const data = fairPlayMap.get(team.name);
+              return data
+                ? { ...team, fairPlay: data.fairPlay }
+                : team;
+            }),
+          }));
+        });
+      }
+    };
+    loadFairPlay();
   }, []);
 
   // Initialize/Update R32 matches when groups change

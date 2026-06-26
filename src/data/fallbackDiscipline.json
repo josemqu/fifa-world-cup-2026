@@ -1,0 +1,338 @@
+{
+  "Curazao": {
+    "teamId": "E4",
+    "yellow": 7,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -7
+  },
+  "Paraguay": {
+    "teamId": "D3",
+    "yellow": 7,
+    "red": 1,
+    "indirectRed": 0,
+    "fairPlay": -11
+  },
+  "Haití": {
+    "teamId": "C4",
+    "yellow": 6,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -6
+  },
+  "Bosnia y Herzegovina": {
+    "teamId": "B4",
+    "yellow": 6,
+    "red": 1,
+    "indirectRed": 0,
+    "fairPlay": -10
+  },
+  "Estados Unidos": {
+    "teamId": "D1",
+    "yellow": 5,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -5
+  },
+  "Escocia": {
+    "teamId": "C3",
+    "yellow": 5,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -5
+  },
+  "Suecia": {
+    "teamId": "F4",
+    "yellow": 5,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -5
+  },
+  "Ecuador": {
+    "teamId": "E2",
+    "yellow": 5,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -5
+  },
+  "Brasil": {
+    "teamId": "C1",
+    "yellow": 5,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -5
+  },
+  "Australia": {
+    "teamId": "D2",
+    "yellow": 5,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -5
+  },
+  "Canadá": {
+    "teamId": "B1",
+    "yellow": 5,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -5
+  },
+  "Sudáfrica": {
+    "teamId": "A3",
+    "yellow": 5,
+    "red": 2,
+    "indirectRed": 0,
+    "fairPlay": -13
+  },
+  "Costa de Marfil": {
+    "teamId": "E3",
+    "yellow": 4,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -4
+  },
+  "Portugal": {
+    "teamId": "K1",
+    "yellow": 4,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -4
+  },
+  "Catar": {
+    "teamId": "B3",
+    "yellow": 4,
+    "red": 2,
+    "indirectRed": 0,
+    "fairPlay": -12
+  },
+  "Corea del Sur": {
+    "teamId": "A2",
+    "yellow": 4,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -4
+  },
+  "Países Bajos": {
+    "teamId": "F1",
+    "yellow": 3,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -3
+  },
+  "Panamá": {
+    "teamId": "L4",
+    "yellow": 3,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -3
+  },
+  "Colombia": {
+    "teamId": "K2",
+    "yellow": 3,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -3
+  },
+  "Egipto": {
+    "teamId": "G2",
+    "yellow": 3,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -3
+  },
+  "Cabo Verde": {
+    "teamId": "H4",
+    "yellow": 3,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -3
+  },
+  "Suiza": {
+    "teamId": "B2",
+    "yellow": 3,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -3
+  },
+  "Arabia Saudita": {
+    "teamId": "H3",
+    "yellow": 3,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -3
+  },
+  "Austria": {
+    "teamId": "J2",
+    "yellow": 3,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -3
+  },
+  "Bélgica": {
+    "teamId": "G1",
+    "yellow": 3,
+    "red": 1,
+    "indirectRed": 0,
+    "fairPlay": -7
+  },
+  "Turquía": {
+    "teamId": "D4",
+    "yellow": 2,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -2
+  },
+  "Uruguay": {
+    "teamId": "H2",
+    "yellow": 2,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -2
+  },
+  "RD Congo": {
+    "teamId": "K4",
+    "yellow": 2,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -2
+  },
+  "Nueva Zelanda": {
+    "teamId": "G4",
+    "yellow": 2,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -2
+  },
+  "Iraq": {
+    "teamId": "I4",
+    "yellow": 2,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -2
+  },
+  "Marruecos": {
+    "teamId": "C2",
+    "yellow": 2,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -2
+  },
+  "Argentina": {
+    "teamId": "J1",
+    "yellow": 2,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -2
+  },
+  "Ghana": {
+    "teamId": "L3",
+    "yellow": 2,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -2
+  },
+  "Irán": {
+    "teamId": "G3",
+    "yellow": 2,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -2
+  },
+  "México": {
+    "teamId": "A1",
+    "yellow": 2,
+    "red": 1,
+    "indirectRed": 0,
+    "fairPlay": -6
+  },
+  "Uzbekistán": {
+    "teamId": "K3",
+    "yellow": 2,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -2
+  },
+  "Jordania": {
+    "teamId": "J4",
+    "yellow": 1,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -1
+  },
+  "Argelia": {
+    "teamId": "J3",
+    "yellow": 1,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -1
+  },
+  "Alemania": {
+    "teamId": "E1",
+    "yellow": 1,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -1
+  },
+  "Túnez": {
+    "teamId": "F3",
+    "yellow": 1,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -1
+  },
+  "Croacia": {
+    "teamId": "L2",
+    "yellow": 1,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -1
+  },
+  "Japón": {
+    "teamId": "F2",
+    "yellow": 1,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -1
+  },
+  "Inglaterra": {
+    "teamId": "L1",
+    "yellow": 1,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -1
+  },
+  "España": {
+    "teamId": "H1",
+    "yellow": 1,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -1
+  },
+  "República Checa": {
+    "teamId": "A4",
+    "yellow": 1,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": -1
+  },
+  "Francia": {
+    "teamId": "I1",
+    "yellow": 0,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": 0
+  },
+  "Noruega": {
+    "teamId": "I3",
+    "yellow": 0,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": 0
+  },
+  "Senegal": {
+    "teamId": "I2",
+    "yellow": 0,
+    "red": 0,
+    "indirectRed": 0,
+    "fairPlay": 0
+  }
+}

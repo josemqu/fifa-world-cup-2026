@@ -4,13 +4,15 @@ const createTeam = (
   name: string,
   group: string,
   ranking: number,
-  isPlaceholder = false
+  isPlaceholder = false,
+  fairPlay = 0
 ): Team => ({
   id,
   name,
   group,
   ranking,
   isPlaceholder,
+  fairPlay,
   played: 0,
   won: 0,
   drawn: 0,

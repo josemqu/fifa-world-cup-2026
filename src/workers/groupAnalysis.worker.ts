@@ -143,7 +143,19 @@ self.onmessage = async (e: MessageEvent) => {
         if (b.pts !== a.pts) return b.pts - a.pts;
         if (b.gf - b.ga !== a.gf - a.ga) return b.gf - b.ga - (a.gf - a.ga);
         if (b.gf !== a.gf) return b.gf - a.gf;
-        return b.won - a.won;
+        
+        // 4. Fair play (higher/less negative is better)
+        const fairPlayA = a.fairPlay ?? 0;
+        const fairPlayB = b.fairPlay ?? 0;
+        if (fairPlayB !== fairPlayA) return fairPlayB - fairPlayA;
+        
+        // 5. FIFA Ranking (lower rank index is better)
+        const rankA = a.ranking ?? 999;
+        const rankB = b.ranking ?? 999;
+        if (rankA !== rankB) return rankA - rankB;
+        
+        // Fallback: Alphabetical ID to ensure stable sort
+        return a.id.localeCompare(b.id);
       });
 
       // Mark qualified thirds and count eliminations
