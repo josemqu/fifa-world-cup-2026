@@ -34,6 +34,7 @@ import {
   Globe,
   Check,
   Copy,
+  Calendar,
   Plus,
   Minus,
   LogIn,
@@ -974,6 +975,25 @@ function PredictionsTab({
   setActiveStage: (stage: string) => void;
 }) {
   const { dbUser } = useAuth();
+  const [viewMode, setViewMode] = useState<"stages" | "yesterday" | "today" | "tomorrow">("today");
+  const now = useCurrentTime(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = window.localStorage.getItem("prode_view_mode") as "stages" | "yesterday" | "today" | "tomorrow" | null;
+      if (saved && ["stages", "yesterday", "today", "tomorrow"].includes(saved)) {
+        setViewMode(saved);
+      }
+    }
+  }, []);
+
+  const handleViewModeChange = useCallback((mode: "stages" | "yesterday" | "today" | "tomorrow") => {
+    setViewMode(mode);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("prode_view_mode", mode);
+    }
+  }, []);
+
   const isAdmin = useMemo(() => {
     return dbUser?.role === "admin" || !!dbUser?.email?.toLowerCase().includes("mailjmq");
   }, [dbUser]);
@@ -988,6 +1008,32 @@ function PredictionsTab({
   const isKnockoutActive = useMemo(() => {
     return KNOCKOUT_STAGES.some((s) => s.key === activeStage);
   }, [activeStage]);
+
+  const getMatchIdsForOffset = useCallback((offset: number) => {
+    if (!now) return [];
+    const target = new Date(now);
+    target.setDate(now.getDate() + offset);
+    const dateKey = target.toLocaleDateString("sv-SE");
+    const ids: string[] = [];
+    for (const [id, info] of MATCH_LOOKUP.entries()) {
+      if (info.utcDate) {
+        const mDate = new Date(info.utcDate);
+        if (mDate.toLocaleDateString("sv-SE") === dateKey) {
+          ids.push(id);
+        }
+      }
+    }
+    ids.sort((a, b) => {
+      const timeA = MATCH_LOOKUP.get(a)?.utcDate ? new Date(MATCH_LOOKUP.get(a)!.utcDate).getTime() : 0;
+      const timeB = MATCH_LOOKUP.get(b)?.utcDate ? new Date(MATCH_LOOKUP.get(b)!.utcDate).getTime() : 0;
+      return timeA - timeB;
+    });
+    return ids;
+  }, [now]);
+
+  const yesterdayMatchIds = useMemo(() => getMatchIdsForOffset(-1), [getMatchIdsForOffset]);
+  const todayMatchIds = useMemo(() => getMatchIdsForOffset(0), [getMatchIdsForOffset]);
+  const tomorrowMatchIds = useMemo(() => getMatchIdsForOffset(1), [getMatchIdsForOffset]);
 
   const [predictions, setPredictions] = useState<Map<string, PredictionEntry>>(new Map());
   const [loadingPredictions, setLoadingPredictions] = useState(true);
@@ -1199,6 +1245,13 @@ function PredictionsTab({
     return getKnockoutMatchIds(activeStage);
   }, [activeStage]);
 
+  const visibleMatchIds = useMemo(() => {
+    if (viewMode === "yesterday") return yesterdayMatchIds;
+    if (viewMode === "today") return todayMatchIds;
+    if (viewMode === "tomorrow") return tomorrowMatchIds;
+    return stageMatchIds;
+  }, [viewMode, yesterdayMatchIds, todayMatchIds, tomorrowMatchIds, stageMatchIds]);
+
   // Resolve team names from our local dynamically-propagated prode matches
   const prodeMatches = useMemo(() => {
     // 1. Deep clone tournamentGroups if finished, otherwise INITIAL_GROUPS
@@ -1404,46 +1457,83 @@ function PredictionsTab({
         </div>
       </div>
 
-      {/* Stage Selector */}
-      <div className="space-y-2">
-        {/* Group Stage pills */}
-        <div className="flex flex-wrap gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg p-1">
-          {GROUP_LABELS.map((g) => (
-            <button
-              key={g}
-              onClick={() => setActiveStage(g)}
-              className={clsx(
-                "flex-1 min-w-[28px] py-1.5 rounded-md text-xs font-bold transition-all text-center",
-                activeStage === g
-                  ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-              )}
-            >
-              {g}
-            </button>
-          ))}
-        </div>
-        {/* Knockout stage pills */}
-        <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg p-1">
-          {KNOCKOUT_STAGES.map((s) => (
-            <button
-              key={s.key}
-              onClick={() => setActiveStage(s.key)}
-              className={clsx(
-                "flex-1 py-1.5 rounded-md text-xs font-bold transition-all whitespace-nowrap text-center",
-                activeStage === s.key
-                  ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-              )}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
+      {/* View Mode Selector */}
+      <div className="flex p-1 gap-1 bg-slate-100/60 dark:bg-slate-900/40 rounded-xl border border-slate-200/50 dark:border-slate-800/50 shadow-inner">
+        {(
+          [
+            { key: "stages", label: "Por Etapas", icon: <Globe className="w-3.5 h-3.5" /> },
+            { key: "yesterday", label: "Ayer", icon: <Calendar className="w-3.5 h-3.5" /> },
+            { key: "today", label: "Hoy", icon: <Calendar className="w-3.5 h-3.5" /> },
+            { key: "tomorrow", label: "Mañana", icon: <Calendar className="w-3.5 h-3.5" /> },
+          ] as const
+        ).map((item) => (
+          <button
+            key={item.key}
+            onClick={() => handleViewModeChange(item.key)}
+            className={clsx(
+              "relative flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer",
+              viewMode === item.key
+                ? "text-blue-650 dark:text-blue-200"
+                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+            )}
+          >
+            {viewMode === item.key && (
+              <motion.div
+                layoutId="predictionsViewMode"
+                className="absolute inset-0 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200/30 dark:border-slate-700/30"
+                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-1.5">
+              {item.icon}
+              <span>{item.label}</span>
+            </span>
+          </button>
+        ))}
       </div>
 
+      {/* Stage Selector (Only in stages view) */}
+      {viewMode === "stages" && (
+        <div className="space-y-2">
+          {/* Group Stage pills */}
+          <div className="flex flex-wrap gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg p-1">
+            {GROUP_LABELS.map((g) => (
+              <button
+                key={g}
+                onClick={() => setActiveStage(g)}
+                className={clsx(
+                  "flex-1 min-w-[28px] py-1.5 rounded-md text-xs font-bold transition-all text-center",
+                  activeStage === g
+                    ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                )}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
+          {/* Knockout stage pills */}
+          <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg p-1">
+            {KNOCKOUT_STAGES.map((s) => (
+              <button
+                key={s.key}
+                onClick={() => setActiveStage(s.key)}
+                className={clsx(
+                  "flex-1 py-1.5 rounded-md text-xs font-bold transition-all whitespace-nowrap text-center",
+                  activeStage === s.key
+                    ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                )}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Warning Banner if knockout stage is locked because group stage is not finished */}
-      {isKnockoutActive && !isGroupStageFinished && (
+      {viewMode === "stages" && isKnockoutActive && !isGroupStageFinished && (
         <div className="bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/30 rounded-xl p-4 flex gap-3 text-amber-800 dark:text-amber-300">
           <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
           <div className="text-xs space-y-1">
@@ -1460,7 +1550,7 @@ function PredictionsTab({
 
       {/* Match Cards */}
       <div className="space-y-3">
-        {stageMatchIds.map((matchId) => {
+        {visibleMatchIds.map((matchId) => {
           const info = MATCH_LOOKUP.get(matchId);
           const resolved = resolvedTeamNames.get(matchId);
           const homeName = resolved?.home || info?.homeTeamName || "?";
@@ -1585,9 +1675,25 @@ function PredictionsTab({
             />
           );
         })}
-        {stageMatchIds.length === 0 && (
-          <div className="text-center py-12 text-slate-400 dark:text-slate-600">
-            No hay partidos en esta etapa.
+        {visibleMatchIds.length === 0 && (
+          <div className="text-center py-12 px-6 bg-gradient-to-b from-slate-50/50 to-slate-100/30 dark:from-slate-800/20 dark:to-slate-900/10 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col items-center justify-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 dark:text-slate-500 border border-slate-200/50 dark:border-slate-700/50 shadow-xs">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                {viewMode === "yesterday" && "Sin partidos ayer"}
+                {viewMode === "today" && "Sin partidos hoy"}
+                {viewMode === "tomorrow" && "Sin partidos mañana"}
+                {viewMode === "stages" && "Sin partidos en esta etapa"}
+              </p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 max-w-[280px] mx-auto leading-relaxed">
+                {viewMode === "yesterday" && "No se disputaron encuentros en la fecha anterior."}
+                {viewMode === "today" && "No hay encuentros del Mundial programados para el día de hoy."}
+                {viewMode === "tomorrow" && "No hay encuentros programados para el día de mañana."}
+                {viewMode === "stages" && "No hay partidos correspondientes a la etapa o grupo seleccionado."}
+              </p>
+            </div>
           </div>
         )}
       </div>
