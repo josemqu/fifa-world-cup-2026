@@ -6,6 +6,7 @@ import {
   ThirdPlaceCombination,
 } from "@/data/knockoutData";
 import { analyzeGroup } from "@/utils/groupAnalysis";
+import { FIFA_THIRD_PLACE_MATRIX } from "@/data/fifaThirdPlaceMatrix";
 
 interface R32MatchDefinition {
   id: string;
@@ -70,19 +71,11 @@ export function getKnockoutPairings(groups: Group[]) {
   // Get the group names of the best 8 thirds
   const qualifiedGroups = bestThirds.map((t) => t.group).sort();
 
-  // The THIRD_PLACE_MATRIX provided is for a different tournament structure (likely Euro with 6 groups or old format)
-  // and does not match the 12-group structure of World Cup 2026 where specific groups (like C, F, H, J) have fixed matchups.
-  // We disable the matrix lookup to force the dynamic fallback solver to run, which correctly assigns
-  // the 3rd place teams to the available variable matches respecting constraints.
-  const combination = undefined;
-
-  /*
-  const combination = THIRD_PLACE_MATRIX.find((c) => {
-    const cGroups = [...c.groups].sort();
-    if (cGroups.length !== qualifiedGroups.length) return false;
-    return cGroups.every((val, index) => val === qualifiedGroups[index]);
+  // Look up the combination in the official 495-row FIFA matrix
+  const combination = FIFA_THIRD_PLACE_MATRIX.find((c) => {
+    if (c.groups.length !== qualifiedGroups.length) return false;
+    return c.groups.every((val, index) => val === qualifiedGroups[index]);
   });
-  */
 
   return {
     qualified,
@@ -92,7 +85,7 @@ export function getKnockoutPairings(groups: Group[]) {
 }
 
 export function generateR32Matches(groups: Group[]) {
-  const { qualified, bestThirds } = getKnockoutPairings(groups);
+  const { qualified, bestThirds, combination } = getKnockoutPairings(groups);
 
   // Helper to check if a group is finished
   const isGroupFinished = (groupName: string) => {
@@ -131,71 +124,77 @@ export function generateR32Matches(groups: Group[]) {
   );
 
   // Fallback assignment logic if combination is missing but we have 8 thirds
-  // (Since we disabled matrix lookup, this is now the MAIN logic)
   let fallbackAssignments = new Map<string, Team>();
   if (bestThirds.length === 8) {
-    // We need to assign bestThirds to the variable matches.
-    // Variable matches home teams groups:
-    const variableHomeGroups = R32_MATCHES.filter(
-      (m) => m.type === "variable"
-    ).map((m) => m.home.charAt(1));
+    if (combination) {
+      // Find the team objects in bestThirds that correspond to each group in the matchups
+      const groupToTeamMap = new Map<string, Team>();
+      bestThirds.forEach((team) => {
+        groupToTeamMap.set(team.group, team);
+      });
 
-    // Backtracking solver to find valid assignment (homeGroup !== thirdGroup)
-    const solve = (
-      index: number,
-      usedIndices: Set<number>,
-      currentAssignments: Map<string, Team>
-    ): boolean => {
-      if (index === variableHomeGroups.length) {
-        fallbackAssignments = new Map(currentAssignments);
-        return true;
-      }
-
-      const homeGroup = variableHomeGroups[index];
-
-      // Try to find a third place team for this group
-      for (let i = 0; i < bestThirds.length; i++) {
-        if (!usedIndices.has(i)) {
-          const thirdTeam = bestThirds[i];
-
-          // Constraint: Third place team cannot play against 1st place of same group
-          if (thirdTeam.group !== homeGroup) {
-            usedIndices.add(i);
-            currentAssignments.set(homeGroup, thirdTeam);
-
-            if (solve(index + 1, usedIndices, currentAssignments)) {
-              return true;
-            }
-
-            // Backtrack
-            currentAssignments.delete(homeGroup);
-            usedIndices.delete(i);
-          }
+      // Assign each winner group to the corresponding third-place team
+      for (const [winnerGroup, thirdGroup] of Object.entries(combination.matchups)) {
+        const assignedTeam = groupToTeamMap.get(thirdGroup);
+        if (assignedTeam) {
+          fallbackAssignments.set(winnerGroup, assignedTeam);
         }
       }
+    } else {
+      // Fallback solver if combination is missing (should not happen with FIFA_THIRD_PLACE_MATRIX)
+      // Variable matches home teams groups:
+      const variableHomeGroups = R32_MATCHES.filter(
+        (m) => m.type === "variable"
+      ).map((m) => m.home.charAt(1));
 
-      return false;
-    };
+      // Backtracking solver to find valid assignment (homeGroup !== thirdGroup)
+      const solve = (
+        index: number,
+        usedIndices: Set<number>,
+        currentAssignments: Map<string, Team>
+      ): boolean => {
+        if (index === variableHomeGroups.length) {
+          fallbackAssignments = new Map(currentAssignments);
+          return true;
+        }
 
-    const solutionFound = solve(0, new Set(), new Map());
+        const homeGroup = variableHomeGroups[index];
 
-    // If no strict solution found (rare but possible with weird distributions?),
-    // fall back to purely random valid assignment ignoring same-group constraint
-    // to AT LEAST have a match.
-    if (!solutionFound) {
-      const usedIndices = new Set<number>();
-      const assignments = new Map<string, Team>();
-
-      for (const homeGroup of variableHomeGroups) {
+        // Try to find a third place team for this group
         for (let i = 0; i < bestThirds.length; i++) {
           if (!usedIndices.has(i)) {
-            assignments.set(homeGroup, bestThirds[i]);
-            usedIndices.add(i);
-            break;
+            const thirdTeam = bestThirds[i];
+
+            // Check if this third place team is allowed in this variable match
+            const matchDef = R32_MATCHES.find(
+              (m) => m.type === "variable" && m.home.endsWith(homeGroup)
+            );
+            const isAllowed =
+              matchDef && "possibilities" in matchDef
+                ? (matchDef.possibilities as string[]).includes(thirdTeam.group)
+                : true;
+
+            // Constraint: Third place team cannot play against 1st place of same group
+            // AND the group must be in the match's official possibilities
+            if (thirdTeam.group !== homeGroup && isAllowed) {
+              usedIndices.add(i);
+              currentAssignments.set(homeGroup, thirdTeam);
+
+              if (solve(index + 1, usedIndices, currentAssignments)) {
+                return true;
+              }
+
+              // Backtrack
+              currentAssignments.delete(homeGroup);
+              usedIndices.delete(i);
+            }
           }
         }
-      }
-      fallbackAssignments = assignments;
+
+        return false;
+      };
+
+      solve(0, new Set(), new Map());
     }
   }
 

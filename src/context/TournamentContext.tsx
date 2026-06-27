@@ -88,6 +88,9 @@ const TournamentContext = createContext<TournamentContextType | undefined>(
 );
 
 function getTournamentScoresHash(groups: Group[], knockoutMatches: KnockoutMatch[]): string {
+  // Version prefix to invalidate cache on simulation/solver logic updates
+  const VERSION = "v3";
+
   // Serialize group matches scores
   const groupScores = groups
     .flatMap((g) => g.matches)
@@ -99,7 +102,7 @@ function getTournamentScoresHash(groups: Group[], knockoutMatches: KnockoutMatch
     .map((m) => `${m.id}:${m.homeScore ?? ""}-${m.awayScore ?? ""}`)
     .join(",");
 
-  return `${groupScores}|${knockoutScores}`;
+  return `${VERSION}|${groupScores}|${knockoutScores}`;
 }
 
 function getEffectiveNow(): Date {
@@ -405,6 +408,47 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           knockoutMatches,
         );
         setProbabilities(newProbabilities);
+
+        // Auto-assign teams that are 100% locked according to the simulation
+        let matchesChanged = false;
+        const resolvedMatches = knockoutMatches.map((m) => {
+          let homeTeam = m.homeTeam;
+          let awayTeam = m.awayTeam;
+          const prob = newProbabilities.get(m.id);
+
+          if (prob) {
+            if (
+              (!homeTeam || "placeholder" in homeTeam) &&
+              prob.projectedHomeTeam &&
+              prob.homeTeamProb === 1
+            ) {
+              homeTeam = prob.projectedHomeTeam;
+              matchesChanged = true;
+            }
+
+            if (
+              (!awayTeam || "placeholder" in awayTeam) &&
+              prob.projectedAwayTeam &&
+              prob.awayTeamProb === 1
+            ) {
+              awayTeam = prob.projectedAwayTeam;
+              matchesChanged = true;
+            }
+          }
+
+          if (homeTeam !== m.homeTeam || awayTeam !== m.awayTeam) {
+            return {
+              ...m,
+              homeTeam,
+              awayTeam,
+            };
+          }
+          return m;
+        });
+
+        if (matchesChanged) {
+          setKnockoutMatches(propagateKnockoutTeams(resolvedMatches));
+        }
       }
     };
 

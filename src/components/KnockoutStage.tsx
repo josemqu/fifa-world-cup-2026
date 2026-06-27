@@ -78,7 +78,7 @@ function CandidatesTooltip({
   const remaining = sorted.length - limit;
 
   return (
-    <div className="flex flex-col gap-1 min-w-[150px]">
+    <div className="flex flex-col gap-1 min-w-[180px]">
       <span className="font-bold text-xs border-b border-slate-700/50 pb-1 mb-1">
         Candidatos Posibles
       </span>
@@ -88,8 +88,8 @@ function CandidatesTooltip({
             key={c.team.id}
             className="flex justify-between items-center text-[10px]"
           >
-            <span className="truncate max-w-[100px] block">
-              {c.team.name}
+            <span className="truncate max-w-[130px] block">
+              {c.team.name} ({c.team.group})
             </span>
             <span className="font-mono text-slate-400 ml-2 shrink-0">
               {(c.probability * 100).toFixed(0)}%
