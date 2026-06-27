@@ -8,23 +8,23 @@ export const KNOCKOUT_DETAILS: Record<
   },
   "74": {
     utcDate: "2026-06-29T20:30:00Z",
-    location: "Houston Stadium - Houston, USA",
+    location: "Boston Stadium - Boston, USA",
   },
   "75": {
     utcDate: "2026-06-30T01:00:00Z",
-    location: "Boston Stadium - Boston, USA",
+    location: "Estadio Monterrey - Guadalupe, México",
   },
   "76": {
     utcDate: "2026-06-29T17:00:00Z",
-    location: "Estadio Monterrey - Guadalupe, México",
+    location: "Houston Stadium - Houston, USA",
   },
   "77": {
     utcDate: "2026-06-30T21:00:00Z",
-    location: "Dallas Stadium - Dallas, USA",
+    location: "New York New Jersey Stadium - East Rutherford, USA",
   },
   "78": {
     utcDate: "2026-06-30T17:00:00Z",
-    location: "New York New Jersey Stadium - East Rutherford, USA",
+    location: "Dallas Stadium - Dallas, USA",
   },
   "79": {
     utcDate: "2026-07-01T01:00:00Z",
@@ -41,15 +41,15 @@ export const KNOCKOUT_DETAILS: Record<
   },
   "82": {
     utcDate: "2026-07-01T20:00:00Z",
-    location: "San Francisco Bay Area Stadium - San Francisco, USA",
+    location: "Seattle Stadium - Seattle, USA",
   },
   "83": {
     utcDate: "2026-07-02T23:00:00Z",
-    location: "Los Angeles Stadium - Los Ángeles, USA",
+    location: "Toronto Stadium - Toronto, Canadá",
   },
   "84": {
     utcDate: "2026-07-02T19:00:00Z",
-    location: "Toronto Stadium - Toronto, Canadá",
+    location: "Los Angeles Stadium - Los Ángeles, USA",
   },
   "85": {
     utcDate: "2026-07-03T03:00:00Z",
@@ -57,23 +57,23 @@ export const KNOCKOUT_DETAILS: Record<
   },
   "86": {
     utcDate: "2026-07-03T22:00:00Z",
-    location: "Dallas Stadium - Dallas, USA",
+    location: "Miami Stadium - Miami, USA",
   },
   "87": {
     utcDate: "2026-07-04T01:30:00Z",
-    location: "Miami Stadium - Miami, USA",
+    location: "Kansas City Stadium - Kansas City, USA",
   },
   "88": {
     utcDate: "2026-07-03T18:00:00Z",
-    location: "Kansas City Stadium - Kansas City, USA",
+    location: "Dallas Stadium - Dallas, USA",
   },
   "89": {
     utcDate: "2026-07-04T21:00:00Z",
-    location: "Houston Stadium - Houston, USA",
+    location: "Philadelphia Stadium - Filadelfia, USA",
   },
   "90": {
     utcDate: "2026-07-04T17:00:00Z",
-    location: "Philadelphia Stadium - Filadelfia, USA",
+    location: "Houston Stadium - Houston, USA",
   },
   "91": {
     utcDate: "2026-07-05T20:00:00Z",

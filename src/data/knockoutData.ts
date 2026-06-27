@@ -103,7 +103,7 @@ export const R32_MATCHES = [
     type: "fixed",
     home: "2A",
     away: "2B",
-    next: "89",
+    next: "90",
     ...KNOCKOUT_DETAILS["73"],
   },
   {
@@ -128,7 +128,7 @@ export const R32_MATCHES = [
     type: "fixed",
     home: "1C",
     away: "2F",
-    next: "90",
+    next: "91",
     ...KNOCKOUT_DETAILS["76"],
   },
   {
@@ -137,7 +137,7 @@ export const R32_MATCHES = [
     home: "1I",
     away: "3?",
     possibilities: ["C", "D", "F", "G", "H"],
-    next: "91",
+    next: "89",
     ...KNOCKOUT_DETAILS["77"],
   }, // 1°I vs 3° (C/D/F/G/H) - Look up 'I' in matrix
   {
@@ -172,7 +172,7 @@ export const R32_MATCHES = [
     home: "1D",
     away: "3?",
     possibilities: ["B", "E", "F", "I", "J"],
-    next: "93",
+    next: "94",
     ...KNOCKOUT_DETAILS["81"],
   }, // 1°D vs 3° (B/E/F/I/J) - Look up 'D' in matrix
   {
@@ -181,7 +181,7 @@ export const R32_MATCHES = [
     home: "1G",
     away: "3?",
     possibilities: ["A", "E", "H", "I", "J"],
-    next: "93",
+    next: "94",
     ...KNOCKOUT_DETAILS["82"],
   }, // 1°G vs 3° (A/E/H/I/J) - Look up 'G' in matrix
   {
@@ -189,7 +189,7 @@ export const R32_MATCHES = [
     type: "fixed",
     home: "2K",
     away: "2L",
-    next: "94",
+    next: "93",
     ...KNOCKOUT_DETAILS["83"],
   },
   {
@@ -197,7 +197,7 @@ export const R32_MATCHES = [
     type: "fixed",
     home: "1H",
     away: "2J",
-    next: "94",
+    next: "93",
     ...KNOCKOUT_DETAILS["84"],
   },
   {
@@ -206,7 +206,7 @@ export const R32_MATCHES = [
     home: "1B",
     away: "3?",
     possibilities: ["E", "F", "G", "I", "J"],
-    next: "95",
+    next: "96",
     ...KNOCKOUT_DETAILS["85"],
   }, // 1°B vs 3° (E/F/G/I/J) - Look up 'B' in matrix
   {
@@ -231,29 +231,29 @@ export const R32_MATCHES = [
     type: "fixed",
     home: "2D",
     away: "2G",
-    next: "96",
+    next: "95",
     ...KNOCKOUT_DETAILS["88"],
   },
 ];
 
 export const R16_MATCHES = [
-  { id: "89", home: "W73", away: "W74", next: "97", ...KNOCKOUT_DETAILS["89"] },
-  { id: "90", home: "W75", away: "W76", next: "97", ...KNOCKOUT_DETAILS["90"] },
-  { id: "91", home: "W77", away: "W78", next: "98", ...KNOCKOUT_DETAILS["91"] },
-  { id: "92", home: "W79", away: "W80", next: "98", ...KNOCKOUT_DETAILS["92"] },
-  { id: "93", home: "W81", away: "W82", next: "99", ...KNOCKOUT_DETAILS["93"] },
-  { id: "94", home: "W83", away: "W84", next: "99", ...KNOCKOUT_DETAILS["94"] },
+  { id: "89", home: "W74", away: "W77", next: "97", ...KNOCKOUT_DETAILS["89"] },
+  { id: "90", home: "W73", away: "W75", next: "97", ...KNOCKOUT_DETAILS["90"] },
+  { id: "91", home: "W76", away: "W78", next: "99", ...KNOCKOUT_DETAILS["91"] },
+  { id: "92", home: "W79", away: "W80", next: "99", ...KNOCKOUT_DETAILS["92"] },
+  { id: "93", home: "W83", away: "W84", next: "98", ...KNOCKOUT_DETAILS["93"] },
+  { id: "94", home: "W81", away: "W82", next: "98", ...KNOCKOUT_DETAILS["94"] },
   {
     id: "95",
-    home: "W85",
-    away: "W86",
+    home: "W86",
+    away: "W88",
     next: "100",
     ...KNOCKOUT_DETAILS["95"],
   },
   {
     id: "96",
-    home: "W87",
-    away: "W88",
+    home: "W85",
+    away: "W87",
     next: "100",
     ...KNOCKOUT_DETAILS["96"],
   },
@@ -269,15 +269,15 @@ export const QF_MATCHES = [
   },
   {
     id: "98",
-    home: "W91",
-    away: "W92",
+    home: "W93",
+    away: "W94",
     next: "101",
     ...KNOCKOUT_DETAILS["98"],
   },
   {
     id: "99",
-    home: "W93",
-    away: "W94",
+    home: "W91",
+    away: "W92",
     next: "102",
     ...KNOCKOUT_DETAILS["99"],
   },

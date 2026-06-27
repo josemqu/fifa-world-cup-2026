@@ -839,18 +839,23 @@ export function KnockoutStage({
     onMatchUpdate(match.id, null, null, null, null);
   };
 
+  const R32_ORDER = ["74", "77", "73", "75", "83", "84", "81", "82", "76", "78", "79", "80", "86", "88", "85", "87"];
+  const R16_ORDER = ["89", "90", "93", "94", "91", "92", "95", "96"];
+  const QF_ORDER = ["97", "98", "99", "100"];
+  const SF_ORDER = ["101", "102"];
+
   const r32Matches = matches
     .filter((m) => m.stage === "R32")
-    .sort((a, b) => Number(a.id) - Number(b.id));
+    .sort((a, b) => R32_ORDER.indexOf(a.id) - R32_ORDER.indexOf(b.id));
   const r16Matches = matches
     .filter((m) => m.stage === "R16")
-    .sort((a, b) => Number(a.id) - Number(b.id));
+    .sort((a, b) => R16_ORDER.indexOf(a.id) - R16_ORDER.indexOf(b.id));
   const qfMatches = matches
     .filter((m) => m.stage === "QF")
-    .sort((a, b) => Number(a.id) - Number(b.id));
+    .sort((a, b) => QF_ORDER.indexOf(a.id) - QF_ORDER.indexOf(b.id));
   const sfMatches = matches
     .filter((m) => m.stage === "SF")
-    .sort((a, b) => Number(a.id) - Number(b.id));
+    .sort((a, b) => SF_ORDER.indexOf(a.id) - SF_ORDER.indexOf(b.id));
 
   const finalMatch = matches.find((m) => m.id === "104");
   const thirdPlaceMatch = matches.find((m) => m.id === "103");
