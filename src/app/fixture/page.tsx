@@ -31,7 +31,7 @@ function FixturePageContent() {
   const router = useRouter();
 
   // Tab State syncing with search params: "groups" or "knockout"
-  const activeTab = (searchParams.get("tab") as "groups" | "knockout") || "groups";
+  const activeTab = (searchParams.get("tab") as "groups" | "knockout") || "knockout";
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
