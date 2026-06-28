@@ -30,6 +30,8 @@ import { KNOCKOUT_DETAILS } from "@/data/knockoutDetails";
 import { generateR32Matches } from "@/utils/knockoutUtils";
 import { recalculateGroupStats } from "@/utils/simulationUtils";
 import { clsx } from "clsx";
+import { useTournament } from "@/context/TournamentContext";
+
 
 interface DbUser {
   _id: string;
@@ -136,26 +138,18 @@ function getKnockoutMatchIds(stageKey: string) {
 }
 
 // Main resolution function
-function resolveTournament(predictions: Map<string, PredictionEntry>) {
-  const clonedGroups = JSON.parse(JSON.stringify(INITIAL_GROUPS)) as Group[];
+function resolveTournament(
+  predictions: Map<string, PredictionEntry>,
+  tournamentGroups: Group[],
+  isGroupStageFinished: boolean
+) {
+  const clonedGroups = JSON.parse(
+    JSON.stringify(isGroupStageFinished ? tournamentGroups : INITIAL_GROUPS)
+  ) as Group[];
 
-  // Overlay user predictions on clonedGroups
-  for (const group of clonedGroups) {
-    for (const match of group.matches) {
-      const pred = predictions.get(match.id);
-      if (pred && pred.homeScore !== "" && pred.awayScore !== "") {
-        match.homeScore = Number(pred.homeScore);
-        match.awayScore = Number(pred.awayScore);
-        match.finished = true;
-      } else {
-        match.homeScore = null;
-        match.awayScore = null;
-        match.finished = false;
-      }
-    }
-    const updated = recalculateGroupStats(group);
-    group.teams = updated.teams;
-  }
+  // Note: We do NOT overlay user predictions on group stage matches anymore.
+  // The group stage is finished in reality, so we must use the actual qualified teams.
+
 
   const r32Matches = generateR32Matches(clonedGroups);
   const allKnockouts = new Map<string, KnockoutMatch>();
@@ -346,9 +340,21 @@ export function PredictionComparisonModal({
     loadData();
   }, [isOpen, targetUser.firebaseUid, adminUid]);
 
+  const { groups: tournamentGroups } = useTournament();
+  const isGroupStageFinished = useMemo(() => {
+    const allGroupMatches = tournamentGroups.flatMap((g) => g.matches);
+    return allGroupMatches.length > 0 && allGroupMatches.every((m) => m.finished);
+  }, [tournamentGroups]);
+
   // Resolve tournament structures
-  const userResolved = useMemo(() => resolveTournament(userPreds), [userPreds]);
-  const adminResolved = useMemo(() => resolveTournament(adminPreds), [adminPreds]);
+  const userResolved = useMemo(
+    () => resolveTournament(userPreds, tournamentGroups, isGroupStageFinished),
+    [userPreds, tournamentGroups, isGroupStageFinished]
+  );
+  const adminResolved = useMemo(
+    () => resolveTournament(adminPreds, tournamentGroups, isGroupStageFinished),
+    [adminPreds, tournamentGroups, isGroupStageFinished]
+  );
 
   // Pre-calculate statistics
   const stats = useMemo(() => {
