@@ -130,6 +130,61 @@ function getKnockoutMatchIds(stageKey: string) {
   }
 }
 
+function getCurrentStageKey(groups: Group[], knockoutMatches: KnockoutMatch[]): string {
+  const allMatches: { utcDate: string; finished: boolean; stageKey: string; status?: string }[] = [];
+
+  // Group matches
+  if (groups) {
+    for (const group of groups) {
+      if (group.matches) {
+        for (const match of group.matches) {
+          allMatches.push({
+            utcDate: match.utcDate,
+            finished: match.finished,
+            status: match.status,
+            stageKey: group.name,
+          });
+        }
+      }
+    }
+  }
+
+  // Knockout matches
+  if (knockoutMatches) {
+    for (const match of knockoutMatches) {
+      const stageKey = match.stage === "3rdPlace" ? "Final" : match.stage;
+      allMatches.push({
+        utcDate: match.utcDate,
+        finished: match.finished || match.status === "finished",
+        status: match.status,
+        stageKey,
+      });
+    }
+  }
+
+  if (allMatches.length === 0) {
+    return "A";
+  }
+
+  // Sort matches chronologically
+  allMatches.sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime());
+
+  // 1. Check if there are any live matches. If so, return the stage of the first live match.
+  const liveMatch = allMatches.find((m) => m.status === "live" || m.status === "halftime");
+  if (liveMatch) {
+    return liveMatch.stageKey;
+  }
+
+  // 2. Otherwise, find the first match that is NOT finished.
+  const firstUnfinished = allMatches.find((m) => !m.finished);
+  if (firstUnfinished) {
+    return firstUnfinished.stageKey;
+  }
+
+  // 3. If all matches are finished, return the last match's stage key.
+  return allMatches[allMatches.length - 1].stageKey;
+}
+
 // Build full match lookup map
 function buildMatchLookup() {
   const map = new Map<string, { homeTeamName: string; awayTeamName: string; utcDate: string; stage: string; groupId?: string; label?: string; matchday?: number }>();
@@ -306,15 +361,20 @@ function ProdePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const defaultStage = useMemo(() => {
+    return getCurrentStageKey(tournamentGroups, knockoutMatches);
+  }, [tournamentGroups, knockoutMatches]);
+
   // 1. Get initial states from URL search params
   const initialTab = (searchParams.get("tab") as Tab) || "predictions";
-  const initialStage = searchParams.get("stage") || "A";
+  const initialStage = searchParams.get("stage") || defaultStage;
   const initialGroupId = searchParams.get("groupId") || null;
 
   const [activeTab, setActiveTabState] = useState<Tab>(initialTab);
   const [activeStage, setActiveStageState] = useState<string>(initialStage);
   const [selectedGroupId, setSelectedGroupIdState] = useState<string | null>(initialGroupId);
   const [showRulesModal, setShowRulesModal] = useState(false);
+  const [hasSetDefaultStage, setHasSetDefaultStage] = useState(false);
 
   // Sync URL search params with state
   const updateUrl = useCallback((tab: Tab, stage: string, groupId: string | null) => {
@@ -393,6 +453,41 @@ function ProdePageContent() {
     };
     autoJoin();
   }, [user, searchParams, activeTab, activeStage, selectedGroupId, updateUrl, autoJoining]);
+
+  // Dynamically set the default stage once the actual tournament progress loads
+  useEffect(() => {
+    if (searchParams.has("stage")) {
+      setHasSetDefaultStage(true);
+      return;
+    }
+
+    const hasProgress = tournamentGroups.some(g => g.matches.some(m => m.finished || m.status === "live" || m.status === "halftime")) ||
+                        knockoutMatches.some(m => m.finished || m.status === "live" || m.status === "halftime");
+
+    if (hasProgress && defaultStage && !hasSetDefaultStage) {
+      setActiveStageState(defaultStage);
+      setHasSetDefaultStage(true);
+      
+      const tab = (searchParams.get("tab") as Tab) || "predictions";
+      const groupId = searchParams.get("groupId") || null;
+      updateUrl(tab, defaultStage, groupId);
+    }
+  }, [tournamentGroups, knockoutMatches, defaultStage, hasSetDefaultStage, searchParams, updateUrl]);
+
+  // Fallback timeout in case the tournament hasn't started yet (no matches have progress)
+  useEffect(() => {
+    if (searchParams.has("stage") || hasSetDefaultStage) return;
+    const timer = setTimeout(() => {
+      if (!hasSetDefaultStage && defaultStage) {
+        setActiveStageState(defaultStage);
+        setHasSetDefaultStage(true);
+        const tab = (searchParams.get("tab") as Tab) || "predictions";
+        const groupId = searchParams.get("groupId") || null;
+        updateUrl(tab, defaultStage, groupId);
+      }
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [defaultStage, hasSetDefaultStage, searchParams, updateUrl]);
 
   // Sync from URL changes (e.g. back button / history navigation)
   useEffect(() => {
