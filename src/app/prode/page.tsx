@@ -75,6 +75,8 @@ type GroupData = {
   ownerUid: string;
   members: string[];
   createdAt: string;
+  userPosition?: number;
+  userPositionChange?: number;
 };
 
 type PredictionMatchInfo = {
@@ -2349,7 +2351,11 @@ function GroupsTab({
 
   const loadGroups = useCallback(async () => {
     try {
-      const res = await fetch(`/api/prode/groups?uid=${firebaseUid}`);
+      let timezone = "America/Argentina/Buenos_Aires";
+      try {
+        timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      } catch (e) {}
+      const res = await fetch(`/api/prode/groups?uid=${firebaseUid}&timezone=${encodeURIComponent(timezone)}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success) setGroups(data.data || []);
@@ -2552,9 +2558,15 @@ function GroupsTab({
                           {isCurrentUser && (
                             <div className="absolute left-0 top-2 bottom-2 w-1 bg-blue-500 rounded-r-md" />
                           )}
-                          <div className="w-16 flex items-center justify-end gap-1.5 shrink-0">
+                          <div className="w-12 h-10 flex flex-col items-center justify-center shrink-0">
+                            <div className="flex items-center justify-center shrink-0">
+                              {currentRank === 1 ? <Crown className="w-5 h-5 text-yellow-500" /> :
+                               currentRank === 2 ? <Medal className="w-5 h-5 text-slate-400" /> :
+                               currentRank === 3 ? <Medal className="w-5 h-5 text-amber-700" /> :
+                               <span className="text-sm font-mono text-slate-400">{currentRank}</span>}
+                            </div>
                             {entry.positionChange !== undefined && entry.positionChange !== 0 && (
-                              <div className="select-none shrink-0">
+                              <div className="select-none shrink-0 mt-0.5">
                                 {entry.positionChange > 0 ? (
                                   <span className="inline-flex items-center text-[8px] font-bold text-emerald-600 dark:text-emerald-450 bg-emerald-500/10 px-1 py-0.5 rounded-sm" title="Subió de posición respecto al día anterior">
                                     ▲{entry.positionChange}
@@ -2566,12 +2578,6 @@ function GroupsTab({
                                 )}
                               </div>
                             )}
-                            <div className="w-8 flex justify-center shrink-0">
-                              {currentRank === 1 ? <Crown className="w-5 h-5 text-yellow-500" /> :
-                               currentRank === 2 ? <Medal className="w-5 h-5 text-slate-400" /> :
-                               currentRank === 3 ? <Medal className="w-5 h-5 text-amber-700" /> :
-                               <span className="text-sm font-mono text-slate-400">{currentRank}</span>}
-                            </div>
                           </div>
                           <div className="flex-1 min-w-0">
                             <button
@@ -2739,13 +2745,31 @@ function GroupsTab({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{group.name}</p>
-                <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
                   <span className="flex items-center gap-1">
                     <Hash className="w-3 h-3" />
                     {group.code}
                   </span>
                   <span>·</span>
                   <span>{group.members.length} miembros</span>
+                  {group.userPosition !== undefined && (
+                    <>
+                      <span>·</span>
+                      <span className="font-semibold text-blue-600 dark:text-blue-400">
+                        Puesto {group.userPosition}
+                      </span>
+                    </>
+                  )}
+                  {group.userPositionChange !== undefined && group.userPositionChange !== 0 && (
+                    <span className={clsx(
+                      "inline-flex items-center text-[9px] font-bold px-1 rounded-sm ml-1 select-none",
+                      group.userPositionChange > 0
+                        ? "text-emerald-600 dark:text-emerald-450 bg-emerald-500/10"
+                        : "text-rose-600 dark:text-rose-450 bg-rose-500/10"
+                    )}>
+                      {group.userPositionChange > 0 ? `▲${group.userPositionChange}` : `▼${Math.abs(group.userPositionChange)}`}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
@@ -2885,9 +2909,15 @@ function LeaderboardTab() {
                 {isCurrentUser && (
                   <div className="absolute left-0 top-2 bottom-2 w-1 bg-blue-500 rounded-r-md" />
                 )}
-                <div className="w-16 flex items-center justify-end gap-1.5 shrink-0">
+                <div className="w-12 h-10 flex flex-col items-center justify-center shrink-0">
+                  <div className="flex items-center justify-center shrink-0">
+                    {currentRank === 1 ? <Crown className="w-5 h-5 text-yellow-500" /> :
+                     currentRank === 2 ? <Medal className="w-5 h-5 text-slate-400" /> :
+                     currentRank === 3 ? <Medal className="w-5 h-5 text-amber-700" /> :
+                     <span className="text-sm font-mono text-slate-400">{currentRank}</span>}
+                  </div>
                   {entry.positionChange !== undefined && entry.positionChange !== 0 && (
-                    <div className="select-none shrink-0">
+                    <div className="select-none shrink-0 mt-0.5">
                       {entry.positionChange > 0 ? (
                         <span className="inline-flex items-center text-[8px] font-bold text-emerald-600 dark:text-emerald-450 bg-emerald-500/10 px-1 py-0.5 rounded-sm" title="Subió de posición respecto al día anterior">
                           ▲{entry.positionChange}
@@ -2899,12 +2929,6 @@ function LeaderboardTab() {
                       )}
                     </div>
                   )}
-                  <div className="w-8 flex justify-center shrink-0">
-                    {currentRank === 1 ? <Crown className="w-5 h-5 text-yellow-500" /> :
-                     currentRank === 2 ? <Medal className="w-5 h-5 text-slate-400" /> :
-                     currentRank === 3 ? <Medal className="w-5 h-5 text-amber-700" /> :
-                     <span className="text-sm font-mono text-slate-400">{currentRank}</span>}
-                  </div>
                 </div>
                 <div className="flex-1 min-w-0">
                   <button
