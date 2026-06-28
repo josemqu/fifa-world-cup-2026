@@ -189,8 +189,12 @@ export async function GET(
     );
 
     const todayPosMap: Record<string, number> = {};
+    let currentRankToday = 1;
     todaySorted.forEach((user, idx) => {
-      todayPosMap[user.firebaseUid] = idx + 1;
+      if (idx > 0 && user.totalPoints < todaySorted[idx - 1].totalPoints) {
+        currentRankToday += 1;
+      }
+      todayPosMap[user.firebaseUid] = currentRankToday;
     });
 
     // Sort for yesterday standings
@@ -202,8 +206,12 @@ export async function GET(
     );
 
     const yesterdayPosMap: Record<string, number> = {};
+    let currentRankYesterday = 1;
     yesterdaySorted.forEach((user, idx) => {
-      yesterdayPosMap[user.firebaseUid] = idx + 1;
+      if (idx > 0 && user.yesterdayPoints < yesterdaySorted[idx - 1].yesterdayPoints) {
+        currentRankYesterday += 1;
+      }
+      yesterdayPosMap[user.firebaseUid] = currentRankYesterday;
     });
 
     const finalLeaderboard = todaySorted.map((user) => {
