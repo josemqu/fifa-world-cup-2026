@@ -146,26 +146,38 @@ export function MatchDateTime({
     return `90+${elapsed - 110}'`;
   };
 
+  const showDateTime = !(now && isPlaying);
+
   const dateTimeContent = (
     <div className="flex items-center gap-1.5">
-      <span className={dateClassName}>
-        {localDate}
-      </span>
-      {localTime && (
+      {showDateTime ? (
         <>
-          <span className="text-slate-300 dark:text-slate-700">|</span>
-          <span className={timeClassName}>
-            {localTime}
+          <span className={dateClassName}>
+            {localDate}
           </span>
+          {localTime && (
+            <>
+              <span className="text-slate-300 dark:text-slate-700">|</span>
+              <span className={timeClassName}>
+                {localTime}
+              </span>
+            </>
+          )}
+          {matchId && (
+            <>
+              <span className="text-slate-200 dark:text-slate-800">|</span>
+              <span className="font-mono text-slate-400 text-[10px]">
+                #{matchId}
+              </span>
+            </>
+          )}
         </>
-      )}
-      {matchId && (
-        <>
-          <span className="text-slate-200 dark:text-slate-800">|</span>
+      ) : (
+        matchId && (
           <span className="font-mono text-slate-400 text-[10px]">
             #{matchId}
           </span>
-        </>
+        )
       )}
     </div>
   );
