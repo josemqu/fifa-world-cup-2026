@@ -4,7 +4,7 @@ import ProdeGroup from "@/models/ProdeGroup";
 import ProdePrediction from "@/models/ProdePrediction";
 import LiveScore from "@/models/LiveScore";
 import User from "@/models/User";
-import { calculatePoints, buildMatchDateMap } from "@/utils/prodeUtils";
+import { calculatePoints, buildMatchDateMap, getLocalMidnightInUTC } from "@/utils/prodeUtils";
 
 const matchDateMap = buildMatchDateMap();
 
@@ -99,8 +99,11 @@ export async function GET(
       };
     }
 
+    const { searchParams } = new URL(request.url);
+    const timezone = searchParams.get("timezone") || "America/Argentina/Buenos_Aires";
+
     const today = new Date();
-    const todayStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+    const todayStart = getLocalMidnightInUTC(today, timezone);
 
     const leaderboard = group.members.map((uid: string) => {
       const preds = predictionsByUser[uid] || [];

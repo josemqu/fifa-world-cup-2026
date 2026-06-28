@@ -3,7 +3,7 @@ import connectDB from "@/lib/mongodb";
 import ProdePrediction from "@/models/ProdePrediction";
 import LiveScore from "@/models/LiveScore";
 import User from "@/models/User";
-import { calculatePoints, buildMatchDateMap } from "@/utils/prodeUtils";
+import { calculatePoints, buildMatchDateMap, getLocalMidnightInUTC } from "@/utils/prodeUtils";
 
 interface LeaderboardMatchInfo {
   matchId: string;
@@ -17,13 +17,16 @@ interface LeaderboardMatchInfo {
   actualAwayPenalties: number | null;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     await connectDB();
 
+    const { searchParams } = new URL(request.url);
+    const timezone = searchParams.get("timezone") || "America/Argentina/Buenos_Aires";
+
     const matchDateMap = buildMatchDateMap();
     const today = new Date();
-    const todayStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+    const todayStart = getLocalMidnightInUTC(today, timezone);
 
     const finishedMatches = await LiveScore.find({ status: "finished" });
     const finishedMatchIds = finishedMatches.map((m) => m.matchId);

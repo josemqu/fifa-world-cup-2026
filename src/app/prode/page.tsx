@@ -2425,7 +2425,11 @@ function GroupsTab({
   const openGroupDetail = useCallback(async (groupId: string) => {
     setLoadingDetail(true);
     try {
-      const res = await fetch(`/api/prode/groups/${groupId}`);
+      let timezone = "America/Argentina/Buenos_Aires";
+      try {
+        timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      } catch (e) {}
+      const res = await fetch(`/api/prode/groups/${groupId}?timezone=${encodeURIComponent(timezone)}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success) setGroupDetail(data.data);
@@ -2811,7 +2815,11 @@ function LeaderboardTab() {
   useEffect(() => {
     const loadLeaderboard = async () => {
       try {
-        const res = await fetch("/api/prode/leaderboard");
+        let timezone = "America/Argentina/Buenos_Aires";
+        try {
+          timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        } catch (e) {}
+        const res = await fetch(`/api/prode/leaderboard?timezone=${encodeURIComponent(timezone)}`);
         if (res.ok) {
           const data = await res.json();
           if (data.success) setLeaderboard(data.data || []);
