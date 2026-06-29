@@ -796,8 +796,15 @@ export function KnockoutStage({
   matches,
   onMatchUpdate,
 }: KnockoutStageProps) {
-  const { dbUser } = useAuth();
+  const { dbUser, user } = useAuth();
   const { simulateKnockout, simulateAll, resetTournament } = useTournament();
+
+  const isAdmin = useMemo(() => {
+    return dbUser?.role === "admin" ||
+      !!user?.email?.toLowerCase().includes("mailjmq") ||
+      !!dbUser?.email?.toLowerCase().includes("mailjmq");
+  }, [dbUser, user]);
+
 
   // Helper to chunk matches into pairs
   const pairMatches = (matchList: KnockoutMatch[]) => {
@@ -924,6 +931,7 @@ export function KnockoutStage({
 
   return (
     <div className="flex flex-col gap-4 animate-fade-in-up mt-4 md:mt-8">
+
       {/* Mobile Round Selector */}
       <div className="md:hidden px-4 mb-2">
         <div className="flex p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl overflow-x-auto scrollbar-none gap-1 border border-slate-200/50 dark:border-slate-700/50">

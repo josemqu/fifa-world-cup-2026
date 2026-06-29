@@ -7,8 +7,9 @@ import { useAuth } from "@/context/AuthContext";
 import { PageTransition } from "@/components/PageTransition";
 import { GroupStage } from "@/components/GroupStage";
 import { KnockoutStage } from "@/components/KnockoutStage";
+import { MinimalistBracket } from "@/components/MinimalistBracket";
 import { TournamentStatsCard } from "@/components/TournamentStatsCard";
-import { Trophy, GitFork, Loader2 } from "lucide-react";
+import { Trophy, GitFork, Loader2, Eye } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
 
@@ -34,6 +35,7 @@ function FixturePageContent() {
   const activeTab = (searchParams.get("tab") as "groups" | "knockout") || "knockout";
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isMinimalistOpen, setIsMinimalistOpen] = useState(false);
 
   const setActiveTab = (tab: "groups" | "knockout") => {
     const params = new URLSearchParams(searchParams.toString());
@@ -58,57 +60,69 @@ function FixturePageContent() {
         </div>
 
         {/* Sub-tab Selector */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <div className="flex p-1 gap-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl backdrop-blur-sm shadow-inner border border-slate-200/50 dark:border-slate-700/50 w-full sm:w-max">
-            <button
-              onClick={() => setActiveTab("groups")}
-              className={clsx(
-                "relative flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer",
-                activeTab === "groups"
-                  ? "text-blue-600 dark:text-blue-100"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-              )}
-            >
-              {activeTab === "groups" && (
-                <motion.div
-                  layoutId="fixtureSubTab"
-                  className="absolute inset-0 bg-white dark:bg-slate-700 rounded-lg shadow-sm"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                />
-              )}
-              <span className="relative z-10 flex items-center gap-2">
-                <Trophy className="w-3.5 h-3.5" />
-                Grupos
-              </span>
-            </button>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex p-1 gap-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl backdrop-blur-sm shadow-inner border border-slate-200/50 dark:border-slate-700/50 w-full sm:w-max">
+              <button
+                onClick={() => setActiveTab("groups")}
+                className={clsx(
+                  "relative flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer",
+                  activeTab === "groups"
+                    ? "text-blue-600 dark:text-blue-100"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                )}
+              >
+                {activeTab === "groups" && (
+                  <motion.div
+                    layoutId="fixtureSubTab"
+                    className="absolute inset-0 bg-white dark:bg-slate-700 rounded-lg shadow-sm"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-2">
+                  <Trophy className="w-3.5 h-3.5" />
+                  Grupos
+                </span>
+              </button>
 
-            <button
-              onClick={() => setActiveTab("knockout")}
-              className={clsx(
-                "relative flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer",
-                activeTab === "knockout"
-                  ? "text-blue-600 dark:text-blue-100"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-              )}
-            >
-              {activeTab === "knockout" && (
-                <motion.div
-                  layoutId="fixtureSubTab"
-                  className="absolute inset-0 bg-white dark:bg-slate-700 rounded-lg shadow-sm"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                />
-              )}
-              <span className="relative z-10 flex items-center gap-2">
-                <GitFork className="w-3.5 h-3.5" />
-                Llaves
-              </span>
-            </button>
+              <button
+                onClick={() => setActiveTab("knockout")}
+                className={clsx(
+                  "relative flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer",
+                  activeTab === "knockout"
+                    ? "text-blue-600 dark:text-blue-100"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                )}
+              >
+                {activeTab === "knockout" && (
+                  <motion.div
+                    layoutId="fixtureSubTab"
+                    className="absolute inset-0 bg-white dark:bg-slate-700 rounded-lg shadow-sm"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-2">
+                  <GitFork className="w-3.5 h-3.5" />
+                  Llaves
+                </span>
+              </button>
+            </div>
+
+            {isAnalyzing && (
+              <div className="flex items-center ml-1">
+                <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+              </div>
+            )}
           </div>
 
-          {isAnalyzing && (
-            <div className="flex items-center ml-1">
-              <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-            </div>
+          {activeTab === "knockout" && isAdmin && (
+            <button
+              onClick={() => setIsMinimalistOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md transition-all active:scale-95 cursor-pointer self-start sm:self-auto"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              Cuadro completo
+            </button>
           )}
         </div>
 
@@ -151,6 +165,15 @@ function FixturePageContent() {
           knockoutMatches={knockoutMatches}
         />
       </div>
+
+      {isMinimalistOpen && isAdmin && (
+        <MinimalistBracket
+          groups={groups}
+          matches={knockoutMatches}
+          onMatchUpdate={updateKnockoutMatch}
+          onClose={() => setIsMinimalistOpen(false)}
+        />
+      )}
     </PageTransition>
   );
 }
