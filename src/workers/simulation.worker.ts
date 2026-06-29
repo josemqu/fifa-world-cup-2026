@@ -304,6 +304,10 @@ self.onmessage = async (e: MessageEvent) => {
     });
 
     const getDeterministicWinner = (match: KnockoutMatch): Team | null => {
+      // Only return a deterministic winner if the match is fully finished
+      const isFinished = match.finished === true || match.status === "finished";
+      if (!isFinished) return null;
+
       if (
         !match.homeTeam ||
         !match.awayTeam ||

@@ -326,7 +326,9 @@ export const propagateKnockoutTeams = (
       match.awayTeam &&
       !("placeholder" in match.awayTeam);
 
-    if (hasRealTeams && match.homeScore != null && match.awayScore != null) {
+    const isFinished = match.finished === true || match.status === "finished";
+
+    if (isFinished && hasRealTeams && match.homeScore != null && match.awayScore != null) {
       if (match.homeScore > match.awayScore) {
         winner = match.homeTeam as Team;
       } else if (match.awayScore > match.homeScore) {
