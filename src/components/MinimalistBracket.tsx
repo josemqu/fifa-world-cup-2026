@@ -37,9 +37,23 @@ interface ConnectorProps {
   highlightBottom?: boolean;
   highlightOutput?: boolean;
   style?: React.CSSProperties;
+  team?: any;
+  match?: KnockoutMatch;
+  roundName?: string;
+  renderTeamCircle: (team: any, match: KnockoutMatch | undefined, roundName: string) => React.ReactNode;
 }
 
-function LeftConnector({ rowSpan, highlightTop, highlightBottom, highlightOutput, style }: ConnectorProps) {
+function LeftConnector({
+  rowSpan,
+  highlightTop,
+  highlightBottom,
+  highlightOutput,
+  style,
+  team,
+  match,
+  roundName,
+  renderTeamCircle,
+}: ConnectorProps) {
   return (
     <div
       className="relative w-full h-full pointer-events-none"
@@ -85,12 +99,28 @@ function LeftConnector({ rowSpan, highlightTop, highlightBottom, highlightOutput
         )}
         style={{ left: "calc(50% - 1px)" }}
       />
+      {/* Circle at the junction */}
+      {team !== undefined && (
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-auto">
+          {renderTeamCircle(team, match, roundName || "")}
+        </div>
+      )}
     </div>
   );
 }
 
 // Right side connector lines
-function RightConnector({ rowSpan, highlightTop, highlightBottom, highlightOutput, style }: ConnectorProps) {
+function RightConnector({
+  rowSpan,
+  highlightTop,
+  highlightBottom,
+  highlightOutput,
+  style,
+  team,
+  match,
+  roundName,
+  renderTeamCircle,
+}: ConnectorProps) {
   return (
     <div
       className="relative w-full h-full pointer-events-none"
@@ -136,6 +166,12 @@ function RightConnector({ rowSpan, highlightTop, highlightBottom, highlightOutpu
         )}
         style={{ right: "calc(50% - 1px)" }}
       />
+      {/* Circle at the junction */}
+      {team !== undefined && (
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-auto">
+          {renderTeamCircle(team, match, roundName || "")}
+        </div>
+      )}
     </div>
   );
 }
@@ -183,8 +219,11 @@ export function MinimalistBracket({
   const getMatch = useCallback((id: string) => matchesMap.get(id), [matchesMap]);
 
   // Helpers to get team info from match
-  const getTeamName = (team: any) => {
-    if (!team) return "Por definir";
+  const getTeamName = (team: any, match?: KnockoutMatch) => {
+    if (!team) {
+      if (match) return `W${match.id}`;
+      return "TBD";
+    }
     if ("placeholder" in team) return team.placeholder;
     return team.name;
   };
@@ -202,7 +241,7 @@ export function MinimalistBracket({
   // Render a team circle (flag or placeholder)
   const renderTeamCircle = (team: any, match: KnockoutMatch | undefined, roundName: string) => {
     const isPH = isPlaceholderTeam(team);
-    const name = getTeamName(team);
+    const name = getTeamName(team, match);
 
     const circleContent = (
       <div
@@ -292,30 +331,30 @@ export function MinimalistBracket({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-slate-900/95 border border-slate-800/80 rounded-3xl p-6 relative w-full max-w-[1400px] h-full max-h-[850px] flex flex-col justify-between shadow-2xl backdrop-blur-xl"
+        className="bg-slate-900/95 border border-slate-800/80 rounded-3xl p-6 relative w-full max-w-[1400px] h-full max-h-[92vh] md:max-h-[850px] flex flex-col justify-between shadow-2xl backdrop-blur-xl"
       >
         
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-blue-500" />
-            <h2 className="text-lg font-bold text-white">El camino del campeón</h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
-            title="Cerrar modal (Esc)"
-          >
-            <X className="w-5 h-5" />
-          </button>
+        {/* Floating Title Capsule */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 select-none bg-slate-950/70 border border-slate-800/80 px-4 py-1.5 rounded-full backdrop-blur-md shadow-lg pointer-events-none">
+          <Trophy className="w-4 h-4 text-yellow-500 animate-pulse" />
+          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-100">El camino del campeón</h2>
         </div>
 
-        {/* 19-Column Flat Grid Symmetrical Tree Layout */}
+        {/* Floating Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-30 p-2 text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 rounded-full transition-colors cursor-pointer border border-slate-700/40"
+          title="Cerrar modal (Esc)"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
+        {/* 11-Column Flat Grid Symmetrical Tree Layout */}
         <div
-          className="grid gap-y-0 w-full max-w-[1280px] mx-auto items-stretch justify-items-stretch flex-1 grid-cols-[24px_1fr_24px_1fr_24px_1fr_24px_1fr_24px_0.5fr_24px_1fr_24px_1fr_24px_1fr_24px_1fr_24px] md:grid-cols-[32px_1fr_32px_1.2fr_32px_1.4fr_32px_1.6fr_32px_2.2fr_32px_1.6fr_32px_1.4fr_32px_1.2fr_32px_1fr_32px]"
+          className="grid gap-y-0 w-full max-w-[1280px] mx-auto items-stretch justify-items-stretch flex-1 grid-cols-[24px_1.2fr_1.4fr_1.6fr_1.8fr_0.5fr_1.8fr_1.6fr_1.4fr_1.2fr_24px] md:grid-cols-[32px_1.5fr_1.8fr_2.0fr_2.2fr_2.2fr_2.2fr_2.0fr_1.8fr_1.5fr_32px] pt-12 md:pt-0"
           style={{
             gridTemplateRows: "repeat(16, minmax(0, 1fr))",
-            height: isAdmin ? "calc(100% - 120px)" : "calc(100% - 60px)",
+            height: "100%",
           }}
         >
           {/* --- LEFT SIDE BRACKET --- */}
@@ -338,8 +377,6 @@ export function MinimalistBracket({
           {/* Left Col 2: R32-R16 Connectors */}
           {leftR32Ids.map((id, index) => {
             const r32Match = getMatch(id);
-            const r16Match = getMatch(leftR16Ids[Math.floor(index / 2)]);
-
             const highlightTop = isSameTeam(r32Match?.winner, r32Match?.homeTeam);
             const highlightBottom = isSameTeam(r32Match?.winner, r32Match?.awayTeam);
             const highlightOutput = !isPlaceholderTeam(r32Match?.winner);
@@ -352,30 +389,17 @@ export function MinimalistBracket({
                 highlightBottom={highlightBottom}
                 highlightOutput={highlightOutput}
                 style={{ gridColumn: 2, gridRowStart: index * 2 + 1 }}
+                team={r32Match?.winner}
+                match={r32Match}
+                roundName="Octavos"
+                renderTeamCircle={renderTeamCircle}
               />
             );
           })}
 
-          {/* Left Col 3: R16 Circles */}
-          {leftR16Ids.map((id, index) => {
-            const m = getMatch(id);
-            return (
-              <React.Fragment key={`l-r16-${id}`}>
-                <div className="flex items-center justify-center" style={{ gridColumn: 3, gridRow: `${index * 4 + 1} / span 2` }}>
-                  {renderTeamCircle(m?.homeTeam, m, "Octavos")}
-                </div>
-                <div className="flex items-center justify-center" style={{ gridColumn: 3, gridRow: `${index * 4 + 3} / span 2` }}>
-                  {renderTeamCircle(m?.awayTeam, m, "Octavos")}
-                </div>
-              </React.Fragment>
-            );
-          })}
-
-          {/* Left Col 4: R16-QF Connectors */}
+          {/* Left Col 3: R16-QF Connectors */}
           {leftR16Ids.map((id, index) => {
             const r16Match = getMatch(id);
-            const qfMatch = getMatch(leftQFIds[Math.floor(index / 2)]);
-
             const highlightTop = isSameTeam(r16Match?.winner, r16Match?.homeTeam);
             const highlightBottom = isSameTeam(r16Match?.winner, r16Match?.awayTeam);
             const highlightOutput = !isPlaceholderTeam(r16Match?.winner);
@@ -387,31 +411,18 @@ export function MinimalistBracket({
                 highlightTop={highlightTop}
                 highlightBottom={highlightBottom}
                 highlightOutput={highlightOutput}
-                style={{ gridColumn: 4, gridRowStart: index * 4 + 1 }}
+                style={{ gridColumn: 3, gridRowStart: index * 4 + 1 }}
+                team={r16Match?.winner}
+                match={r16Match}
+                roundName="Cuartos"
+                renderTeamCircle={renderTeamCircle}
               />
             );
           })}
 
-          {/* Left Col 5: QF Circles */}
-          {leftQFIds.map((id, index) => {
-            const m = getMatch(id);
-            return (
-              <React.Fragment key={`l-qf-${id}`}>
-                <div className="flex items-center justify-center" style={{ gridColumn: 5, gridRow: `${index * 8 + 1} / span 4` }}>
-                  {renderTeamCircle(m?.homeTeam, m, "Cuartos")}
-                </div>
-                <div className="flex items-center justify-center" style={{ gridColumn: 5, gridRow: `${index * 8 + 5} / span 4` }}>
-                  {renderTeamCircle(m?.awayTeam, m, "Cuartos")}
-                </div>
-              </React.Fragment>
-            );
-          })}
-
-          {/* Left Col 6: QF-SF Connectors */}
+          {/* Left Col 4: QF-SF Connectors */}
           {leftQFIds.map((id, index) => {
             const qfMatch = getMatch(id);
-            const sfMatch = getMatch(leftSFIds[Math.floor(index / 2)]);
-
             const highlightTop = isSameTeam(qfMatch?.winner, qfMatch?.homeTeam);
             const highlightBottom = isSameTeam(qfMatch?.winner, qfMatch?.awayTeam);
             const highlightOutput = !isPlaceholderTeam(qfMatch?.winner);
@@ -423,30 +434,18 @@ export function MinimalistBracket({
                 highlightTop={highlightTop}
                 highlightBottom={highlightBottom}
                 highlightOutput={highlightOutput}
-                style={{ gridColumn: 6, gridRowStart: index * 8 + 1 }}
+                style={{ gridColumn: 4, gridRowStart: index * 8 + 1 }}
+                team={qfMatch?.winner}
+                match={qfMatch}
+                roundName="Semifinal"
+                renderTeamCircle={renderTeamCircle}
               />
             );
           })}
 
-          {/* Left Col 7: SF Circles */}
-          {leftSFIds.map((id, index) => {
-            const m = getMatch(id);
-            return (
-              <React.Fragment key={`l-sf-${id}`}>
-                <div className="flex items-center justify-center" style={{ gridColumn: 7, gridRow: `${index * 16 + 1} / span 8` }}>
-                  {renderTeamCircle(m?.homeTeam, m, "Semifinal")}
-                </div>
-                <div className="flex items-center justify-center" style={{ gridColumn: 7, gridRow: `${index * 16 + 9} / span 8` }}>
-                  {renderTeamCircle(m?.awayTeam, m, "Semifinal")}
-                </div>
-              </React.Fragment>
-            );
-          })}
-
-          {/* Left Col 8: SF-Finalist Connector */}
+          {/* Left Col 5: SF-Finalist Connector */}
           {leftSFIds.map((id, index) => {
             const sfMatch = getMatch(id);
-            
             const highlightTop = isSameTeam(sfMatch?.winner, sfMatch?.homeTeam);
             const highlightBottom = isSameTeam(sfMatch?.winner, sfMatch?.awayTeam);
             const highlightOutput = !isPlaceholderTeam(sfMatch?.winner);
@@ -458,20 +457,19 @@ export function MinimalistBracket({
                 highlightTop={highlightTop}
                 highlightBottom={highlightBottom}
                 highlightOutput={highlightOutput}
-                style={{ gridColumn: 8, gridRowStart: 1 }}
+                style={{ gridColumn: 5, gridRowStart: 1 }}
+                team={sfMatch?.winner}
+                match={sfMatch}
+                roundName="Final"
+                renderTeamCircle={renderTeamCircle}
               />
             );
           })}
 
-          {/* Left Col 9: Finalist Circle */}
-          <div className="flex items-center justify-center" style={{ gridColumn: 9, gridRow: "1 / span 16" }}>
-            {renderTeamCircle(finalMatch?.homeTeam, finalMatch, "Final")}
-          </div>
-
 
           {/* --- CENTER ZONE (Final & Trophy) --- */}
 
-          <div className="col-start-10 row-start-1 row-span-full relative flex flex-col items-center justify-start pt-6 md:justify-center md:pt-0">
+          <div className="col-start-6 row-start-1 row-span-full relative flex flex-col items-center justify-start pt-16 md:justify-center md:pt-0">
             {/* Symmetrical central horizontal bracket connector line */}
             <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-slate-800 dark:bg-slate-800 -translate-y-1/2 z-0 pointer-events-none" />
 
@@ -485,7 +483,7 @@ export function MinimalistBracket({
 
             {/* Symmetrical central vertical connector line for mobile */}
             <div className={clsx(
-              "absolute top-[60px] bottom-1/2 left-1/2 w-[2px] -translate-x-1/2 z-0 pointer-events-none transition-colors duration-300 md:hidden",
+              "absolute top-[100px] bottom-1/2 left-1/2 w-[2px] -translate-x-1/2 z-0 pointer-events-none transition-colors duration-300 md:hidden",
               champion ? "bg-yellow-500" : "bg-slate-800 dark:bg-slate-800"
             )} />
 
@@ -560,12 +558,7 @@ export function MinimalistBracket({
 
           {/* --- RIGHT SIDE BRACKET --- */}
 
-          {/* Right Col 9: Finalist Circle */}
-          <div className="flex items-center justify-center" style={{ gridColumn: 11, gridRow: "1 / span 16" }}>
-            {renderTeamCircle(finalMatch?.awayTeam, finalMatch, "Final")}
-          </div>
-
-          {/* Right Col 8: SF-Finalist Connector */}
+          {/* Right Col 5: SF-Finalist Connector */}
           {rightSFIds.map((id, index) => {
             const sfMatch = getMatch(id);
             const highlightTop = isSameTeam(sfMatch?.winner, sfMatch?.homeTeam);
@@ -579,31 +572,18 @@ export function MinimalistBracket({
                 highlightTop={highlightTop}
                 highlightBottom={highlightBottom}
                 highlightOutput={highlightOutput}
-                style={{ gridColumn: 12, gridRowStart: 1 }}
+                style={{ gridColumn: 7, gridRowStart: 1 }}
+                team={sfMatch?.winner}
+                match={sfMatch}
+                roundName="Final"
+                renderTeamCircle={renderTeamCircle}
               />
             );
           })}
 
-          {/* Right Col 7: SF Circles */}
-          {rightSFIds.map((id, index) => {
-            const m = getMatch(id);
-            return (
-              <React.Fragment key={`r-sf-${id}`}>
-                <div className="flex items-center justify-center" style={{ gridColumn: 13, gridRow: `${index * 16 + 1} / span 8` }}>
-                  {renderTeamCircle(m?.homeTeam, m, "Semifinal")}
-                </div>
-                <div className="flex items-center justify-center" style={{ gridColumn: 13, gridRow: `${index * 16 + 9} / span 8` }}>
-                  {renderTeamCircle(m?.awayTeam, m, "Semifinal")}
-                </div>
-              </React.Fragment>
-            );
-          })}
-
-          {/* Right Col 6: QF-SF Connectors */}
+          {/* Right Col 4: QF-SF Connectors */}
           {rightQFIds.map((id, index) => {
             const qfMatch = getMatch(id);
-            const sfMatch = getMatch(rightSFIds[Math.floor(index / 2)]);
-
             const highlightTop = isSameTeam(qfMatch?.winner, qfMatch?.homeTeam);
             const highlightBottom = isSameTeam(qfMatch?.winner, qfMatch?.awayTeam);
             const highlightOutput = !isPlaceholderTeam(qfMatch?.winner);
@@ -615,31 +595,18 @@ export function MinimalistBracket({
                 highlightTop={highlightTop}
                 highlightBottom={highlightBottom}
                 highlightOutput={highlightOutput}
-                style={{ gridColumn: 14, gridRowStart: index * 8 + 1 }}
+                style={{ gridColumn: 8, gridRowStart: index * 8 + 1 }}
+                team={qfMatch?.winner}
+                match={qfMatch}
+                roundName="Semifinal"
+                renderTeamCircle={renderTeamCircle}
               />
             );
           })}
 
-          {/* Right Col 5: QF Circles */}
-          {rightQFIds.map((id, index) => {
-            const m = getMatch(id);
-            return (
-              <React.Fragment key={`r-qf-${id}`}>
-                <div className="flex items-center justify-center" style={{ gridColumn: 15, gridRow: `${index * 8 + 1} / span 4` }}>
-                  {renderTeamCircle(m?.homeTeam, m, "Cuartos")}
-                </div>
-                <div className="flex items-center justify-center" style={{ gridColumn: 15, gridRow: `${index * 8 + 5} / span 4` }}>
-                  {renderTeamCircle(m?.awayTeam, m, "Cuartos")}
-                </div>
-              </React.Fragment>
-            );
-          })}
-
-          {/* Right Col 4: R16-QF Connectors */}
+          {/* Right Col 3: R16-QF Connectors */}
           {rightR16Ids.map((id, index) => {
             const r16Match = getMatch(id);
-            const qfMatch = getMatch(rightQFIds[Math.floor(index / 2)]);
-
             const highlightTop = isSameTeam(r16Match?.winner, r16Match?.homeTeam);
             const highlightBottom = isSameTeam(r16Match?.winner, r16Match?.awayTeam);
             const highlightOutput = !isPlaceholderTeam(r16Match?.winner);
@@ -651,31 +618,18 @@ export function MinimalistBracket({
                 highlightTop={highlightTop}
                 highlightBottom={highlightBottom}
                 highlightOutput={highlightOutput}
-                style={{ gridColumn: 16, gridRowStart: index * 4 + 1 }}
+                style={{ gridColumn: 9, gridRowStart: index * 4 + 1 }}
+                team={r16Match?.winner}
+                match={r16Match}
+                roundName="Cuartos"
+                renderTeamCircle={renderTeamCircle}
               />
-            );
-          })}
-
-          {/* Right Col 3: R16 Circles */}
-          {rightR16Ids.map((id, index) => {
-            const m = getMatch(id);
-            return (
-              <React.Fragment key={`r-r16-${id}`}>
-                <div className="flex items-center justify-center" style={{ gridColumn: 17, gridRow: `${index * 4 + 1} / span 2` }}>
-                  {renderTeamCircle(m?.homeTeam, m, "Octavos")}
-                </div>
-                <div className="flex items-center justify-center" style={{ gridColumn: 17, gridRow: `${index * 4 + 3} / span 2` }}>
-                  {renderTeamCircle(m?.awayTeam, m, "Octavos")}
-                </div>
-              </React.Fragment>
             );
           })}
 
           {/* Right Col 2: R32-R16 Connectors */}
           {rightR32Ids.map((id, index) => {
             const r32Match = getMatch(id);
-            const r16Match = getMatch(rightR16Ids[Math.floor(index / 2)]);
-
             const highlightTop = isSameTeam(r32Match?.winner, r32Match?.homeTeam);
             const highlightBottom = isSameTeam(r32Match?.winner, r32Match?.awayTeam);
             const highlightOutput = !isPlaceholderTeam(r32Match?.winner);
@@ -687,7 +641,11 @@ export function MinimalistBracket({
                 highlightTop={highlightTop}
                 highlightBottom={highlightBottom}
                 highlightOutput={highlightOutput}
-                style={{ gridColumn: 18, gridRowStart: index * 2 + 1 }}
+                style={{ gridColumn: 10, gridRowStart: index * 2 + 1 }}
+                team={r32Match?.winner}
+                match={r32Match}
+                roundName="Octavos"
+                renderTeamCircle={renderTeamCircle}
               />
             );
           })}
@@ -697,10 +655,10 @@ export function MinimalistBracket({
             const m = getMatch(id);
             return (
               <React.Fragment key={`r-r32-${id}`}>
-                <div className="flex items-center justify-center" style={{ gridColumn: 19, gridRowStart: index * 2 + 1 }}>
+                <div className="flex items-center justify-center" style={{ gridColumn: 11, gridRowStart: index * 2 + 1 }}>
                   {renderTeamCircle(m?.homeTeam, m, "16avos")}
                 </div>
-                <div className="flex items-center justify-center" style={{ gridColumn: 19, gridRowStart: index * 2 + 2 }}>
+                <div className="flex items-center justify-center" style={{ gridColumn: 11, gridRowStart: index * 2 + 2 }}>
                   {renderTeamCircle(m?.awayTeam, m, "16avos")}
                 </div>
               </React.Fragment>
