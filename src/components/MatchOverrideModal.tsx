@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 
@@ -41,8 +42,13 @@ export function MatchOverrideModal({
   dbUser,
   user,
 }: MatchOverrideModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [homeScoreInput, setHomeScoreInput] = useState<string>("");
   const [awayScoreInput, setAwayScoreInput] = useState<string>("");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [homePenaltiesInput, setHomePenaltiesInput] = useState<string>("");
   const [awayPenaltiesInput, setAwayPenaltiesInput] = useState<string>("");
   const [status, setStatus] = useState<string>("scheduled");
@@ -128,7 +134,9 @@ export function MatchOverrideModal({
     }
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div
       onClick={onClose}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-fade-in"
@@ -334,6 +342,7 @@ export function MatchOverrideModal({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
