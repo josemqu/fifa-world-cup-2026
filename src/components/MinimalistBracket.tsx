@@ -45,16 +45,18 @@ function LeftConnector({ rowSpan, highlightTop, highlightBottom, highlightOutput
       {/* Top horizontal branch */}
       <div
         className={clsx(
-          "absolute top-1/4 left-0 right-1/2 h-[2px] -translate-y-1/2 transition-colors duration-300",
+          "absolute top-1/4 left-0 h-[2px] -translate-y-1/2 transition-colors duration-300",
           highlightTop ? "bg-slate-200 dark:bg-slate-200" : "bg-slate-800 dark:bg-slate-800"
         )}
+        style={{ right: "calc(50% - 1px)" }}
       />
       {/* Bottom horizontal branch */}
       <div
         className={clsx(
-          "absolute top-3/4 left-0 right-1/2 h-[2px] -translate-y-1/2 transition-colors duration-300",
+          "absolute top-3/4 left-0 h-[2px] -translate-y-1/2 transition-colors duration-300",
           highlightBottom ? "bg-slate-200 dark:bg-slate-200" : "bg-slate-800 dark:bg-slate-800"
         )}
+        style={{ right: "calc(50% - 1px)" }}
       />
       {/* Top half vertical connection */}
       <div
@@ -75,9 +77,10 @@ function LeftConnector({ rowSpan, highlightTop, highlightBottom, highlightOutput
       {/* Output branch to next round */}
       <div
         className={clsx(
-          "absolute top-1/2 left-1/2 right-0 h-[2px] -translate-y-1/2 transition-colors duration-300",
+          "absolute top-1/2 right-0 h-[2px] -translate-y-1/2 transition-colors duration-300",
           highlightOutput ? "bg-slate-200 dark:bg-slate-200" : "bg-slate-800 dark:bg-slate-800"
         )}
+        style={{ left: "calc(50% - 1px)" }}
       />
     </div>
   );
@@ -93,16 +96,18 @@ function RightConnector({ rowSpan, highlightTop, highlightBottom, highlightOutpu
       {/* Top horizontal branch */}
       <div
         className={clsx(
-          "absolute top-1/4 left-1/2 right-0 h-[2px] -translate-y-1/2 transition-colors duration-300",
+          "absolute top-1/4 right-0 h-[2px] -translate-y-1/2 transition-colors duration-300",
           highlightTop ? "bg-slate-200 dark:bg-slate-200" : "bg-slate-800 dark:bg-slate-800"
         )}
+        style={{ left: "calc(50% - 1px)" }}
       />
       {/* Bottom horizontal branch */}
       <div
         className={clsx(
-          "absolute top-3/4 left-1/2 right-0 h-[2px] -translate-y-1/2 transition-colors duration-300",
+          "absolute top-3/4 right-0 h-[2px] -translate-y-1/2 transition-colors duration-300",
           highlightBottom ? "bg-slate-200 dark:bg-slate-200" : "bg-slate-800 dark:bg-slate-800"
         )}
+        style={{ left: "calc(50% - 1px)" }}
       />
       {/* Top half vertical connection */}
       <div
@@ -123,9 +128,10 @@ function RightConnector({ rowSpan, highlightTop, highlightBottom, highlightOutpu
       {/* Output branch to next round */}
       <div
         className={clsx(
-          "absolute top-1/2 left-0 right-1/2 h-[2px] -translate-y-1/2 transition-colors duration-300",
+          "absolute top-1/2 left-0 h-[2px] -translate-y-1/2 transition-colors duration-300",
           highlightOutput ? "bg-slate-200 dark:bg-slate-200" : "bg-slate-800 dark:bg-slate-800"
         )}
+        style={{ right: "calc(50% - 1px)" }}
       />
     </div>
   );

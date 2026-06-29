@@ -115,7 +115,7 @@ function FixturePageContent() {
             )}
           </div>
 
-          {activeTab === "knockout" && isAdmin && (
+          {activeTab === "knockout" && (
             <button
               onClick={() => setIsMinimalistOpen(true)}
               className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md transition-all active:scale-95 cursor-pointer self-start sm:self-auto"
@@ -166,7 +166,7 @@ function FixturePageContent() {
         />
       </div>
 
-      {isMinimalistOpen && isAdmin && (
+      {isMinimalistOpen && (
         <MinimalistBracket
           groups={groups}
           matches={knockoutMatches}
