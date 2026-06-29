@@ -388,21 +388,6 @@ function MatchCard({
                   </Tooltip>
                 )}
               </div>
-              {showTeamProbabilities &&
-                !isHomeProjected &&
-                showProbabilities &&
-                (prob!.homeTeamProb * 100).toFixed(0) !== "100" && (
-                  <span
-                    className={clsx(
-                      "text-[10px] font-mono whitespace-nowrap shrink-0 transition-colors",
-                      homeIsFavorite
-                        ? "text-indigo-600 dark:text-indigo-400 font-bold"
-                        : "text-slate-400/70",
-                    )}
-                  >
-                    {(prob!.homeTeamProb * 100).toFixed(0)}%
-                  </span>
-                )}
             </div>
             <div className="flex items-center gap-1 shrink-0">
               {isStarted ? (
@@ -517,21 +502,6 @@ function MatchCard({
                   </Tooltip>
                 )}
               </div>
-              {showTeamProbabilities &&
-                !isAwayProjected &&
-                showProbabilities &&
-                (prob!.awayTeamProb * 100).toFixed(0) !== "100" && (
-                  <span
-                    className={clsx(
-                      "text-[10px] font-mono whitespace-nowrap shrink-0 transition-colors",
-                      awayIsFavorite
-                        ? "text-indigo-600 dark:text-indigo-400 font-bold"
-                        : "text-slate-400/70",
-                    )}
-                  >
-                    {(prob!.awayTeamProb * 100).toFixed(0)}%
-                  </span>
-                )}
             </div>
             <div className="flex items-center gap-1 shrink-0">
               {isStarted ? (
