@@ -483,8 +483,14 @@ export function MinimalistBracket({
               <div className="absolute top-1/2 left-1/2 right-0 h-[2px] bg-slate-200 dark:bg-slate-200 -translate-y-1/2 z-0 pointer-events-none" />
             )}
 
+            {/* Symmetrical central vertical connector line for mobile */}
+            <div className={clsx(
+              "absolute top-[60px] bottom-1/2 left-1/2 w-[2px] -translate-x-1/2 z-0 pointer-events-none transition-colors duration-300 md:hidden",
+              champion ? "bg-yellow-500" : "bg-slate-800 dark:bg-slate-800"
+            )} />
+
             {/* Symmetrical Central Content */}
-            <div className="z-10 flex flex-col items-center bg-slate-900 border border-slate-800 px-3 py-2.5 md:px-5 md:py-4 rounded-xl md:rounded-2xl shadow-xl backdrop-blur-md max-w-[100px] md:max-w-[140px] text-center">
+            <div className="z-10 flex flex-col items-center bg-slate-900 border border-slate-800 px-3 py-2.5 md:px-5 md:py-4 rounded-xl md:rounded-2xl shadow-xl backdrop-blur-md max-w-[115px] md:max-w-[140px] text-center">
               {/* Champion Banner above Trophy if resolved */}
               {champion && (
                 <div className="flex flex-col items-center justify-center h-5 md:h-6 mb-1.5 md:mb-3 animate-bounce-subtle">
@@ -522,7 +528,7 @@ export function MinimalistBracket({
                 <div className="flex flex-col items-center justify-center h-5 md:h-6 mt-1.5 md:mt-3">
                   <div className="flex items-center gap-1 bg-yellow-500/10 dark:bg-yellow-500/20 border border-yellow-500/40 text-yellow-800 dark:text-yellow-400 px-1.5 py-0.5 rounded-full font-black text-[8px] md:text-[10px] shadow-xs">
                     <Flag code={getCountryIsoCode(champion.name)} className="w-2.5 h-2 md:w-3.5 md:h-2.5 rounded-xs object-cover" />
-                    <span className="truncate max-w-[50px] md:max-w-[70px]">{champion.name}</span>
+                    <span className="truncate max-w-[60px] md:max-w-[70px]">{champion.name}</span>
                   </div>
                 </div>
               )}
