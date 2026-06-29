@@ -92,7 +92,9 @@ function CandidatesTooltip({
               {c.team.name} ({c.team.group})
             </span>
             <span className="font-mono text-slate-400 ml-2 shrink-0">
-              {(c.probability * 100).toFixed(0)}%
+              {c.probability * 100 < 0.5 && c.probability > 0
+                ? "~0%"
+                : `${(c.probability * 100).toFixed(0)}%`}
             </span>
           </div>
         ))}
