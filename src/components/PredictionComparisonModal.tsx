@@ -383,8 +383,8 @@ export function PredictionComparisonModal({
           aPred.awayPenalties !== "" ? Number(aPred.awayPenalties) : undefined
         );
 
-        if (pts === 3) exactMatches++;
-        else if (pts === 1) outcomeMatches++;
+        if (pts === 3 || pts === 4) exactMatches++;
+        else if (pts === 1 || pts === 2) outcomeMatches++;
         else differs++;
       }
     });
@@ -639,8 +639,8 @@ export function PredictionComparisonModal({
                           m.adminAwayPen !== "" ? Number(m.adminAwayPen) : undefined
                         );
 
-                        if (matchPoints === 3) matchStatus = "exact";
-                        else if (matchPoints === 1) matchStatus = "outcome";
+                        if (matchPoints === 3 || matchPoints === 4) matchStatus = "exact";
+                        else if (matchPoints === 1 || matchPoints === 2) matchStatus = "outcome";
                         else matchStatus = "differ";
                       }
 

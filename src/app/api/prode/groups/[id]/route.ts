@@ -143,10 +143,10 @@ export async function GET(
           actualAwayPenalties: actual.awayPenalties,
         };
 
-        if (pts === 3) {
+        if (pts === 3 || pts === 4) {
           exactCount++;
           exactMatches.push(matchInfo);
-        } else if (pts === 1) {
+        } else if (pts === 1 || pts === 2) {
           correctCount++;
           correctMatches.push(matchInfo);
         }
@@ -155,9 +155,9 @@ export async function GET(
         const utcDateStr = matchDateMap[pred.matchId];
         if (utcDateStr && new Date(utcDateStr) < todayStart) {
           yesterdayPoints += pts;
-          if (pts === 3) {
+          if (pts === 3 || pts === 4) {
             yesterdayExact++;
-          } else if (pts === 1) {
+          } else if (pts === 1 || pts === 2) {
             yesterdayCorrect++;
           }
         }

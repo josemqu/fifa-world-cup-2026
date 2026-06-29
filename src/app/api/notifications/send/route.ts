@@ -263,7 +263,7 @@ async function handleDailyWinners(force = false) {
       userPointsMap[pred.firebaseUid] = { totalPoints: 0, exactCount: 0 };
     }
     userPointsMap[pred.firebaseUid].totalPoints += pts;
-    if (pts === 3) userPointsMap[pred.firebaseUid].exactCount++;
+    if (pts === 3 || pts === 4) userPointsMap[pred.firebaseUid].exactCount++;
   }
 
   // Get user display names/nicknames
@@ -332,7 +332,7 @@ async function handleDailyWinners(force = false) {
         );
 
         totalPoints += pts;
-        if (pts === 3) exactCount++;
+        if (pts === 3 || pts === 4) exactCount++;
       }
 
       return {

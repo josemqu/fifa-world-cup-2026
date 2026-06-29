@@ -324,14 +324,14 @@ export function RivalPredictionsModal({
                             {/* Points badge if finished */}
                             {member.points !== null && (
                               <div className="min-w-[42px] text-right">
-                                {member.points === 3 && (
+                                {member.points >= 3 && (
                                   <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                    <Zap className="w-2.5 h-2.5" /> +3
+                                    <Zap className="w-2.5 h-2.5" /> +{member.points}
                                   </span>
                                 )}
-                                {member.points === 1 && (
+                                {(member.points === 1 || member.points === 2) && (
                                   <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                                    <ShieldCheck className="w-2.5 h-2.5" /> +1
+                                    <ShieldCheck className="w-2.5 h-2.5" /> +{member.points}
                                   </span>
                                 )}
                                 {member.points === 0 && (

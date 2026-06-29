@@ -100,13 +100,13 @@ export async function GET(request: Request) {
           );
 
           totalPoints += pts;
-          if (pts === 3) exactCount++;
-          else if (pts === 1) correctCount++;
+          if (pts === 3 || pts === 4) exactCount++;
+          else if (pts === 1 || pts === 2) correctCount++;
 
           if (utcDateStr && new Date(utcDateStr) < todayStart) {
             yesterdayPoints += pts;
-            if (pts === 3) yesterdayExact++;
-            else if (pts === 1) yesterdayCorrect++;
+            if (pts === 3 || pts === 4) yesterdayExact++;
+            else if (pts === 1 || pts === 2) yesterdayCorrect++;
           }
         }
 

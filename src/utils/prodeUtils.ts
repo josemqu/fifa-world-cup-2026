@@ -8,64 +8,46 @@ export function calculatePoints(
   actHomePen?: number,
   actAwayPen?: number
 ): number {
-  // Determine actual winner
-  let actualWinner: "home" | "away" | "tie" = "tie";
-  if (actualHome > actualAway) {
-    actualWinner = "home";
-  } else if (actualAway > actualHome) {
-    actualWinner = "away";
+  const exactScore = predictedHome === actualHome && predictedAway === actualAway;
+  const predictedWinner120 = predictedHome > predictedAway ? "home" : (predictedAway > predictedHome ? "away" : "tie");
+  const actualWinner120 = actualHome > actualAway ? "home" : (actualAway > actualHome ? "away" : "tie");
+
+  // Determine actual advancing team (winner including penalties)
+  let actualAdvancingTeam: "home" | "away" | null = null;
+  if (actualWinner120 !== "tie") {
+    actualAdvancingTeam = actualWinner120;
   } else if (actHomePen !== undefined && actAwayPen !== undefined && actHomePen !== null && actAwayPen !== null) {
-    if (actHomePen > actAwayPen) {
-      actualWinner = "home";
-    } else if (actAwayPen > actHomePen) {
-      actualWinner = "away";
-    }
+    actualAdvancingTeam = actHomePen > actAwayPen ? "home" : "away";
   }
 
-  // Determine predicted winner
-  let predictedWinner: "home" | "away" | "tie" = "tie";
-  if (predictedHome > predictedAway) {
-    predictedWinner = "home";
-  } else if (predictedAway > predictedHome) {
-    predictedWinner = "away";
+  // Determine predicted advancing team (predicted winner including penalties)
+  let predictedAdvancingTeam: "home" | "away" | null = null;
+  if (predictedWinner120 !== "tie") {
+    predictedAdvancingTeam = predictedWinner120;
   } else if (predHomePen !== undefined && predAwayPen !== undefined && predHomePen !== null && predAwayPen !== null) {
-    if (predHomePen > predAwayPen) {
-      predictedWinner = "home";
-    } else if (predAwayPen > predHomePen) {
-      predictedWinner = "away";
+    predictedAdvancingTeam = predHomePen > predAwayPen ? "home" : "away";
+  }
+
+  // 1. Exact Score Match in 120 minutes:
+  if (exactScore) {
+    let penaltyBonus = 0;
+    if (actualWinner120 === "tie" && actualAdvancingTeam && predictedAdvancingTeam && actualAdvancingTeam === predictedAdvancingTeam) {
+      penaltyBonus = 1;
     }
+    return 3 + penaltyBonus;
   }
 
-  // 1. Exact Score Match:
-  // If it's a draw, both the normal score and the advancing team must match.
-  // Otherwise, just the scores must match.
-  const scoresMatch = predictedHome === actualHome && predictedAway === actualAway;
-  if (scoresMatch) {
-    if (actualHome === actualAway) {
-      const hasActualPenalties = actHomePen !== undefined && actAwayPen !== undefined && actHomePen !== null && actAwayPen !== null;
-      if (hasActualPenalties) {
-        if (predictedWinner === actualWinner) {
-          return 3;
-        } else {
-          // Got the draw score right (e.g. 1-1), but the wrong team advanced.
-          // Award 1 point for predicting the correct draw score.
-          return 1;
-        }
-      }
+  // 2. Correct Outcome of 120 minutes (not exact score):
+  if (predictedWinner120 === actualWinner120) {
+    let penaltyBonus = 0;
+    if (actualWinner120 === "tie" && actualAdvancingTeam && predictedAdvancingTeam && actualAdvancingTeam === predictedAdvancingTeam) {
+      penaltyBonus = 1;
     }
-    return 3;
+    return 1 + penaltyBonus;
   }
 
-  // 2. Correct Outcome (not exact score):
-  // Compare predicted winner vs actual winner (either normal time winner or penalty winner).
-  if (actualWinner !== "tie" && predictedWinner === actualWinner) {
-    return 1;
-  }
-
-  // If both actual and predicted are ties (no penalties or same tie outcome but wrong scores):
-  const predictedOutcome = Math.sign(predictedHome - predictedAway);
-  const actualOutcome = Math.sign(actualHome - actualAway);
-  if (predictedOutcome === 0 && actualOutcome === 0) {
+  // 3. Did not guess the 120m outcome, but guessed who passes (only possible in knockout matches):
+  if (actualAdvancingTeam && predictedAdvancingTeam && actualAdvancingTeam === predictedAdvancingTeam) {
     return 1;
   }
 
