@@ -207,14 +207,14 @@ export function MinimalistBracket({
     const circleContent = (
       <div
         className={clsx(
-          "w-8 h-8 rounded-full flex items-center justify-center shadow-md select-none transition-all duration-200 border",
+          "w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center shadow-md select-none transition-all duration-200 border",
           isPH
-            ? "bg-slate-100 dark:bg-slate-800 border-slate-700 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-[10px] font-black"
+            ? "bg-slate-100 dark:bg-slate-800 border-slate-700 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-[8px] md:text-[10px] font-black"
             : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-200 hover:scale-115 hover:shadow-lg"
         )}
       >
         {isPH ? (
-          <span className="font-mono tracking-tighter text-[8px]">{name}</span>
+          <span className="font-mono tracking-tighter text-[6px] md:text-[8px]">{name}</span>
         ) : (() => {
           const code = getCountryIsoCode(name);
           if (!code) return <div className="w-full h-full bg-slate-200 dark:bg-slate-700 rounded-full" />;
@@ -245,7 +245,7 @@ export function MinimalistBracket({
             content={<CandidatesTooltip candidates={candidates} />}
             placement="top"
             interactive={false}
-            wrapperClassName="flex items-center justify-center w-8 h-8"
+            wrapperClassName="flex items-center justify-center w-6 h-6 md:w-8 md:h-8"
           >
             {circleContent}
           </Tooltip>
@@ -264,7 +264,7 @@ export function MinimalistBracket({
         content={<span className="font-bold text-xs">{name}</span>}
         placement="top"
         interactive={false}
-        wrapperClassName="flex items-center justify-center w-8 h-8"
+        wrapperClassName="flex items-center justify-center w-6 h-6 md:w-8 md:h-8"
       >
         {circleContent}
       </Tooltip>
@@ -312,9 +312,8 @@ export function MinimalistBracket({
 
         {/* 19-Column Flat Grid Symmetrical Tree Layout */}
         <div
-          className="grid gap-y-0 w-full max-w-[1280px] mx-auto items-stretch justify-items-stretch flex-1"
+          className="grid gap-y-0 w-full max-w-[1280px] mx-auto items-stretch justify-items-stretch flex-1 grid-cols-[24px_1fr_24px_1fr_24px_1fr_24px_1fr_24px_0.5fr_24px_1fr_24px_1fr_24px_1fr_24px_1fr_24px] md:grid-cols-[32px_1fr_32px_1.2fr_32px_1.4fr_32px_1.6fr_32px_2.2fr_32px_1.6fr_32px_1.4fr_32px_1.2fr_32px_1fr_32px]"
           style={{
-            gridTemplateColumns: "32px 1fr 32px 1.2fr 32px 1.4fr 32px 1.6fr 32px 2.2fr 32px 1.6fr 32px 1.4fr 32px 1.2fr 32px 1fr 32px",
             gridTemplateRows: "repeat(16, minmax(0, 1fr))",
             height: isAdmin ? "calc(100% - 120px)" : "calc(100% - 60px)",
           }}
@@ -472,7 +471,7 @@ export function MinimalistBracket({
 
           {/* --- CENTER ZONE (Final & Trophy) --- */}
 
-          <div className="col-start-10 row-start-1 row-span-full relative flex flex-col items-center justify-center">
+          <div className="col-start-10 row-start-1 row-span-full relative flex flex-col items-center justify-start pt-6 md:justify-center md:pt-0">
             {/* Symmetrical central horizontal bracket connector line */}
             <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-slate-800 dark:bg-slate-800 -translate-y-1/2 z-0 pointer-events-none" />
 
@@ -485,11 +484,11 @@ export function MinimalistBracket({
             )}
 
             {/* Symmetrical Central Content */}
-            <div className="z-10 flex flex-col items-center bg-slate-900 border border-slate-800 px-5 py-4 rounded-2xl shadow-xl backdrop-blur-md max-w-[140px] text-center">
+            <div className="z-10 flex flex-col items-center bg-slate-900 border border-slate-800 px-3 py-2.5 md:px-5 md:py-4 rounded-xl md:rounded-2xl shadow-xl backdrop-blur-md max-w-[100px] md:max-w-[140px] text-center">
               {/* Champion Banner above Trophy if resolved */}
               {champion && (
-                <div className="flex flex-col items-center justify-center h-6 mb-3 animate-bounce-subtle">
-                  <span className="text-[9px] font-black text-yellow-500 tracking-widest uppercase">
+                <div className="flex flex-col items-center justify-center h-5 md:h-6 mb-1.5 md:mb-3 animate-bounce-subtle">
+                  <span className="text-[7px] md:text-[9px] font-black text-yellow-500 tracking-widest uppercase">
                     🏆 CAMPEÓN
                   </span>
                 </div>
@@ -499,8 +498,8 @@ export function MinimalistBracket({
               <div className={clsx(
                 "relative flex items-center justify-center transition-all duration-500 rounded-full border shadow-inner select-none",
                 champion 
-                  ? "w-20 h-20 border-yellow-400 dark:border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.5)] scale-110 bg-white dark:bg-slate-900 p-0.5 overflow-hidden" 
-                  : "w-14 h-14 bg-slate-800 border-slate-700 text-slate-500 p-3"
+                  ? "w-14 h-14 md:w-20 md:h-20 border-yellow-400 dark:border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.5)] bg-white dark:bg-slate-900 p-0.5 overflow-hidden" 
+                  : "w-10 h-10 md:w-14 md:h-14 bg-slate-800 border-slate-700 text-slate-500 p-2 md:p-3"
               )}>
                 {champion ? (() => {
                   const code = getCountryIsoCode(champion.name);
@@ -514,16 +513,16 @@ export function MinimalistBracket({
                     </div>
                   );
                 })() : (
-                  <Trophy className="w-8 h-8" />
+                  <Trophy className="w-5 h-5 md:w-8 md:h-8" />
                 )}
               </div>
 
               {/* Champion Name Chip below Trophy if resolved */}
               {champion && (
-                <div className="flex flex-col items-center justify-center h-6 mt-3">
-                  <div className="flex items-center gap-1.5 bg-yellow-500/10 dark:bg-yellow-500/20 border border-yellow-500/40 text-yellow-800 dark:text-yellow-400 px-2 py-0.5 rounded-full font-black text-[10px] shadow-xs">
-                    <Flag code={getCountryIsoCode(champion.name)} className="w-3.5 h-2.5 rounded-xs object-cover" />
-                    <span className="truncate max-w-[70px]">{champion.name}</span>
+                <div className="flex flex-col items-center justify-center h-5 md:h-6 mt-1.5 md:mt-3">
+                  <div className="flex items-center gap-1 bg-yellow-500/10 dark:bg-yellow-500/20 border border-yellow-500/40 text-yellow-800 dark:text-yellow-400 px-1.5 py-0.5 rounded-full font-black text-[8px] md:text-[10px] shadow-xs">
+                    <Flag code={getCountryIsoCode(champion.name)} className="w-2.5 h-2 md:w-3.5 md:h-2.5 rounded-xs object-cover" />
+                    <span className="truncate max-w-[50px] md:max-w-[70px]">{champion.name}</span>
                   </div>
                 </div>
               )}
