@@ -485,17 +485,13 @@ export function MinimalistBracket({
             )}
 
             {/* Symmetrical Central Content */}
-            <div className="z-10 flex flex-col items-center gap-4 bg-slate-900 border border-slate-800 px-5 py-4 rounded-2xl shadow-xl backdrop-blur-md max-w-[140px] text-center">
+            <div className="z-10 flex flex-col items-center bg-slate-900 border border-slate-800 px-5 py-4 rounded-2xl shadow-xl backdrop-blur-md max-w-[140px] text-center">
               {/* Champion Banner above Trophy if resolved */}
               {champion && (
-                <div className="flex flex-col items-center animate-bounce-subtle">
-                  <span className="text-[9px] font-black text-yellow-500 tracking-widest uppercase mb-0.5">
+                <div className="flex flex-col items-center justify-center h-6 mb-3 animate-bounce-subtle">
+                  <span className="text-[9px] font-black text-yellow-500 tracking-widest uppercase">
                     🏆 CAMPEÓN
                   </span>
-                  <div className="flex items-center gap-1.5 bg-yellow-500/10 dark:bg-yellow-500/20 border border-yellow-500/40 text-yellow-800 dark:text-yellow-400 px-2 py-0.5 rounded-full font-black text-[10px] shadow-xs">
-                    <Flag code={getCountryIsoCode(champion.name)} className="w-3.5 h-2.5 rounded-xs object-cover" />
-                    <span className="truncate max-w-[70px]">{champion.name}</span>
-                  </div>
                 </div>
               )}
 
@@ -521,6 +517,16 @@ export function MinimalistBracket({
                   <Trophy className="w-8 h-8" />
                 )}
               </div>
+
+              {/* Champion Name Chip below Trophy if resolved */}
+              {champion && (
+                <div className="flex flex-col items-center justify-center h-6 mt-3">
+                  <div className="flex items-center gap-1.5 bg-yellow-500/10 dark:bg-yellow-500/20 border border-yellow-500/40 text-yellow-800 dark:text-yellow-400 px-2 py-0.5 rounded-full font-black text-[10px] shadow-xs">
+                    <Flag code={getCountryIsoCode(champion.name)} className="w-3.5 h-2.5 rounded-xs object-cover" />
+                    <span className="truncate max-w-[70px]">{champion.name}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Admin Floating Buttons stacked vertically */}
