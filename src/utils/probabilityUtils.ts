@@ -4,6 +4,7 @@ import { simulateTournament } from "./simulationUtils";
 interface MatchStats {
   homeTeamCounts: Map<string, number>; // teamId -> count
   awayTeamCounts: Map<string, number>; // teamId -> count
+  winnerCounts: Map<string, number>; // teamId -> count (who wins the match)
   matchupCounts: Map<string, number>; // "homeId-awayId" -> count
   teamData: Map<string, Team>; // teamId -> Team object (for referencing)
 }
@@ -23,6 +24,7 @@ export const calculateKnockoutProbabilities = async (
       projectedAwayTeam?: Team;
       homeCandidates?: { team: Team; probability: number }[];
       awayCandidates?: { team: Team; probability: number }[];
+      winnerCandidates?: { team: Team; probability: number }[];
     }
   >
 > => {
@@ -67,6 +69,7 @@ export const calculateKnockoutProbabilities = async (
       matchStats.set(matchId, {
         homeTeamCounts: new Map(),
         awayTeamCounts: new Map(),
+        winnerCounts: new Map(),
         matchupCounts: new Map(),
         teamData: new Map(),
       });
@@ -119,6 +122,16 @@ export const calculateKnockoutProbabilities = async (
         const key = `${hTeam.id}-${aTeam.id}`;
         stats.matchupCounts.set(key, (stats.matchupCounts.get(key) || 0) + 1);
       }
+
+      // Track winner
+      const winner = match.winner as Team;
+      if (winner && !("placeholder" in winner)) {
+        stats.winnerCounts.set(
+          winner.id,
+          (stats.winnerCounts.get(winner.id) || 0) + 1,
+        );
+        stats.teamData.set(winner.id, winner);
+      }
     });
   }
 
@@ -133,6 +146,7 @@ export const calculateKnockoutProbabilities = async (
       projectedAwayTeam?: Team;
       homeCandidates?: { team: Team; probability: number }[];
       awayCandidates?: { team: Team; probability: number }[];
+      winnerCandidates?: { team: Team; probability: number }[];
     }
   >();
 
@@ -195,6 +209,19 @@ export const calculateKnockoutProbabilities = async (
     });
     awayCandidates.sort((a, b) => b.probability - a.probability);
 
+    // Build Winner Candidates List (who wins each match)
+    const winnerCandidates: { team: Team; probability: number }[] = [];
+    stats.winnerCounts.forEach((count, id) => {
+      const team = stats.teamData.get(id);
+      if (team) {
+        winnerCandidates.push({
+          team,
+          probability: count / iterations,
+        });
+      }
+    });
+    winnerCandidates.sort((a, b) => b.probability - a.probability);
+
     // Calculate Conditional Probability (Bayes)
     // P(Matchup | Team) = P(Matchup) / P(Team)
     // We condition on the most likely team to be conservative and consistent
@@ -215,6 +242,7 @@ export const calculateKnockoutProbabilities = async (
         : undefined,
       homeCandidates,
       awayCandidates,
+      winnerCandidates,
     });
   });
 
@@ -244,6 +272,7 @@ export const calculateKnockoutProbabilities = async (
       projectedAwayTeam: awayTeam,
       homeCandidates: [{ team: homeTeam, probability: 1 }],
       awayCandidates: [{ team: awayTeam, probability: 1 }],
+      winnerCandidates: [{ team: winner, probability: 1 }],
     });
   });
 

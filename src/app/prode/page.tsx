@@ -1712,6 +1712,7 @@ function PredictionsTab({
               awayTeamName={awayName}
               utcDate={utcDate}
               isLocked={isLocked}
+              teamsUndefined={!!isLockedByUndefinedTeams}
               homeScore={pred?.homeScore ?? ""}
               awayScore={pred?.awayScore ?? ""}
               homePenalties={pred?.homePenalties ?? ""}
@@ -1905,6 +1906,7 @@ function ProdeMatchCard({
   isAdmin = false,
   modelPrediction,
   onOpenModelPrediction,
+  teamsUndefined = false,
 }: {
   matchId: string;
   homeTeamName: string;
@@ -1940,6 +1942,7 @@ function ProdeMatchCard({
     predictionDetails: any;
   } | null;
   onOpenModelPrediction?: () => void;
+  teamsUndefined?: boolean;
 }) {
   const matchDate = utcDate ? new Date(utcDate) : null;
   const formattedDate = matchDate
@@ -2212,6 +2215,14 @@ function ProdeMatchCard({
             <TeamFlag teamName={awayTeamName} className="w-7 h-5 shrink-0 rounded-sm shadow-sm" />
           </div>
         </div>
+
+        {/* Teams Undefined Banner */}
+        {teamsUndefined && (
+          <div className="mt-2 flex items-center justify-center gap-1.5 text-[10px] text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-1.5">
+            <Lock className="w-3 h-3 shrink-0" />
+            <span className="font-medium">Los equipos de este partido aún no están definidos</span>
+          </div>
+        )}
 
         {/* Penalties Winner Selector */}
         {showPenaltiesSelector && (

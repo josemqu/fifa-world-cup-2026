@@ -271,11 +271,24 @@ export function MinimalistBracket({
     );
 
     if (isPH) {
+      const isWinnerJunction = match ? (
+        team !== match.homeTeam &&
+        team !== match.awayTeam &&
+        !(team && typeof team === 'object' && 'placeholder' in team && 
+          ((match.homeTeam && 'placeholder' in match.homeTeam && match.homeTeam.placeholder === team.placeholder) ||
+           (match.awayTeam && 'placeholder' in match.awayTeam && match.awayTeam.placeholder === team.placeholder)))
+      ) : false;
+
       const isHome = match ? (
         match.homeTeam === team ||
         (match.homeTeam && "placeholder" in match.homeTeam && team && "placeholder" in team && match.homeTeam.placeholder === team.placeholder)
       ) : false;
-      const candidates = match ? (isHome ? match.probabilisticData?.homeCandidates : match.probabilisticData?.awayCandidates) : undefined;
+
+      const candidates = match ? (
+        isWinnerJunction 
+          ? match.probabilisticData?.winnerCandidates 
+          : (isHome ? match.probabilisticData?.homeCandidates : match.probabilisticData?.awayCandidates)
+      ) : undefined;
       const hasCandidates = candidates && candidates.length > 0;
 
       if (hasCandidates) {

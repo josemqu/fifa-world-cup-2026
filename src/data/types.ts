@@ -82,6 +82,7 @@ export type KnockoutMatch = {
     projectedAwayTeam?: Team;
     homeCandidates?: { team: Team; probability: number }[];
     awayCandidates?: { team: Team; probability: number }[];
+    winnerCandidates?: { team: Team; probability: number }[];
   };
 };
 
