@@ -759,6 +759,9 @@ function ScheduleMatchCard({
   const isPlaceholder = match.homeTeamName === "Por definir" || match.awayTeamName === "Por definir";
   const isStarted = new Date() >= new Date(match.utcDate);
 
+  const isTied = match.homeScore !== null && match.homeScore !== undefined && match.awayScore !== null && match.awayScore !== undefined && match.homeScore === match.awayScore;
+  const showPenalties = match.isKnockout && isTied && match.homePenalties !== null && match.homePenalties !== undefined && match.awayPenalties !== null && match.awayPenalties !== undefined;
+
   return (
     <div
       ref={cardRef}
@@ -839,6 +842,11 @@ function ScheduleMatchCard({
           <div className="flex items-center gap-1 shrink-0 mx-2">
             {isStarted ? (
               <>
+                {showPenalties && (
+                  <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                    ({match.homePenalties})
+                  </span>
+                )}
                 <FlashScoreInput
                   type="number"
                   className="w-8 h-8 text-center text-xs font-bold bg-slate-100/50 dark:bg-slate-900/30 rounded border border-slate-200/60 dark:border-slate-800/80 text-slate-500 dark:text-slate-400 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none cursor-default pointer-events-none"
@@ -854,6 +862,11 @@ function ScheduleMatchCard({
                   value={match.awayScore ?? 0}
                   readOnly
                 />
+                {showPenalties && (
+                  <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                    ({match.awayPenalties})
+                  </span>
+                )}
               </>
             ) : (
               <>
