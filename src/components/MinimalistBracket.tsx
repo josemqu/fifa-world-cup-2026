@@ -6,8 +6,10 @@ import { KnockoutMatch, Team, Group } from "@/data/types";
 import { Tooltip } from "@/components/ui/Tooltip";
 import Flag from "react-world-flags";
 import { getCountryIsoCode } from "@/utils/countries";
-import { Trophy, X } from "lucide-react";
+import { Trophy, X, Zap, Trash2 } from "lucide-react";
 import { clsx } from "clsx";
+import { useAuth } from "@/context/AuthContext";
+import { useTournament } from "@/context/TournamentContext";
 
 interface MinimalistBracketProps {
   groups: Group[];
@@ -143,6 +145,15 @@ export function MinimalistBracket({
   onMatchUpdate,
   onClose,
 }: MinimalistBracketProps) {
+  const { dbUser, user } = useAuth();
+  const { simulateAll, resetTournament } = useTournament();
+
+  const isAdmin = useMemo(() => {
+    return dbUser?.role === "admin" ||
+      !!user?.email?.toLowerCase().includes("mailjmq") ||
+      !!dbUser?.email?.toLowerCase().includes("mailjmq");
+  }, [dbUser, user]);
+
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -284,7 +295,7 @@ export function MinimalistBracket({
           style={{
             gridTemplateColumns: "32px 1fr 32px 1.2fr 32px 1.4fr 32px 1.6fr 32px 2.2fr 32px 1.6fr 32px 1.4fr 32px 1.2fr 32px 1fr 32px",
             gridTemplateRows: "repeat(16, minmax(0, 1fr))",
-            height: "calc(100% - 60px)",
+            height: isAdmin ? "calc(100% - 120px)" : "calc(100% - 60px)",
           }}
         >
           {/* --- LEFT SIDE BRACKET --- */}
@@ -490,6 +501,28 @@ export function MinimalistBracket({
                 )}
               </div>
             </div>
+
+            {/* Admin Floating Buttons stacked vertically */}
+            {isAdmin && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col gap-2 z-20 animate-fade-in">
+                <button
+                  onClick={simulateAll}
+                  className="flex items-center justify-center gap-1.5 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95 hover:scale-102 cursor-pointer w-24"
+                  title="Simular todo el torneo"
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>Simular</span>
+                </button>
+                <button
+                  onClick={resetTournament}
+                  className="flex items-center justify-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95 hover:scale-102 cursor-pointer w-24"
+                  title="Limpiar todos los resultados"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Limpiar</span>
+                </button>
+              </div>
+            )}
           </div>
 
 
