@@ -1485,20 +1485,23 @@ function PredictionsTab({
     return allKnockouts;
   }, [predictions, isGroupStageFinished, tournamentGroups]);
 
-  // Resolve team names from tournament context for knockout matches
+  // Resolve team names from the REAL tournament context (not user predictions)
+  // This ensures we only show officially determined teams
   const resolvedTeamNames = useMemo(() => {
-    const map = new Map<string, { home: string; away: string }>();
-    for (const [id, km] of prodeMatches) {
+    const map = new Map<string, { home: string; away: string; bothTeamsDefined: boolean }>();
+    for (const km of knockoutMatches) {
+      const homeIsPlaceholder = !km.homeTeam || "placeholder" in km.homeTeam;
+      const awayIsPlaceholder = !km.awayTeam || "placeholder" in km.awayTeam;
       const homeName = km.homeTeam
         ? ("placeholder" in km.homeTeam ? formatPlaceholder(km.homeTeam.placeholder) : km.homeTeam.name)
         : "Por definir";
       const awayName = km.awayTeam
         ? ("placeholder" in km.awayTeam ? formatPlaceholder(km.awayTeam.placeholder) : km.awayTeam.name)
         : "Por definir";
-      map.set(id, { home: homeName, away: awayName });
+      map.set(km.id, { home: homeName, away: awayName, bothTeamsDefined: !homeIsPlaceholder && !awayIsPlaceholder });
     }
     return map;
-  }, [prodeMatches]);
+  }, [knockoutMatches]);
 
   const handleResetMatch = useCallback((matchId: string) => {
     const resolved = resolvedTeamNames.get(matchId);
@@ -1639,7 +1642,9 @@ function PredictionsTab({
           const utcDate = info?.utcDate || "";
           const isKnockout = /^\d+$/.test(matchId);
           const isLockedByGroupStage = isKnockout && !isGroupStageFinished;
-          const isLocked = (utcDate ? new Date() >= new Date(utcDate) : false) || isLockedByGroupStage;
+          const resolvedInfo = resolvedTeamNames.get(matchId);
+          const isLockedByUndefinedTeams = isKnockout && resolvedInfo && !resolvedInfo.bothTeamsDefined;
+          const isLocked = (utcDate ? new Date() >= new Date(utcDate) : false) || isLockedByGroupStage || !!isLockedByUndefinedTeams;
           const pred = predictions.get(matchId);
 
           let actualMatch = null;
