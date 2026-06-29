@@ -157,8 +157,9 @@ export const predictMatchScoreRemaining = (
     formDefensivaB: formB ? formB.formDefensiva : undefined,
   });
 
-  const elapsedClamped = Math.max(0, Math.min(90, elapsed));
-  const remainingFraction = (90 - elapsedClamped) / 90;
+  const maxMinutes = elapsed > 90 ? 120 : 90;
+  const elapsedClamped = Math.max(0, Math.min(maxMinutes, elapsed));
+  const remainingFraction = (maxMinutes - elapsedClamped) / 90;
 
   return {
     home: currentHome + Math.min(6, poisson(prediction.lambdaA * remainingFraction)),

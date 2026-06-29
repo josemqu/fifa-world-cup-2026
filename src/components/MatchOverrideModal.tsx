@@ -207,7 +207,7 @@ export function MatchOverrideModal({
               <input
                 type="number"
                 min="0"
-                max="130"
+                max="135"
                 disabled={status !== "live"}
                 value={status === "live" ? elapsed : ""}
                 onChange={(e) => setElapsed(e.target.value)}

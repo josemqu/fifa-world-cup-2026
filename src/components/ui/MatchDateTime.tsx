@@ -56,6 +56,8 @@ export function MatchDateTime({
   let matchStatus: string | undefined;
   let matchElapsed: number | null | undefined;
   let matchLastSync: string | undefined;
+  let currentHomeScore: number | null = null;
+  let currentAwayScore: number | null = null;
 
   if (matchId) {
     // Check group stage matches
@@ -65,6 +67,8 @@ export function MatchDateTime({
         matchStatus = m.status;
         matchElapsed = m.elapsed;
         matchLastSync = m.lastSyncAt;
+        currentHomeScore = m.homeScore ?? null;
+        currentAwayScore = m.awayScore ?? null;
         break;
       }
     }
@@ -75,13 +79,20 @@ export function MatchDateTime({
         matchStatus = m.status;
         matchElapsed = m.elapsed;
         matchLastSync = m.lastSyncAt;
+        currentHomeScore = m.homeScore ?? null;
+        currentAwayScore = m.awayScore ?? null;
       }
     }
   }
 
   const matchDate = new Date(utcDate);
-  // Asumimos 120 minutos de duración de partido (90m + 15m entretiempo + descuentos)
-  const matchEndDate = new Date(matchDate.getTime() + 120 * 60000);
+  const isKnockout = matchId ? !matchId.startsWith("M") : false;
+  const isTied = currentHomeScore !== null && currentAwayScore !== null && currentHomeScore === currentAwayScore;
+  const canGoToExtraTime = isKnockout && (isTied || currentHomeScore === null);
+  const matchDurationMinutes = canGoToExtraTime ? 175 : 120;
+
+  // Asumimos 120 minutos de duración de partido (90m + 15m entretiempo + descuentos) o 175 si puede ir a prórroga
+  const matchEndDate = new Date(matchDate.getTime() + matchDurationMinutes * 60000);
 
   const isPlaying = matchStatus
     ? (matchStatus === "live" || matchStatus === "halftime")
@@ -98,7 +109,8 @@ export function MatchDateTime({
       const timeSinceSync = matchLastSync
         ? Math.floor((Date.now() - new Date(matchLastSync).getTime()) / 60000)
         : 0;
-      return Math.min(120, (matchElapsed || 0) + Math.max(0, timeSinceSync));
+      const maxMinutes = isKnockout ? 135 : 120;
+      return Math.min(maxMinutes, (matchElapsed || 0) + Math.max(0, timeSinceSync));
     }
     return Math.max(0, Math.floor((now.getTime() - matchDate.getTime()) / 60000));
   })();
@@ -111,6 +123,17 @@ export function MatchDateTime({
     if (currentElapsed < 50) return 45;
     if (currentElapsed < 65) return -1;
     if (currentElapsed <= 110) return currentElapsed - 20;
+    if (currentElapsed < 115) return 90;
+
+    if (canGoToExtraTime) {
+      if (currentElapsed < 120) return -1; // pausa antes del tiempo extra
+      if (currentElapsed <= 135) return currentElapsed - 29; // 91 a 105
+      if (currentElapsed < 140) return 105; // descuento del primer tiempo extra
+      if (currentElapsed < 142) return -1; // pausa entre tiempos extra
+      if (currentElapsed <= 157) return currentElapsed - 36; // 106 a 120
+      return 120; // adición o penales
+    }
+
     return 90;
   })();
 
@@ -129,11 +152,16 @@ export function MatchDateTime({
       const timeSinceSync = matchLastSync
         ? Math.floor((Date.now() - new Date(matchLastSync).getTime()) / 60000)
         : 0;
-      const currentElapsed = Math.min(120, (matchElapsed || 0) + Math.max(0, timeSinceSync));
+      const currentElapsed = (matchElapsed || 0) + Math.max(0, timeSinceSync);
+      
       if (matchElapsed <= 45) {
         return currentElapsed <= 45 ? `${currentElapsed}'` : `45+${currentElapsed - 45}'`;
-      } else {
+      } else if (matchElapsed <= 90) {
         return currentElapsed <= 90 ? `${currentElapsed}'` : `90+${currentElapsed - 90}'`;
+      } else if (matchElapsed <= 105) {
+        return currentElapsed <= 105 ? `${currentElapsed}'` : `105+${currentElapsed - 105}'`;
+      } else {
+        return currentElapsed <= 120 ? `${currentElapsed}'` : `120+${currentElapsed - 120}'`;
       }
     }
 
@@ -143,6 +171,18 @@ export function MatchDateTime({
     if (elapsed < 50) return `45+${elapsed - 45}'`;
     if (elapsed < 65) return "ET";
     if (elapsed <= 110) return `${elapsed - 20}'`;
+    if (elapsed < 115) return `90+${elapsed - 110}'`;
+    
+    if (canGoToExtraTime) {
+      if (elapsed < 120) return "ET"; // Pausa antes del tiempo extra
+      if (elapsed <= 134) return `${elapsed - 29}'`; // Primer tiempo extra (91' a 105')
+      if (elapsed < 139) return `105+${elapsed - 134}'`; // Descuento del primer tiempo extra
+      if (elapsed < 141) return "ET"; // Pausa antes del segundo tiempo extra
+      if (elapsed <= 155) return `${elapsed - 35}'`; // Segundo tiempo extra (106' a 120')
+      if (elapsed < 160) return `120+${elapsed - 155}'`; // Descuento del segundo tiempo extra
+      return "PEN"; // Penales
+    }
+
     return `90+${elapsed - 110}'`;
   };
 
