@@ -377,9 +377,10 @@ export function MinimalistBracket({
           {/* Left Col 2: R32-R16 Connectors */}
           {leftR32Ids.map((id, index) => {
             const r32Match = getMatch(id);
+            const r16Match = getMatch(leftR16Ids[Math.floor(index / 2)]);
             const highlightTop = isSameTeam(r32Match?.winner, r32Match?.homeTeam);
             const highlightBottom = isSameTeam(r32Match?.winner, r32Match?.awayTeam);
-            const highlightOutput = !isPlaceholderTeam(r32Match?.winner);
+            const highlightOutput = !!(r32Match?.winner && r16Match?.winner && isSameTeam(r32Match.winner, r16Match.winner));
 
             return (
               <LeftConnector
@@ -400,9 +401,10 @@ export function MinimalistBracket({
           {/* Left Col 3: R16-QF Connectors */}
           {leftR16Ids.map((id, index) => {
             const r16Match = getMatch(id);
+            const qfMatch = getMatch(leftQFIds[Math.floor(index / 2)]);
             const highlightTop = isSameTeam(r16Match?.winner, r16Match?.homeTeam);
             const highlightBottom = isSameTeam(r16Match?.winner, r16Match?.awayTeam);
-            const highlightOutput = !isPlaceholderTeam(r16Match?.winner);
+            const highlightOutput = !!(r16Match?.winner && qfMatch?.winner && isSameTeam(r16Match.winner, qfMatch.winner));
 
             return (
               <LeftConnector
@@ -423,9 +425,10 @@ export function MinimalistBracket({
           {/* Left Col 4: QF-SF Connectors */}
           {leftQFIds.map((id, index) => {
             const qfMatch = getMatch(id);
+            const sfMatch = getMatch(leftSFIds[Math.floor(index / 2)]);
             const highlightTop = isSameTeam(qfMatch?.winner, qfMatch?.homeTeam);
             const highlightBottom = isSameTeam(qfMatch?.winner, qfMatch?.awayTeam);
-            const highlightOutput = !isPlaceholderTeam(qfMatch?.winner);
+            const highlightOutput = !!(qfMatch?.winner && sfMatch?.winner && isSameTeam(qfMatch.winner, sfMatch.winner));
 
             return (
               <LeftConnector
@@ -446,9 +449,10 @@ export function MinimalistBracket({
           {/* Left Col 5: SF-Finalist Connector */}
           {leftSFIds.map((id, index) => {
             const sfMatch = getMatch(id);
+            const finalMatch = getMatch(finalMatchId);
             const highlightTop = isSameTeam(sfMatch?.winner, sfMatch?.homeTeam);
             const highlightBottom = isSameTeam(sfMatch?.winner, sfMatch?.awayTeam);
-            const highlightOutput = !isPlaceholderTeam(sfMatch?.winner);
+            const highlightOutput = !!(sfMatch?.winner && finalMatch?.winner && isSameTeam(sfMatch.winner, finalMatch.winner));
 
             return (
               <LeftConnector
@@ -561,9 +565,10 @@ export function MinimalistBracket({
           {/* Right Col 5: SF-Finalist Connector */}
           {rightSFIds.map((id, index) => {
             const sfMatch = getMatch(id);
+            const finalMatch = getMatch(finalMatchId);
             const highlightTop = isSameTeam(sfMatch?.winner, sfMatch?.homeTeam);
             const highlightBottom = isSameTeam(sfMatch?.winner, sfMatch?.awayTeam);
-            const highlightOutput = !isPlaceholderTeam(sfMatch?.winner);
+            const highlightOutput = !!(sfMatch?.winner && finalMatch?.winner && isSameTeam(sfMatch.winner, finalMatch.winner));
 
             return (
               <RightConnector
@@ -584,9 +589,10 @@ export function MinimalistBracket({
           {/* Right Col 4: QF-SF Connectors */}
           {rightQFIds.map((id, index) => {
             const qfMatch = getMatch(id);
+            const sfMatch = getMatch(rightSFIds[Math.floor(index / 2)]);
             const highlightTop = isSameTeam(qfMatch?.winner, qfMatch?.homeTeam);
             const highlightBottom = isSameTeam(qfMatch?.winner, qfMatch?.awayTeam);
-            const highlightOutput = !isPlaceholderTeam(qfMatch?.winner);
+            const highlightOutput = !!(qfMatch?.winner && sfMatch?.winner && isSameTeam(qfMatch.winner, sfMatch.winner));
 
             return (
               <RightConnector
@@ -607,9 +613,10 @@ export function MinimalistBracket({
           {/* Right Col 3: R16-QF Connectors */}
           {rightR16Ids.map((id, index) => {
             const r16Match = getMatch(id);
+            const qfMatch = getMatch(rightQFIds[Math.floor(index / 2)]);
             const highlightTop = isSameTeam(r16Match?.winner, r16Match?.homeTeam);
             const highlightBottom = isSameTeam(r16Match?.winner, r16Match?.awayTeam);
-            const highlightOutput = !isPlaceholderTeam(r16Match?.winner);
+            const highlightOutput = !!(r16Match?.winner && qfMatch?.winner && isSameTeam(r16Match.winner, qfMatch.winner));
 
             return (
               <RightConnector
@@ -630,9 +637,10 @@ export function MinimalistBracket({
           {/* Right Col 2: R32-R16 Connectors */}
           {rightR32Ids.map((id, index) => {
             const r32Match = getMatch(id);
+            const r16Match = getMatch(rightR16Ids[Math.floor(index / 2)]);
             const highlightTop = isSameTeam(r32Match?.winner, r32Match?.homeTeam);
             const highlightBottom = isSameTeam(r32Match?.winner, r32Match?.awayTeam);
-            const highlightOutput = !isPlaceholderTeam(r32Match?.winner);
+            const highlightOutput = !!(r32Match?.winner && r16Match?.winner && isSameTeam(r32Match.winner, r16Match.winner));
 
             return (
               <RightConnector
