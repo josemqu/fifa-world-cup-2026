@@ -467,14 +467,31 @@ export function MinimalistBracket({
                 </div>
               )}
 
-              {/* Premium Trophy Graphic */}
+              {/* Premium Trophy Graphic or Champion Flag */}
               <div className={clsx(
-                "relative flex items-center justify-center p-3 rounded-full border shadow-inner transition-transform duration-300",
+                "relative flex items-center justify-center transition-all duration-500 rounded-full border shadow-inner select-none",
                 champion 
-                  ? "bg-yellow-50/70 border-yellow-200 text-yellow-500 dark:bg-yellow-950/20 dark:border-yellow-900/50 scale-110 shadow-[0_0_15px_rgba(234,179,8,0.2)]" 
-                  : "bg-slate-800 border-slate-700 text-slate-500"
+                  ? "w-20 h-20 border-yellow-400 dark:border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.5)] scale-110 bg-white dark:bg-slate-900 p-0.5 overflow-hidden" 
+                  : "w-14 h-14 bg-slate-800 border-slate-700 text-slate-500 p-3"
               )}>
-                <Trophy className="w-8 h-8" />
+                {champion ? (() => {
+                  const code = getCountryIsoCode(champion.name);
+                  return (
+                    <div className="w-full h-full rounded-full overflow-hidden relative flex items-center justify-center bg-white aspect-square">
+                      <Flag
+                        code={code}
+                        className="object-cover w-full h-full aspect-square rounded-full scale-105"
+                        alt={champion.name}
+                      />
+                      {/* Floating overlay gold trophy badge */}
+                      <div className="absolute -bottom-1 -right-1 bg-yellow-500 text-slate-950 p-1.5 rounded-full shadow-md border border-yellow-300 flex items-center justify-center">
+                        <Trophy className="w-3.5 h-3.5" />
+                      </div>
+                    </div>
+                  );
+                })() : (
+                  <Trophy className="w-8 h-8" />
+                )}
               </div>
             </div>
           </div>
