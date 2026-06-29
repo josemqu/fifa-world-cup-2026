@@ -630,6 +630,8 @@ function MatchCard({
           awayTeamName={awayName || "Por definir"}
           homeScore={match.homeScore ?? null}
           awayScore={match.awayScore ?? null}
+          homePenalties={match.homePenalties ?? null}
+          awayPenalties={match.awayPenalties ?? null}
           finished={!!match.finished}
           stageLabel={roundName}
           isKnockout={true}

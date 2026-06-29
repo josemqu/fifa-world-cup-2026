@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   try {
     await connectDB();
     const body = await request.json();
-    const { matchId, homeScore, awayScore, status, elapsed, manualOverride } = body;
+    const { matchId, homeScore, awayScore, homePenalties, awayPenalties, status, elapsed, manualOverride } = body;
 
     if (!matchId) {
       return NextResponse.json(
@@ -54,6 +54,8 @@ export async function POST(request: Request) {
 
     if (homeScore !== undefined) updateFields.homeScore = homeScore === null || homeScore === "" ? null : Number(homeScore);
     if (awayScore !== undefined) updateFields.awayScore = awayScore === null || awayScore === "" ? null : Number(awayScore);
+    if (homePenalties !== undefined) updateFields.homePenalties = homePenalties === null || homePenalties === "" ? null : Number(homePenalties);
+    if (awayPenalties !== undefined) updateFields.awayPenalties = awayPenalties === null || awayPenalties === "" ? null : Number(awayPenalties);
     if (status !== undefined) updateFields.status = status;
     if (elapsed !== undefined) updateFields.elapsed = elapsed === null || elapsed === "" ? null : Number(elapsed);
 

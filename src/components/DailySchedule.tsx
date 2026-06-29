@@ -28,6 +28,8 @@ type NormalizedMatch = {
   awayTeamName: string;
   homeScore: number | null | undefined;
   awayScore: number | null | undefined;
+  homePenalties?: number | null;
+  awayPenalties?: number | null;
   homeScorers?: Scorer[];
   awayScorers?: Scorer[];
   location?: string;
@@ -99,6 +101,8 @@ export function DailySchedule({
         awayTeamName: getTeamNameFromKnockout(match.awayTeam),
         homeScore: match.homeScore,
         awayScore: match.awayScore,
+        homePenalties: match.homePenalties,
+        awayPenalties: match.awayPenalties,
         homeScorers: match.homeScorers,
         awayScorers: match.awayScorers,
         location: match.location,
@@ -680,6 +684,8 @@ export function DailySchedule({
           awayTeamName={editingMatch.awayTeamName}
           homeScore={editingMatch.homeScore ?? null}
           awayScore={editingMatch.awayScore ?? null}
+          homePenalties={editingMatch.homePenalties ?? null}
+          awayPenalties={editingMatch.awayPenalties ?? null}
           finished={!!editingMatch.finished}
           stageLabel={editingMatch.stage}
           isKnockout={editingMatch.isKnockout}

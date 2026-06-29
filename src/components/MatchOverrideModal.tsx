@@ -10,6 +10,8 @@ interface MatchOverrideModalProps {
   awayTeamName: string;
   homeScore: number | null;
   awayScore: number | null;
+  homePenalties?: number | null;
+  awayPenalties?: number | null;
   finished: boolean;
   stageLabel: string;
   isKnockout: boolean;
@@ -27,6 +29,8 @@ export function MatchOverrideModal({
   awayTeamName,
   homeScore: initialHomeScore,
   awayScore: initialAwayScore,
+  homePenalties: initialHomePenalties = null,
+  awayPenalties: initialAwayPenalties = null,
   finished: initialFinished,
   stageLabel,
   isKnockout,
@@ -39,11 +43,16 @@ export function MatchOverrideModal({
 }: MatchOverrideModalProps) {
   const [homeScoreInput, setHomeScoreInput] = useState<string>("");
   const [awayScoreInput, setAwayScoreInput] = useState<string>("");
+  const [homePenaltiesInput, setHomePenaltiesInput] = useState<string>("");
+  const [awayPenaltiesInput, setAwayPenaltiesInput] = useState<string>("");
   const [status, setStatus] = useState<string>("scheduled");
   const [elapsed, setElapsed] = useState<string>("");
   const [manualOverride, setManualOverride] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string>("");
+
+  const showPensInput = isKnockout && homeScoreInput !== "" && awayScoreInput !== "" && Number(homeScoreInput) === Number(awayScoreInput);
+  const pensTied = showPensInput && homePenaltiesInput !== "" && awayPenaltiesInput !== "" && Number(homePenaltiesInput) === Number(awayPenaltiesInput);
 
   // Load initial values from dbScores if available, else from props
   useEffect(() => {
@@ -51,22 +60,39 @@ export function MatchOverrideModal({
     if (dbScore) {
       setHomeScoreInput(dbScore.homeScore !== null && dbScore.homeScore !== undefined ? String(dbScore.homeScore) : "");
       setAwayScoreInput(dbScore.awayScore !== null && dbScore.awayScore !== undefined ? String(dbScore.awayScore) : "");
+      setHomePenaltiesInput(dbScore.homePenalties !== null && dbScore.homePenalties !== undefined ? String(dbScore.homePenalties) : "");
+      setAwayPenaltiesInput(dbScore.awayPenalties !== null && dbScore.awayPenalties !== undefined ? String(dbScore.awayPenalties) : "");
       setStatus(dbScore.status || "scheduled");
       setElapsed(dbScore.elapsed !== null && dbScore.elapsed !== undefined ? String(dbScore.elapsed) : "");
       setManualOverride(dbScore.manualOverride !== false);
     } else {
       setHomeScoreInput(initialHomeScore !== null && initialHomeScore !== undefined ? String(initialHomeScore) : "");
       setAwayScoreInput(initialAwayScore !== null && initialAwayScore !== undefined ? String(initialAwayScore) : "");
+      setHomePenaltiesInput(initialHomePenalties !== null && initialHomePenalties !== undefined ? String(initialHomePenalties) : "");
+      setAwayPenaltiesInput(initialAwayPenalties !== null && initialAwayPenalties !== undefined ? String(initialAwayPenalties) : "");
       setStatus(initialFinished ? "finished" : "scheduled");
       setElapsed("");
       setManualOverride(true);
     }
-  }, [matchId, dbScores, initialHomeScore, initialAwayScore, initialFinished]);
+  }, [matchId, dbScores, initialHomeScore, initialAwayScore, initialHomePenalties, initialAwayPenalties, initialFinished]);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg("");
+
+    if (showPensInput && status === "finished") {
+      if (homePenaltiesInput === "" || awayPenaltiesInput === "") {
+        setErrorMsg("Debe ingresar el resultado de la tanda de penales para finalizar el partido.");
+        setLoading(false);
+        return;
+      }
+      if (Number(homePenaltiesInput) === Number(awayPenaltiesInput)) {
+        setErrorMsg("La tanda de penales no puede terminar empatada.");
+        setLoading(false);
+        return;
+      }
+    }
 
     try {
       const email = dbUser?.email || user?.email;
@@ -80,6 +106,8 @@ export function MatchOverrideModal({
           matchId,
           homeScore: homeScoreInput === "" ? null : Number(homeScoreInput),
           awayScore: awayScoreInput === "" ? null : Number(awayScoreInput),
+          homePenalties: showPensInput ? (homePenaltiesInput === "" ? null : Number(homePenaltiesInput)) : null,
+          awayPenalties: showPensInput ? (awayPenaltiesInput === "" ? null : Number(awayPenaltiesInput)) : null,
           status,
           elapsed: status === "live" && elapsed !== "" ? Number(elapsed) : null,
           manualOverride,
@@ -183,6 +211,38 @@ export function MatchOverrideModal({
             </div>
           </div>
 
+          {/* Penalties Inputs (Knockout Draw only) */}
+          {showPensInput && (
+            <div className="grid grid-cols-2 gap-4 bg-amber-50/40 dark:bg-amber-950/10 p-3.5 rounded-xl border border-amber-100/50 dark:border-amber-900/20 animate-fade-in">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-1.5">
+                  Penales Local
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={homePenaltiesInput}
+                  onChange={(e) => setHomePenaltiesInput(e.target.value)}
+                  placeholder="-"
+                  className="w-full text-center text-sm font-extrabold bg-white dark:bg-slate-900 border border-amber-200/80 dark:border-amber-900/40 rounded-lg p-2 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all text-amber-700 dark:text-amber-300"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-1.5">
+                  Penales Visitante
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={awayPenaltiesInput}
+                  onChange={(e) => setAwayPenaltiesInput(e.target.value)}
+                  placeholder="-"
+                  className="w-full text-center text-sm font-extrabold bg-white dark:bg-slate-900 border border-amber-200/80 dark:border-amber-900/40 rounded-lg p-2 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all text-amber-700 dark:text-amber-300"
+                />
+              </div>
+            </div>
+          )}
+
           {/* Status & Elapsed */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -235,6 +295,13 @@ export function MatchOverrideModal({
               </p>
             </div>
           </div>
+
+          {/* Warning Message for tied penalties */}
+          {pensTied && (
+            <div className="text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 px-3 py-2 rounded-lg">
+              ⚠️ Los penales no pueden quedar empatados. Uno de los dos debe ganar la tanda.
+            </div>
+          )}
 
           {/* Error Message */}
           {errorMsg && (
