@@ -712,47 +712,62 @@ function ProdePageContent() {
               {/* Content */}
               <div className="flex-1 overflow-y-auto p-5 space-y-6">
                 {/* Points Section */}
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-550">
                     ¿Cómo sumar puntos?
                   </h4>
-                  
-                  {/* 3 Points */}
-                  <div className="flex gap-3 p-3 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-100 dark:border-emerald-900/20">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-white font-extrabold text-sm shrink-0">
-                      3
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-bold text-slate-900 dark:text-white">Resultado Exacto</p>
-                      <p className="text-xs text-slate-650 dark:text-slate-400 leading-relaxed">
-                        Acertás los goles de ambos equipos. En fase de eliminación directa, si el partido termina empatado en el tiempo regular (90 min), debés acertar además qué equipo clasifica por penales.
-                      </p>
+
+                  {/* Fase de Grupos */}
+                  <div className="space-y-2">
+                    <h5 className="text-xs font-bold text-slate-700 dark:text-slate-350 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Fase de Grupos (90 min + descuento)
+                    </h5>
+                    <div className="grid grid-cols-1 gap-2 pl-3 border-l border-slate-100 dark:border-slate-700/50 ml-1">
+                      <div className="flex items-start gap-2.5 text-xs">
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-emerald-500 text-white font-extrabold text-[10px] shrink-0">3</span>
+                        <p className="text-slate-650 dark:text-slate-400"><strong className="text-slate-800 dark:text-slate-200">Resultado Exacto:</strong> Acertás la cantidad exacta de goles de ambos equipos.</p>
+                      </div>
+                      <div className="flex items-start gap-2.5 text-xs">
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-blue-500 text-white font-extrabold text-[10px] shrink-0">1</span>
+                        <p className="text-slate-650 dark:text-slate-400"><strong className="text-slate-800 dark:text-slate-200">Tendencia / Resultado Parcial:</strong> Acertás el ganador o si hay empate, pero no el resultado exacto.</p>
+                      </div>
+                      <div className="flex items-start gap-2.5 text-xs">
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-slate-400 dark:bg-slate-700 text-white font-extrabold text-[10px] shrink-0">0</span>
+                        <p className="text-slate-650 dark:text-slate-400"><strong className="text-slate-800 dark:text-slate-200">Sin Aciertos:</strong> No acertás el ganador ni el empate.</p>
+                      </div>
                     </div>
                   </div>
 
-                  {/* 1 Point */}
-                  <div className="flex gap-3 p-3 rounded-xl bg-blue-50/50 dark:bg-blue-950/10 border border-blue-100 dark:border-blue-900/20">
-                    <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center text-white font-extrabold text-sm shrink-0">
-                      1
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-bold text-slate-900 dark:text-white">Resultado Parcial / Tendencia</p>
-                      <p className="text-xs text-slate-650 dark:text-slate-400 leading-relaxed">
-                        Acertás quién gana el partido (pero no por cuántos goles exactos) o acertás que empatan (sin importar si adivinás la cantidad de goles). También sumás 1 punto en eliminación directa si acertás el empate exacto pero no quién clasifica.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* 0 Points */}
-                  <div className="flex gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
-                    <div className="w-8 h-8 rounded-lg bg-slate-400 dark:bg-slate-700 flex items-center justify-center text-white font-extrabold text-sm shrink-0">
-                      0
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-bold text-slate-900 dark:text-white">Sin Aciertos</p>
-                      <p className="text-xs text-slate-650 dark:text-slate-400 leading-relaxed">
-                        No acertás el ganador ni el empate.
-                      </p>
+                  {/* Segunda Fase / Eliminatorias */}
+                  <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/50">
+                    <h5 className="text-xs font-bold text-slate-700 dark:text-slate-350 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                      Segunda Fase / Eliminatorias (120 min + penales)
+                    </h5>
+                    <div className="grid grid-cols-1 gap-2.5 pl-3 border-l border-slate-100 dark:border-slate-700/50 ml-1">
+                      <div className="flex items-start gap-2.5 text-xs">
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-emerald-600 text-white font-extrabold text-[10px] shrink-0">4</span>
+                        <p className="text-slate-650 dark:text-slate-400"><strong className="text-slate-800 dark:text-slate-200">Empate Exacto + Penales:</strong> Acertás el empate exacto en los 120m (ej. 1-1) y además acertás quién clasifica por penales.</p>
+                      </div>
+                      <div className="flex items-start gap-2.5 text-xs">
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-emerald-500 text-white font-extrabold text-[10px] shrink-0">3</span>
+                        <p className="text-slate-650 dark:text-slate-400"><strong className="text-slate-800 dark:text-slate-200">Resultado Exacto:</strong> Acertás el marcador exacto de los 120m (si es empate, errando quién avanza por penales).</p>
+                      </div>
+                      <div className="flex items-start gap-2.5 text-xs">
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-purple-500 text-white font-extrabold text-[10px] shrink-0">2</span>
+                        <p className="text-slate-650 dark:text-slate-400"><strong className="text-slate-800 dark:text-slate-200">Empate (no exacto) + Penales:</strong> Acertás que hay empate en 120m (pero no el marcador exacto) y acertás quién avanza por penales.</p>
+                      </div>
+                      <div className="flex items-start gap-2.5 text-xs">
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-blue-500 text-white font-extrabold text-[10px] shrink-0">1</span>
+                        <p className="text-slate-650 dark:text-slate-400">
+                          <strong className="text-slate-800 dark:text-slate-200">Acierto Parcial / Quien Pasa:</strong> Acertás el ganador de los 120m (sin resultado exacto), o el empate (sin resultado exacto) errando los penales. O también, si no acertás el resultado de 120m pero sí el equipo que pasa de ronda.
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2.5 text-xs">
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-slate-400 dark:bg-slate-700 text-white font-extrabold text-[10px] shrink-0">0</span>
+                        <p className="text-slate-650 dark:text-slate-400"><strong className="text-slate-800 dark:text-slate-200">Sin Aciertos:</strong> No acertás el resultado de los 120m ni quién avanza.</p>
+                      </div>
                     </div>
                   </div>
                 </div>
