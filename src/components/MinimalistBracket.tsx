@@ -10,6 +10,7 @@ import { Trophy, X, Zap, Trash2 } from "lucide-react";
 import { clsx } from "clsx";
 import { useAuth } from "@/context/AuthContext";
 import { useTournament } from "@/context/TournamentContext";
+import { CandidatesTooltip } from "./KnockoutStage";
 
 interface MinimalistBracketProps {
   groups: Group[];
@@ -231,6 +232,26 @@ export function MinimalistBracket({
     );
 
     if (isPH) {
+      const isHome = match ? (
+        match.homeTeam === team ||
+        (match.homeTeam && "placeholder" in match.homeTeam && team && "placeholder" in team && match.homeTeam.placeholder === team.placeholder)
+      ) : false;
+      const candidates = match ? (isHome ? match.probabilisticData?.homeCandidates : match.probabilisticData?.awayCandidates) : undefined;
+      const hasCandidates = candidates && candidates.length > 0;
+
+      if (hasCandidates) {
+        return (
+          <Tooltip
+            content={<CandidatesTooltip candidates={candidates} />}
+            placement="top"
+            interactive={false}
+            wrapperClassName="flex items-center justify-center w-8 h-8"
+          >
+            {circleContent}
+          </Tooltip>
+        );
+      }
+
       return (
         <div className="flex items-center justify-center w-full h-full">
           {circleContent}

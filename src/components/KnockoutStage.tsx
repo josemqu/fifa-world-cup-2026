@@ -67,7 +67,7 @@ function ChampionBanner({
 }
 
 // Helper component for candidates tooltip
-function CandidatesTooltip({
+export function CandidatesTooltip({
   candidates,
 }: {
   candidates: { team: Team; probability: number }[];
