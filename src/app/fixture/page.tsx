@@ -19,6 +19,7 @@ function FixturePageContent() {
     knockoutMatches,
     updateMatch,
     updateKnockoutMatch,
+    isCalculatingProbabilities,
   } = useTournament();
 
   const { dbUser, user } = useAuth();
@@ -108,7 +109,7 @@ function FixturePageContent() {
               </button>
             </div>
 
-            {isAnalyzing && (
+            {(isAnalyzing || isCalculatingProbabilities) && (
               <div className="flex items-center ml-1">
                 <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
               </div>

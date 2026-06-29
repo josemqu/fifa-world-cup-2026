@@ -402,7 +402,7 @@ function MatchCard({
                   <FlashScoreInput
                     type="number"
                     className="w-7 h-7 text-center text-xs font-bold bg-slate-100/70 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800/80 text-slate-500 dark:text-slate-400 rounded outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none cursor-default pointer-events-none"
-                    value={match.homeScore ?? 0}
+                    value={match.homeScore ?? "-"}
                     readOnly
                   />
                 </>
@@ -516,7 +516,7 @@ function MatchCard({
                   <FlashScoreInput
                     type="number"
                     className="w-7 h-7 text-center text-xs font-bold bg-slate-100/70 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800/80 text-slate-500 dark:text-slate-400 rounded outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none cursor-default pointer-events-none"
-                    value={match.awayScore ?? 0}
+                    value={match.awayScore ?? "-"}
                     readOnly
                   />
                 </>

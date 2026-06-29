@@ -81,6 +81,7 @@ interface TournamentContextType {
   simulateKnockout: () => void;
   simulateAll: () => void;
   resetTournament: () => void;
+  isCalculatingProbabilities: boolean;
 }
 
 const TournamentContext = createContext<TournamentContextType | undefined>(
@@ -140,6 +141,7 @@ function areScorersEqual(s1?: Scorer[], s2?: Scorer[]): boolean {
 export function TournamentProvider({ children }: { children: ReactNode }) {
   const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
   const [knockoutMatches, setKnockoutMatches] = useState<KnockoutMatch[]>([]);
+  const [isCalculatingProbabilities, setIsCalculatingProbabilities] = useState(false);
   const [probabilities, setProbabilities] = useState<Map<string, any>>(
     new Map(),
   );
@@ -322,6 +324,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
 
       // Update R32 matches
       // We need to preserve scores if the teams haven't changed
+      const now = new Date();
       const updatedR32 = r32.map((newMatch) => {
         const existing = prev.find((m) => m.id === newMatch.id);
 
@@ -342,7 +345,21 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           };
         }
 
-        // If teams changed, reset score
+        // If the match has already started or finished, preserve its scores
+        // even if teams "changed" (e.g. due to initial data loading race condition).
+        // The live sync will provide the correct scores.
+        const matchStarted = existing && now >= new Date(existing.utcDate);
+        const hasScoreData = existing && (existing.homeScore !== null || existing.awayScore !== null);
+        if (existing && (matchStarted || hasScoreData)) {
+          return {
+            ...newMatch,
+            ...existing,
+            homeTeam: newMatch.homeTeam,
+            awayTeam: newMatch.awayTeam,
+          };
+        }
+
+        // If teams changed and match hasn't started, reset score
         return {
           ...newMatch,
           stage: "R32",
@@ -403,10 +420,12 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       // We run probability calculation if there are matches
       // The util handles skipping simulation for finished matches, effectively giving 100% prob
       if (groups.length > 0) {
+        setIsCalculatingProbabilities(true);
         const newProbabilities = await calculateKnockoutProbabilities(
           groups,
           knockoutMatches,
         );
+        setIsCalculatingProbabilities(false);
         setProbabilities(newProbabilities);
 
         // Auto-assign teams that are 100% locked according to the simulation
@@ -757,6 +776,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         setSimulationResults,
         clearSimulationResults,
         isSimulationStale,
+        isCalculatingProbabilities,
         
         // Compatibility aliases
         predictionIterations,
