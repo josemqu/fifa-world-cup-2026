@@ -12,6 +12,7 @@ interface TooltipProps {
   wrapperClassName?: string;
   placement?: "top" | "right" | "bottom" | "left";
   interactive?: boolean;
+  onlyShowIfTruncated?: boolean;
 }
 
 export function Tooltip({
@@ -21,6 +22,7 @@ export function Tooltip({
   wrapperClassName,
   placement = "top",
   interactive = false,
+  onlyShowIfTruncated = false,
 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
@@ -30,11 +32,31 @@ export function Tooltip({
   const [mounted, setMounted] = useState(false);
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const isElementTruncated = (element: HTMLElement): boolean => {
+    if (element.clientWidth > 0 && element.scrollWidth - element.clientWidth > 1) {
+      return true;
+    }
+    for (let i = 0; i < element.children.length; i++) {
+      const child = element.children[i] as HTMLElement;
+      if (child && isElementTruncated(child)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   const showTooltip = () => {
     if (hideTimeoutRef.current) {
       clearTimeout(hideTimeoutRef.current);
       hideTimeoutRef.current = null;
     }
+
+    if (onlyShowIfTruncated && triggerRef.current) {
+      if (!isElementTruncated(triggerRef.current)) {
+        return;
+      }
+    }
+
     setIsVisible(true);
   };
 

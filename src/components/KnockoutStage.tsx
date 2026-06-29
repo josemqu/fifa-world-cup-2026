@@ -359,6 +359,7 @@ function MatchCard({
                   }
                   placement="top"
                   wrapperClassName="min-w-0 flex-1"
+                  onlyShowIfTruncated={!(isHomePlaceholder && !isHomeProjected && homeName) || getPlaceholderExplanation(homeName) === homeName}
                 >
                   <span
                     className={clsx(
@@ -487,6 +488,7 @@ function MatchCard({
                   }
                   placement="top"
                   wrapperClassName="min-w-0 flex-1"
+                  onlyShowIfTruncated={!(isAwayPlaceholder && !isAwayProjected && awayName) || getPlaceholderExplanation(awayName) === awayName}
                 >
                   <span
                     className={clsx(

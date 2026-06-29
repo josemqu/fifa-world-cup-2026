@@ -814,6 +814,7 @@ function ScheduleMatchCard({
               content={getPlaceholderExplanation(match.homeTeamName)} 
               placement="top"
               wrapperClassName="min-w-0 flex-1"
+              onlyShowIfTruncated={getPlaceholderExplanation(match.homeTeamName) === match.homeTeamName}
             >
               <span
                 className={clsx(
@@ -881,6 +882,7 @@ function ScheduleMatchCard({
               content={getPlaceholderExplanation(match.awayTeamName)} 
               placement="top"
               wrapperClassName="min-w-0 flex-1"
+              onlyShowIfTruncated={getPlaceholderExplanation(match.awayTeamName) === match.awayTeamName}
             >
               <span
                 className={clsx(
