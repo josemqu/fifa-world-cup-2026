@@ -253,7 +253,7 @@ export function MinimalistBracket({
         )}
       >
         {isPH ? (
-          <span className="font-mono tracking-tighter text-[6px] md:text-[8px]">{name}</span>
+          <span className="font-mono tracking-tighter text-[6px] md:text-[8px]"></span>
         ) : (() => {
           const code = getCountryIsoCode(name);
           if (!code) return <div className="w-full h-full bg-slate-200 dark:bg-slate-700 rounded-full" />;
