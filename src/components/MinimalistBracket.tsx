@@ -478,10 +478,10 @@ export function MinimalistBracket({
             <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-slate-800 dark:bg-slate-800 -translate-y-1/2 z-0 pointer-events-none" />
 
             {/* Active Highlight Lines for Finalists */}
-            {finalMatch?.homeTeam && !isPlaceholderTeam(finalMatch.homeTeam) && (
+            {finalMatch?.homeTeam && !isPlaceholderTeam(finalMatch.homeTeam) && isSameTeam(champion, finalMatch.homeTeam) && (
               <div className="absolute top-1/2 left-0 right-1/2 h-[2px] bg-slate-200 dark:bg-slate-200 -translate-y-1/2 z-0 pointer-events-none" />
             )}
-            {finalMatch?.awayTeam && !isPlaceholderTeam(finalMatch.awayTeam) && (
+            {finalMatch?.awayTeam && !isPlaceholderTeam(finalMatch.awayTeam) && isSameTeam(champion, finalMatch.awayTeam) && (
               <div className="absolute top-1/2 left-1/2 right-0 h-[2px] bg-slate-200 dark:bg-slate-200 -translate-y-1/2 z-0 pointer-events-none" />
             )}
 
