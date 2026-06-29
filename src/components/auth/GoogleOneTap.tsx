@@ -5,6 +5,23 @@ import { useAuth } from "@/context/AuthContext";
 import { GoogleAuthProvider } from "firebase/auth";
 import Script from "next/script";
 
+// Override console.error to suppress GSI_LOGGER FedCM abort errors
+if (typeof window !== "undefined") {
+  const originalConsoleError = console.error;
+  console.error = (...args: any[]) => {
+    const hasGsiLogger = args.some(
+      (arg) => typeof arg === "string" && arg.includes("[GSI_LOGGER]")
+    );
+    const hasAbortError = args.some(
+      (arg) => typeof arg === "string" && arg.includes("AbortError")
+    );
+    if (hasGsiLogger && hasAbortError) {
+      return;
+    }
+    originalConsoleError.apply(console, args);
+  };
+}
+
 export function GoogleOneTap() {
   const { user, loading, loginWithCredential } = useAuth();
   const initialized = useRef(false);

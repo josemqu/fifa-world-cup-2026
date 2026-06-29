@@ -226,7 +226,7 @@ export function MinimalistBracket({
         content={<span className="font-bold text-xs">{name}</span>}
         placement="top"
         interactive={false}
-        wrapperClassName="flex items-center justify-center w-full h-full"
+        wrapperClassName="flex items-center justify-center w-8 h-8"
       >
         {circleContent}
       </Tooltip>
@@ -261,7 +261,7 @@ export function MinimalistBracket({
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
             <Trophy className="w-5 h-5 text-blue-500" />
-            <h2 className="text-lg font-bold text-white">Esquema de Llaves Minimalista</h2>
+            <h2 className="text-lg font-bold text-white">El camino del campeón</h2>
           </div>
           <button
             onClick={onClose}

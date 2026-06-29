@@ -200,7 +200,7 @@ export function Tooltip({
       ref={triggerRef}
       onMouseEnter={showTooltip}
       onMouseLeave={hideTooltip}
-      className={twMerge("relative cursor-help mx-0", wrapperClassName)}
+      className={twMerge("relative mx-0", wrapperClassName)}
     >
       {children}
       {isVisible && (
