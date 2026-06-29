@@ -38,6 +38,7 @@ export type Match = {
   status?: "scheduled" | "live" | "halftime" | "finished";
   elapsed?: number | null;
   lastSyncAt?: string;
+  isSimulated?: boolean;
 };
 
 export type Group = {
@@ -72,6 +73,7 @@ export type KnockoutMatch = {
   status?: "scheduled" | "live" | "halftime" | "finished";
   elapsed?: number | null;
   lastSyncAt?: string;
+  isSimulated?: boolean;
   probabilisticData?: {
     homeTeamProb: number; // 0-1
     awayTeamProb: number; // 0-1

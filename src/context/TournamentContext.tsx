@@ -513,6 +513,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
             status: expectedStatus,
             elapsed: expectedElapsed,
             lastSyncAt: new Date().toISOString(),
+            isSimulated: false,
           };
         });
 
@@ -577,6 +578,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           status: expectedStatus,
           elapsed: expectedElapsed,
           lastSyncAt: new Date().toISOString(),
+          isSimulated: false,
         };
       });
 
@@ -588,7 +590,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     setGroups((currentGroups) => {
       return currentGroups.map((group) => {
         const updatedMatches = group.matches.map((match) => {
-          const isFinished = match.finished === true || match.status === "finished";
+          const isFinished = (match.finished === true || match.status === "finished") && !match.isSimulated;
           if (isFinished) {
             return match;
           }
@@ -618,6 +620,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
             homeScore: home,
             awayScore: away,
             finished: true,
+            isSimulated: true,
           };
         });
 
@@ -642,6 +645,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           awayPenalties: null,
           winner: null,
           finished: false,
+          isSimulated: false,
         };
       });
       return runKnockoutSimulation(resetMatches);
@@ -652,7 +656,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     const resetGroups = groups.map((group) => ({
       ...group,
       matches: group.matches.map((match) => {
-        const isFinished = match.finished === true || match.status === "finished";
+        const isFinished = (match.finished === true || match.status === "finished") && !match.isSimulated;
         if (isFinished) {
           return match;
         }
@@ -665,12 +669,13 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           homeScore: null,
           awayScore: null,
           finished: false,
+          isSimulated: false,
         };
       }),
     }));
 
     const preservedKnockouts = knockoutMatches.filter((match) => {
-      const isFinished = match.finished === true || match.status === "finished";
+      const isFinished = (match.finished === true || match.status === "finished") && !match.isSimulated;
       const isLive = match.status === "live" || match.status === "halftime";
       return isFinished || isLive;
     });
@@ -696,6 +701,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
             homeScore: null,
             awayScore: null,
             finished: false,
+            isSimulated: false,
           };
         });
         // Recalculate stats
@@ -717,6 +723,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           awayPenalties: null,
           winner: null,
           finished: false,
+          isSimulated: false,
         };
       });
     });

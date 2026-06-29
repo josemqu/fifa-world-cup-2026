@@ -609,6 +609,7 @@ export const runKnockoutSimulation = (
         }
         match.winner = winner;
         match.finished = true;
+        match.isSimulated = true;
       } else {
         // If already played, safety check to resolve winner field
         if (!winner) {
@@ -661,6 +662,7 @@ export const runKnockoutSimulation = (
       match.homePenalties = null;
       match.awayPenalties = null;
       match.winner = null;
+      match.isSimulated = false;
       winner = null;
     }
 
@@ -850,7 +852,7 @@ export const simulateTournament = (
   // Deep clone to avoid mutating input
   const simulatedGroups = initialGroups.map((group) => {
     const updatedMatches = group.matches.map((match) => {
-      if (match.finished) return match; // Keep existing results
+      if (match.finished || match.status === "finished") return match; // Keep existing results
 
       const homeTeam = group.teams.find((t) => t.id === match.homeTeamId);
       const awayTeam = group.teams.find((t) => t.id === match.awayTeamId);
@@ -877,6 +879,7 @@ export const simulateTournament = (
         homeScore: home,
         awayScore: away,
         finished: true,
+        isSimulated: true,
       };
     });
 
@@ -931,6 +934,11 @@ export const simulateTournament = (
           homePenalties: existingMatch.homePenalties,
           awayPenalties: existingMatch.awayPenalties,
           winner: existingMatch.winner,
+          finished: existingMatch.finished,
+          status: existingMatch.status,
+          elapsed: existingMatch.elapsed,
+          homeScorers: existingMatch.homeScorers,
+          awayScorers: existingMatch.awayScorers,
         };
       }
     }
