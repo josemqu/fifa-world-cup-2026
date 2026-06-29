@@ -483,10 +483,6 @@ export function MinimalistBracket({
                         className="object-cover w-full h-full aspect-square rounded-full scale-105"
                         alt={champion.name}
                       />
-                      {/* Floating overlay gold trophy badge */}
-                      <div className="absolute -bottom-1 -right-1 bg-yellow-500 text-slate-950 p-1.5 rounded-full shadow-md border border-yellow-300 flex items-center justify-center">
-                        <Trophy className="w-3.5 h-3.5" />
-                      </div>
                     </div>
                   );
                 })() : (
