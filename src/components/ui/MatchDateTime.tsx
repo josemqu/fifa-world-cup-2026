@@ -186,7 +186,7 @@ export function MatchDateTime({
     return `90+${elapsed - 110}'`;
   };
 
-  const showDateTime = !(now && isPlaying);
+  const showDateTime = !(now && isPlaying) && !isFinished;
 
   const dateTimeContent = (
     <div className="flex items-center gap-1.5">
