@@ -56,9 +56,15 @@ export function MatchOverrideModal({
   const [manualOverride, setManualOverride] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string>("");
+  const [showPensTiedWarning, setShowPensTiedWarning] = useState<boolean>(false);
 
   const showPensInput = isKnockout && homeScoreInput !== "" && awayScoreInput !== "" && Number(homeScoreInput) === Number(awayScoreInput);
-  const pensTied = showPensInput && homePenaltiesInput !== "" && awayPenaltiesInput !== "" && Number(homePenaltiesInput) === Number(awayPenaltiesInput);
+
+  // Reset validation messages when any inputs change
+  useEffect(() => {
+    setErrorMsg("");
+    setShowPensTiedWarning(false);
+  }, [homeScoreInput, awayScoreInput, homePenaltiesInput, awayPenaltiesInput]);
 
   // Load initial values from dbScores if available, else from props
   useEffect(() => {
@@ -87,14 +93,14 @@ export function MatchOverrideModal({
     setLoading(true);
     setErrorMsg("");
 
-    if (showPensInput && status === "finished") {
-      if (homePenaltiesInput === "" || awayPenaltiesInput === "") {
+    if (showPensInput) {
+      if (status === "finished" && (homePenaltiesInput === "" || awayPenaltiesInput === "")) {
         setErrorMsg("Debe ingresar el resultado de la tanda de penales para finalizar el partido.");
         setLoading(false);
         return;
       }
-      if (Number(homePenaltiesInput) === Number(awayPenaltiesInput)) {
-        setErrorMsg("La tanda de penales no puede terminar empatada.");
+      if (homePenaltiesInput !== "" && awayPenaltiesInput !== "" && Number(homePenaltiesInput) === Number(awayPenaltiesInput)) {
+        setShowPensTiedWarning(true);
         setLoading(false);
         return;
       }
@@ -305,8 +311,8 @@ export function MatchOverrideModal({
           </div>
 
           {/* Warning Message for tied penalties */}
-          {pensTied && (
-            <div className="text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 px-3 py-2 rounded-lg">
+          {showPensTiedWarning && (
+            <div className="text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 px-3 py-2 rounded-lg mb-3">
               ⚠️ Los penales no pueden quedar empatados. Uno de los dos debe ganar la tanda.
             </div>
           )}
