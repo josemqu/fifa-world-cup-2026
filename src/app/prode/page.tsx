@@ -300,7 +300,11 @@ const getTodayPointsAndMatches = (entry: LeaderboardEntry, nowTime: Date | null)
   return { todayMatches, totalTodayPoints };
 };
 
-const renderTodayMatchesTooltip = (entry: LeaderboardEntry, nowTime: Date | null = null) => {
+const renderTodayMatchesTooltip = (
+  entry: LeaderboardEntry, 
+  nowTime: Date | null = null,
+  knockoutMatches?: KnockoutMatch[]
+) => {
   const { todayMatches, totalTodayPoints } = getTodayPointsAndMatches(entry, nowTime);
 
   if (todayMatches.length === 0) {
@@ -320,14 +324,26 @@ const renderTodayMatchesTooltip = (entry: LeaderboardEntry, nowTime: Date | null
       <div className="flex flex-col gap-1.5 max-h-[180px] overflow-y-auto scrollbar-hide pr-1">
         {todayMatches.map(({ match: m, points }) => {
           const detail = MATCH_LOOKUP.get(m.matchId);
-          const homeName = detail?.homeTeamName || `Partido #${m.matchId}`;
-          const awayName = detail?.awayTeamName || '';
+          let homeName = detail?.homeTeamName || `Partido #${m.matchId}`;
+          let awayName = detail?.awayTeamName || '';
           
           const isKnockout = Number(m.matchId) >= 73;
           
+          if (isKnockout && knockoutMatches) {
+            const km = knockoutMatches.find((x) => x.id === m.matchId);
+            if (km) {
+              if (km.homeTeam) {
+                homeName = "placeholder" in km.homeTeam ? km.homeTeam.placeholder : km.homeTeam.name;
+              }
+              if (km.awayTeam) {
+                awayName = "placeholder" in km.awayTeam ? km.awayTeam.placeholder : km.awayTeam.name;
+              }
+            }
+          }
+          
           let predScoreText = `${m.homeScore}-${m.awayScore}`;
           if (isKnockout && m.homeScore === m.awayScore && m.homePenalties !== undefined && m.awayPenalties !== undefined) {
-            const advName = m.homePenalties > m.awayPenalties ? (detail?.homeTeamName || 'L') : (detail?.awayTeamName || 'V');
+            const advName = m.homePenalties > m.awayPenalties ? homeName : awayName;
             predScoreText += ` (${advName})`;
           }
 
@@ -2404,6 +2420,7 @@ function GroupsTab({
   selectedGroupId: string | null;
   setSelectedGroupId: (groupId: string | null) => void;
 }) {
+  const { knockoutMatches } = useTournament();
   const [groups, setGroups] = useState<GroupData[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -2712,7 +2729,7 @@ function GroupsTab({
                               <span className="text-lg font-bold text-slate-900 dark:text-white">{entry.totalPoints}</span>
                               <span className="text-[10px] text-slate-400 ml-1">pts</span>
                             </div>
-                            <Tooltip content={renderTodayMatchesTooltip(entry, nowTime)} interactive={true} placement="top">
+                            <Tooltip content={renderTodayMatchesTooltip(entry, nowTime, knockoutMatches)} interactive={true} placement="top">
                               <span className={clsx(
                                 "text-[9px] font-bold px-1.5 py-0.5 rounded-full cursor-pointer transition-colors mt-0.5 select-none",
                                 todayPoints > 0
@@ -2940,6 +2957,7 @@ function GroupsTab({
 // ═══════════════════════════════════════════════════════════════
 
 function LeaderboardTab() {
+  const { knockoutMatches } = useTournament();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
   const { user } = useAuth();
@@ -3063,7 +3081,7 @@ function LeaderboardTab() {
                     <span className="text-lg font-bold text-slate-900 dark:text-white">{entry.totalPoints}</span>
                     <span className="text-[10px] text-slate-400 ml-1">pts</span>
                   </div>
-                  <Tooltip content={renderTodayMatchesTooltip(entry, nowTime)} interactive={true} placement="top">
+                  <Tooltip content={renderTodayMatchesTooltip(entry, nowTime, knockoutMatches)} interactive={true} placement="top">
                     <span className={clsx(
                       "text-[9px] font-bold px-1.5 py-0.5 rounded-full cursor-pointer transition-colors mt-0.5 select-none",
                       todayPoints > 0
@@ -3205,16 +3223,30 @@ function UserPredictionStatsModal({ entry, onClose }: UserPredictionStatsModalPr
 }
 
 function ModalMatchRow({ match, type }: { match: PredictionMatchInfo; type: "exact" | "outcome" }) {
+  const { knockoutMatches } = useTournament();
   const detail = MATCH_LOOKUP.get(match.matchId);
-  const homeName = detail?.homeTeamName || `Partido #${match.matchId}`;
-  const awayName = detail?.awayTeamName || '';
+  let homeName = detail?.homeTeamName || `Partido #${match.matchId}`;
+  let awayName = detail?.awayTeamName || '';
   
   const isKnockout = Number(match.matchId) >= 73;
+  
+  if (isKnockout && knockoutMatches) {
+    const km = knockoutMatches.find((x) => x.id === match.matchId);
+    if (km) {
+      if (km.homeTeam) {
+        homeName = "placeholder" in km.homeTeam ? km.homeTeam.placeholder : km.homeTeam.name;
+      }
+      if (km.awayTeam) {
+        awayName = "placeholder" in km.awayTeam ? km.awayTeam.placeholder : km.awayTeam.name;
+      }
+    }
+  }
+
   const matchdayInfo = detail?.matchday ? `${detail.stage} · Fecha ${detail.matchday}` : detail?.stage || '';
 
   let predScoreText = `${match.homeScore} - ${match.awayScore}`;
   if (isKnockout && match.homeScore === match.awayScore && match.homePenalties !== undefined && match.awayPenalties !== undefined) {
-    const advName = match.homePenalties > match.awayPenalties ? (detail?.homeTeamName || 'L') : (detail?.awayTeamName || 'V');
+    const advName = match.homePenalties > match.awayPenalties ? homeName : awayName;
     predScoreText += ` (${advName})`;
   }
 
