@@ -40,7 +40,7 @@ interface ConnectorProps {
   team?: any;
   match?: KnockoutMatch;
   roundName?: string;
-  renderTeamCircle: (team: any, match: KnockoutMatch | undefined, roundName: string) => React.ReactNode;
+  renderTeamCircle: (team: any, match: KnockoutMatch | undefined, roundName: string, type?: "home" | "away" | "winner") => React.ReactNode;
 }
 
 function LeftConnector({
@@ -100,9 +100,9 @@ function LeftConnector({
         style={{ left: "calc(50% - 1px)" }}
       />
       {/* Circle at the junction */}
-      {team !== undefined && (
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-auto">
-          {renderTeamCircle(team, match, roundName || "")}
+      {match !== undefined && (
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-auto">
+          {renderTeamCircle(team, match, roundName || "", "winner")}
         </div>
       )}
     </div>
@@ -167,9 +167,9 @@ function RightConnector({
         style={{ right: "calc(50% - 1px)" }}
       />
       {/* Circle at the junction */}
-      {team !== undefined && (
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-auto">
-          {renderTeamCircle(team, match, roundName || "")}
+      {match !== undefined && (
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-auto">
+          {renderTeamCircle(team, match, roundName || "", "winner")}
         </div>
       )}
     </div>
@@ -239,7 +239,12 @@ export function MinimalistBracket({
   };
 
   // Render a team circle (flag or placeholder)
-  const renderTeamCircle = (team: any, match: KnockoutMatch | undefined, roundName: string) => {
+  const renderTeamCircle = (
+    team: any,
+    match: KnockoutMatch | undefined,
+    roundName: string,
+    type?: "home" | "away" | "winner"
+  ) => {
     const isPH = isPlaceholderTeam(team);
     const name = getTeamName(team, match);
 
@@ -271,23 +276,10 @@ export function MinimalistBracket({
     );
 
     if (isPH) {
-      const isWinnerJunction = match ? (
-        team !== match.homeTeam &&
-        team !== match.awayTeam &&
-        !(team && typeof team === 'object' && 'placeholder' in team && 
-          ((match.homeTeam && 'placeholder' in match.homeTeam && match.homeTeam.placeholder === team.placeholder) ||
-           (match.awayTeam && 'placeholder' in match.awayTeam && match.awayTeam.placeholder === team.placeholder)))
-      ) : false;
-
-      const isHome = match ? (
-        match.homeTeam === team ||
-        (match.homeTeam && "placeholder" in match.homeTeam && team && "placeholder" in team && match.homeTeam.placeholder === team.placeholder)
-      ) : false;
-
       const candidates = match ? (
-        isWinnerJunction 
-          ? match.probabilisticData?.winnerCandidates 
-          : (isHome ? match.probabilisticData?.homeCandidates : match.probabilisticData?.awayCandidates)
+        type === "winner"
+          ? match.probabilisticData?.winnerCandidates
+          : (type === "home" ? match.probabilisticData?.homeCandidates : match.probabilisticData?.awayCandidates)
       ) : undefined;
       const hasCandidates = candidates && candidates.length > 0;
 
@@ -297,7 +289,7 @@ export function MinimalistBracket({
             content={<CandidatesTooltip candidates={candidates} />}
             placement="top"
             interactive={false}
-            wrapperClassName="flex items-center justify-center w-6 h-6 md:w-8 md:h-8"
+            wrapperClassName="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 z-20"
           >
             {circleContent}
           </Tooltip>
@@ -305,7 +297,7 @@ export function MinimalistBracket({
       }
 
       return (
-        <div className="flex items-center justify-center w-full h-full">
+        <div className="flex items-center justify-center w-full h-full relative z-20">
           {circleContent}
         </div>
       );
@@ -316,7 +308,7 @@ export function MinimalistBracket({
         content={<span className="font-bold text-xs">{name}</span>}
         placement="top"
         interactive={false}
-        wrapperClassName="flex items-center justify-center w-6 h-6 md:w-8 md:h-8"
+        wrapperClassName="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 z-20"
       >
         {circleContent}
       </Tooltip>
@@ -378,10 +370,10 @@ export function MinimalistBracket({
             return (
               <React.Fragment key={`l-r32-${id}`}>
                 <div className="flex items-center justify-center" style={{ gridColumn: 1, gridRowStart: index * 2 + 1 }}>
-                  {renderTeamCircle(m?.homeTeam, m, "16avos")}
+                  {renderTeamCircle(m?.homeTeam, m, "16avos", "home")}
                 </div>
                 <div className="flex items-center justify-center" style={{ gridColumn: 1, gridRowStart: index * 2 + 2 }}>
-                  {renderTeamCircle(m?.awayTeam, m, "16avos")}
+                  {renderTeamCircle(m?.awayTeam, m, "16avos", "away")}
                 </div>
               </React.Fragment>
             );
@@ -402,7 +394,7 @@ export function MinimalistBracket({
                 highlightTop={highlightTop}
                 highlightBottom={highlightBottom}
                 highlightOutput={highlightOutput}
-                style={{ gridColumn: 2, gridRowStart: index * 2 + 1 }}
+                style={{ gridColumn: 2, gridRowStart: index * 2 + 1, zIndex: 10 }}
                 team={r32Match?.winner}
                 match={r32Match}
                 roundName="Octavos"
@@ -426,7 +418,7 @@ export function MinimalistBracket({
                 highlightTop={highlightTop}
                 highlightBottom={highlightBottom}
                 highlightOutput={highlightOutput}
-                style={{ gridColumn: 3, gridRowStart: index * 4 + 1 }}
+                style={{ gridColumn: 3, gridRowStart: index * 4 + 1, zIndex: 9 }}
                 team={r16Match?.winner}
                 match={r16Match}
                 roundName="Cuartos"
@@ -450,7 +442,7 @@ export function MinimalistBracket({
                 highlightTop={highlightTop}
                 highlightBottom={highlightBottom}
                 highlightOutput={highlightOutput}
-                style={{ gridColumn: 4, gridRowStart: index * 8 + 1 }}
+                style={{ gridColumn: 4, gridRowStart: index * 8 + 1, zIndex: 8 }}
                 team={qfMatch?.winner}
                 match={qfMatch}
                 roundName="Semifinal"
@@ -474,7 +466,7 @@ export function MinimalistBracket({
                 highlightTop={highlightTop}
                 highlightBottom={highlightBottom}
                 highlightOutput={highlightOutput}
-                style={{ gridColumn: 5, gridRowStart: 1 }}
+                style={{ gridColumn: 5, gridRowStart: 1, zIndex: 7 }}
                 team={sfMatch?.winner}
                 match={sfMatch}
                 roundName="Final"
@@ -590,7 +582,7 @@ export function MinimalistBracket({
                 highlightTop={highlightTop}
                 highlightBottom={highlightBottom}
                 highlightOutput={highlightOutput}
-                style={{ gridColumn: 7, gridRowStart: 1 }}
+                style={{ gridColumn: 7, gridRowStart: 1, zIndex: 7 }}
                 team={sfMatch?.winner}
                 match={sfMatch}
                 roundName="Final"
@@ -614,7 +606,7 @@ export function MinimalistBracket({
                 highlightTop={highlightTop}
                 highlightBottom={highlightBottom}
                 highlightOutput={highlightOutput}
-                style={{ gridColumn: 8, gridRowStart: index * 8 + 1 }}
+                style={{ gridColumn: 8, gridRowStart: index * 8 + 1, zIndex: 8 }}
                 team={qfMatch?.winner}
                 match={qfMatch}
                 roundName="Semifinal"
@@ -638,7 +630,7 @@ export function MinimalistBracket({
                 highlightTop={highlightTop}
                 highlightBottom={highlightBottom}
                 highlightOutput={highlightOutput}
-                style={{ gridColumn: 9, gridRowStart: index * 4 + 1 }}
+                style={{ gridColumn: 9, gridRowStart: index * 4 + 1, zIndex: 9 }}
                 team={r16Match?.winner}
                 match={r16Match}
                 roundName="Cuartos"
@@ -662,7 +654,7 @@ export function MinimalistBracket({
                 highlightTop={highlightTop}
                 highlightBottom={highlightBottom}
                 highlightOutput={highlightOutput}
-                style={{ gridColumn: 10, gridRowStart: index * 2 + 1 }}
+                style={{ gridColumn: 10, gridRowStart: index * 2 + 1, zIndex: 10 }}
                 team={r32Match?.winner}
                 match={r32Match}
                 roundName="Octavos"
@@ -677,10 +669,10 @@ export function MinimalistBracket({
             return (
               <React.Fragment key={`r-r32-${id}`}>
                 <div className="flex items-center justify-center" style={{ gridColumn: 11, gridRowStart: index * 2 + 1 }}>
-                  {renderTeamCircle(m?.homeTeam, m, "16avos")}
+                  {renderTeamCircle(m?.homeTeam, m, "16avos", "home")}
                 </div>
                 <div className="flex items-center justify-center" style={{ gridColumn: 11, gridRowStart: index * 2 + 2 }}>
-                  {renderTeamCircle(m?.awayTeam, m, "16avos")}
+                  {renderTeamCircle(m?.awayTeam, m, "16avos", "away")}
                 </div>
               </React.Fragment>
             );
