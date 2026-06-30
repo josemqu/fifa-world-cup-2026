@@ -52,6 +52,11 @@ async function syncScores(date?: string) {
       continue;
     }
 
+    const hasExistingPenalties = existing && (
+      (existing.homePenalties !== null && existing.homePenalties !== undefined) ||
+      (existing.awayPenalties !== null && existing.awayPenalties !== undefined)
+    );
+
     const scorersChanged =
       !existing ||
       JSON.stringify(existing.homeScorers || []) !== JSON.stringify(score.homeScorers || []) ||
@@ -61,32 +66,37 @@ async function syncScores(date?: string) {
       !existing ||
       existing.homeScore !== score.homeScore ||
       existing.awayScore !== score.awayScore ||
-      existing.homePenalties !== score.homePenalties ||
-      existing.awayPenalties !== score.awayPenalties ||
+      (hasExistingPenalties ? false : existing.homePenalties !== score.homePenalties) ||
+      (hasExistingPenalties ? false : existing.awayPenalties !== score.awayPenalties) ||
       existing.status !== score.status ||
       existing.elapsed !== score.elapsed ||
       scorersChanged;
 
     if (hasChanged) {
+      const updateFields: Record<string, any> = {
+        externalId: score.externalId,
+        homeTeamName: score.homeTeamName,
+        awayTeamName: score.awayTeamName,
+        homeScore: score.homeScore,
+        awayScore: score.awayScore,
+        homeScorers: score.homeScorers || [],
+        awayScorers: score.awayScorers || [],
+        status: score.status,
+        elapsed: score.elapsed,
+        stage: score.stage,
+        groupId: score.groupId,
+        lastSyncAt: new Date(),
+      };
+
+      if (!hasExistingPenalties) {
+        updateFields.homePenalties = score.homePenalties;
+        updateFields.awayPenalties = score.awayPenalties;
+      }
+
       await LiveScore.findOneAndUpdate(
         { matchId: score.matchId },
         {
-          $set: {
-            externalId: score.externalId,
-            homeTeamName: score.homeTeamName,
-            awayTeamName: score.awayTeamName,
-            homeScore: score.homeScore,
-            awayScore: score.awayScore,
-            homePenalties: score.homePenalties,
-            awayPenalties: score.awayPenalties,
-            homeScorers: score.homeScorers || [],
-            awayScorers: score.awayScorers || [],
-            status: score.status,
-            elapsed: score.elapsed,
-            stage: score.stage,
-            groupId: score.groupId,
-            lastSyncAt: new Date(),
-          },
+          $set: updateFields,
         },
         { upsert: true, returnDocument: 'after' }
       );

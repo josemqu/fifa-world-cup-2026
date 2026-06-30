@@ -46,6 +46,17 @@ export async function POST(request: Request) {
       );
     }
 
+    // Fetch existing score to preserve stage and team names if upserting a new record
+    const existing = await LiveScore.findOne({ matchId });
+    if (!existing) {
+      // Find the group match or knockout details to populate team names and stage
+      // For simplicity, we assume the record should exist.
+      return NextResponse.json(
+        { error: `Match with ID ${matchId} was not found in the database. Please sync first.` },
+        { status: 404 }
+      );
+    }
+
     // Prepare fields to set
     const updateFields: Record<string, any> = {
       manualOverride: manualOverride !== false, // Default to true if not explicitly false
@@ -59,15 +70,11 @@ export async function POST(request: Request) {
     if (status !== undefined) updateFields.status = status;
     if (elapsed !== undefined) updateFields.elapsed = elapsed === null || elapsed === "" ? null : Number(elapsed);
 
-    // Fetch existing score to preserve stage and team names if upserting a new record
-    const existing = await LiveScore.findOne({ matchId });
-    if (!existing) {
-      // Find the group match or knockout details to populate team names and stage
-      // For simplicity, we assume the record should exist.
-      return NextResponse.json(
-        { error: `Match with ID ${matchId} was not found in the database. Please sync first.` },
-        { status: 404 }
-      );
+    if (existing.stage === "knockout") {
+      const hasPenalties = 
+        (homePenalties !== undefined && homePenalties !== null && homePenalties !== "") || 
+        (awayPenalties !== undefined && awayPenalties !== null && awayPenalties !== "");
+      updateFields.penaltiesManual = hasPenalties;
     }
 
     const updated = await LiveScore.findOneAndUpdate(

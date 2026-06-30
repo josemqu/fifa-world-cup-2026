@@ -60,27 +60,38 @@ export async function POST(request: Request) {
       );
     }
 
+    const existing = await LiveScore.findOne({ matchId });
+    const hasExistingPenalties = existing && (
+      (existing.homePenalties !== null && existing.homePenalties !== undefined) ||
+      (existing.awayPenalties !== null && existing.awayPenalties !== undefined)
+    );
+
+    const updateFields: Record<string, any> = {
+      externalId: matchData.externalId,
+      homeTeamName: matchData.homeTeamName,
+      awayTeamName: matchData.awayTeamName,
+      homeScore: matchData.homeScore,
+      awayScore: matchData.awayScore,
+      homeScorers: matchData.homeScorers || [],
+      awayScorers: matchData.awayScorers || [],
+      status: matchData.status,
+      elapsed: matchData.elapsed,
+      stage: matchData.stage,
+      groupId: matchData.groupId,
+      manualOverride: false, // Reset manual override to allow auto syncs
+      lastSyncAt: new Date(),
+    };
+
+    if (!hasExistingPenalties) {
+      updateFields.homePenalties = matchData.homePenalties;
+      updateFields.awayPenalties = matchData.awayPenalties;
+    }
+
     // Force update the match and clear manual override
     const updated = await LiveScore.findOneAndUpdate(
       { matchId },
       {
-        $set: {
-          externalId: matchData.externalId,
-          homeTeamName: matchData.homeTeamName,
-          awayTeamName: matchData.awayTeamName,
-          homeScore: matchData.homeScore,
-          awayScore: matchData.awayScore,
-          homePenalties: matchData.homePenalties,
-          awayPenalties: matchData.awayPenalties,
-          homeScorers: matchData.homeScorers || [],
-          awayScorers: matchData.awayScorers || [],
-          status: matchData.status,
-          elapsed: matchData.elapsed,
-          stage: matchData.stage,
-          groupId: matchData.groupId,
-          manualOverride: false, // Reset manual override to allow auto syncs
-          lastSyncAt: new Date(),
-        },
+        $set: updateFields,
       },
       { upsert: true, new: true, returnDocument: 'after' }
     );
