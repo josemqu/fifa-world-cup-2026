@@ -23,6 +23,7 @@ export interface ILiveScore extends Document {
   stage: "group" | "knockout";
   groupId?: string; // "A", "B", ... para fase de grupos
   manualOverride?: boolean;
+  penaltiesManual?: boolean;
   lastSyncAt: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -53,6 +54,7 @@ const LiveScoreSchema: Schema = new Schema(
     },
     groupId: { type: String },
     manualOverride: { type: Boolean, default: false },
+    penaltiesManual: { type: Boolean, default: false },
     lastSyncAt: { type: Date, default: Date.now },
   },
   {
