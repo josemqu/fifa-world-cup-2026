@@ -29,6 +29,7 @@ import {
   propagateKnockoutTeams,
 } from "@/utils/simulationUtils";
 import { PredictionResult } from "@/utils/monteCarlo";
+import { calculateKnockoutProbabilities } from "@/utils/probabilityUtils";
 
 interface TournamentContextType {
   groups: Group[];
@@ -175,7 +176,12 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           setMatchupResults(JSON.parse(savedMatchups));
         }
         if (savedProbabilities) {
-          setProbabilities(new Map(Object.entries(JSON.parse(savedProbabilities))));
+          const parsed = JSON.parse(savedProbabilities);
+          const entries = Object.entries(parsed);
+          const hasCandidatesData = entries.length > 0 && entries.some(([_, val]: any) => val && (val.winnerCandidates || val.homeCandidates));
+          if (hasCandidatesData) {
+            setProbabilities(new Map(entries));
+          }
         }
         if (savedIterations) {
           setSimulationIterations(Number(savedIterations));
@@ -405,17 +411,20 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         try {
           const savedProbs = localStorage.getItem("tournament_knockout_probabilities");
           if (savedProbs) {
-            setProbabilities(new Map(Object.entries(JSON.parse(savedProbs))));
-            return;
+            const parsed = JSON.parse(savedProbs);
+            const entries = Object.entries(parsed);
+            const hasCandidatesData = entries.length > 0 && entries.some(([_, val]: any) => val && (val.winnerCandidates || val.homeCandidates));
+            if (hasCandidatesData) {
+              setProbabilities(new Map(entries as any));
+              return;
+            } else {
+              console.log("[TournamentContext] Stale probabilities in localStorage (missing candidates), forcing recalculation...");
+            }
           }
         } catch (e) {
           console.error("Failed to parse saved knockout probabilities:", e);
         }
       }
-
-      // Import dynamically to avoid circular dependencies if any, though imports are top-level
-      const { calculateKnockoutProbabilities } =
-        await import("@/utils/probabilityUtils");
 
       // We run probability calculation if there are matches
       // The util handles skipping simulation for finished matches, effectively giving 100% prob
