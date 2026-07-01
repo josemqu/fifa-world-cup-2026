@@ -27,7 +27,7 @@ export const KNOCKOUT_DETAILS: Record<
     location: "Dallas Stadium - Dallas, USA",
   },
   "79": {
-    utcDate: "2026-07-01T01:00:00Z",
+    utcDate: "2026-07-01T02:00:00Z",
     location: "Mexico City Stadium - Ciudad de México, México",
   },
   "80": {
