@@ -23,9 +23,9 @@ const R_R32T = 475;
 
 // Node diameters per ring
 const S_CHAMPION = 68;
-const S_FINALIST = 44;
-const S_QF = 36;
-const S_R16 = 34;
+const S_FINALIST = 32;
+const S_QF = 32;
+const S_R16 = 32;
 const S_R32W = 32;
 const S_R32T = 32;
 

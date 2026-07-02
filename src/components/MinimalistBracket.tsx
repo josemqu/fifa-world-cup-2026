@@ -129,14 +129,7 @@ function LeftConnector({
             team,
             match,
             roundName || "",
-            "winner",
-            roundName === "Final"
-              ? "w-9 h-9 md:w-11 md:h-11"
-              : roundName === "Semifinal"
-                ? "w-7 h-7 md:w-9 md:h-9"
-                : roundName === "Cuartos"
-                  ? "w-7 h-7 md:w-[34px] md:h-[34px]"
-                  : "w-6 h-6 md:w-8 md:h-8"
+            "winner"
           )}
         </div>
       )}
@@ -224,14 +217,7 @@ function RightConnector({
             team,
             match,
             roundName || "",
-            "winner",
-            roundName === "Final"
-              ? "w-9 h-9 md:w-11 md:h-11"
-              : roundName === "Semifinal"
-                ? "w-7 h-7 md:w-9 md:h-9"
-                : roundName === "Cuartos"
-                  ? "w-7 h-7 md:w-[34px] md:h-[34px]"
-                  : "w-6 h-6 md:w-8 md:h-8"
+            "winner"
           )}
         </div>
       )}
