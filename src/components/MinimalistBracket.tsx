@@ -55,54 +55,67 @@ function LeftConnector({
   roundName,
   renderTeamCircle,
 }: ConnectorProps) {
+  const strokeNonLit = "rgba(30, 41, 59, 0.85)";
+  const strokeLit = "rgba(226, 232, 240, 0.85)";
+  const widthNonLit = 1.5;
+  const widthLit = 1.5;
+
   return (
     <div
       className="relative w-full h-full pointer-events-none"
       style={{ ...style, gridRow: `${style?.gridRowStart} / span ${rowSpan}` }}
     >
-      {/* Top horizontal branch */}
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        className="absolute inset-0 w-full h-full overflow-visible"
+      >
+        {/* Draw top branch */}
+        <path
+          d="M 0 25 L 50 25 L 50 50"
+          fill="none"
+          stroke={highlightTop ? strokeLit : strokeNonLit}
+          strokeWidth={highlightTop ? widthLit : widthNonLit}
+          vectorEffect="non-scaling-stroke"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Draw bottom branch */}
+        <path
+          d="M 0 75 L 50 75 L 50 50"
+          fill="none"
+          stroke={highlightBottom ? strokeLit : strokeNonLit}
+          strokeWidth={highlightBottom ? widthLit : widthNonLit}
+          vectorEffect="non-scaling-stroke"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Draw output branch */}
+        <path
+          d="M 50 50 L 100 50"
+          fill="none"
+          stroke={highlightOutput ? strokeLit : strokeNonLit}
+          strokeWidth={highlightOutput ? widthLit : widthNonLit}
+          vectorEffect="non-scaling-stroke"
+          strokeLinecap="round"
+        />
+      </svg>
+
+      {/* Junction dot */}
       <div
         className={clsx(
-          "absolute top-1/4 left-0 h-[2px] -translate-y-1/2 transition-colors duration-300",
-          highlightTop ? "bg-slate-200 dark:bg-slate-200" : "bg-slate-800 dark:bg-slate-800"
+          "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-300",
+          highlightOutput
+            ? "w-[5px] h-[5px] bg-slate-200 border-[0.5px] border-slate-900 shadow-sm"
+            : "w-[4px] h-[4px] bg-slate-700"
         )}
-        style={{ right: "calc(50% - 1px)" }}
       />
-      {/* Bottom horizontal branch */}
-      <div
-        className={clsx(
-          "absolute top-3/4 left-0 h-[2px] -translate-y-1/2 transition-colors duration-300",
-          highlightBottom ? "bg-slate-200 dark:bg-slate-200" : "bg-slate-800 dark:bg-slate-800"
-        )}
-        style={{ right: "calc(50% - 1px)" }}
-      />
-      {/* Top half vertical connection */}
-      <div
-        className={clsx(
-          "absolute left-1/2 w-[2px] -translate-x-1/2 transition-colors duration-300",
-          highlightTop ? "bg-slate-200 dark:bg-slate-200" : "bg-slate-800 dark:bg-slate-800"
-        )}
-        style={{ top: "calc(25% - 1px)", height: "calc(25% + 2px)" }}
-      />
-      {/* Bottom half vertical connection */}
-      <div
-        className={clsx(
-          "absolute left-1/2 w-[2px] -translate-x-1/2 transition-colors duration-300",
-          highlightBottom ? "bg-slate-200 dark:bg-slate-200" : "bg-slate-800 dark:bg-slate-800"
-        )}
-        style={{ top: "calc(50% - 1px)", height: "calc(25% + 2px)" }}
-      />
-      {/* Output branch to next round */}
-      <div
-        className={clsx(
-          "absolute top-1/2 right-0 h-[2px] -translate-y-1/2 transition-colors duration-300",
-          highlightOutput ? "bg-slate-200 dark:bg-slate-200" : "bg-slate-800 dark:bg-slate-800"
-        )}
-        style={{ left: "calc(50% - 1px)" }}
-      />
-      {/* Circle at the junction */}
+
+      {/* Winner flag at the end of the output branch (centered at the right edge of this column) */}
       {match !== undefined && (
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-auto">
+        <div className="absolute left-full top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-auto">
           {renderTeamCircle(team, match, roundName || "", "winner")}
         </div>
       )}
@@ -122,54 +135,67 @@ function RightConnector({
   roundName,
   renderTeamCircle,
 }: ConnectorProps) {
+  const strokeNonLit = "rgba(30, 41, 59, 0.85)";
+  const strokeLit = "rgba(226, 232, 240, 0.85)";
+  const widthNonLit = 1.5;
+  const widthLit = 1.5;
+
   return (
     <div
       className="relative w-full h-full pointer-events-none"
       style={{ ...style, gridRow: `${style?.gridRowStart} / span ${rowSpan}` }}
     >
-      {/* Top horizontal branch */}
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        className="absolute inset-0 w-full h-full overflow-visible"
+      >
+        {/* Draw top branch */}
+        <path
+          d="M 100 25 L 50 25 L 50 50"
+          fill="none"
+          stroke={highlightTop ? strokeLit : strokeNonLit}
+          strokeWidth={highlightTop ? widthLit : widthNonLit}
+          vectorEffect="non-scaling-stroke"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Draw bottom branch */}
+        <path
+          d="M 100 75 L 50 75 L 50 50"
+          fill="none"
+          stroke={highlightBottom ? strokeLit : strokeNonLit}
+          strokeWidth={highlightBottom ? widthLit : widthNonLit}
+          vectorEffect="non-scaling-stroke"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Draw output branch */}
+        <path
+          d="M 50 50 L 0 50"
+          fill="none"
+          stroke={highlightOutput ? strokeLit : strokeNonLit}
+          strokeWidth={highlightOutput ? widthLit : widthNonLit}
+          vectorEffect="non-scaling-stroke"
+          strokeLinecap="round"
+        />
+      </svg>
+
+      {/* Junction dot */}
       <div
         className={clsx(
-          "absolute top-1/4 right-0 h-[2px] -translate-y-1/2 transition-colors duration-300",
-          highlightTop ? "bg-slate-200 dark:bg-slate-200" : "bg-slate-800 dark:bg-slate-800"
+          "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-300",
+          highlightOutput
+            ? "w-[5px] h-[5px] bg-slate-200 border-[0.5px] border-slate-900 shadow-sm"
+            : "w-[4px] h-[4px] bg-slate-700"
         )}
-        style={{ left: "calc(50% - 1px)" }}
       />
-      {/* Bottom horizontal branch */}
-      <div
-        className={clsx(
-          "absolute top-3/4 right-0 h-[2px] -translate-y-1/2 transition-colors duration-300",
-          highlightBottom ? "bg-slate-200 dark:bg-slate-200" : "bg-slate-800 dark:bg-slate-800"
-        )}
-        style={{ left: "calc(50% - 1px)" }}
-      />
-      {/* Top half vertical connection */}
-      <div
-        className={clsx(
-          "absolute left-1/2 w-[2px] -translate-x-1/2 transition-colors duration-300",
-          highlightTop ? "bg-slate-200 dark:bg-slate-200" : "bg-slate-800 dark:bg-slate-800"
-        )}
-        style={{ top: "calc(25% - 1px)", height: "calc(25% + 2px)" }}
-      />
-      {/* Bottom half vertical connection */}
-      <div
-        className={clsx(
-          "absolute left-1/2 w-[2px] -translate-x-1/2 transition-colors duration-300",
-          highlightBottom ? "bg-slate-200 dark:bg-slate-200" : "bg-slate-800 dark:bg-slate-800"
-        )}
-        style={{ top: "calc(50% - 1px)", height: "calc(25% + 2px)" }}
-      />
-      {/* Output branch to next round */}
-      <div
-        className={clsx(
-          "absolute top-1/2 left-0 h-[2px] -translate-y-1/2 transition-colors duration-300",
-          highlightOutput ? "bg-slate-200 dark:bg-slate-200" : "bg-slate-800 dark:bg-slate-800"
-        )}
-        style={{ right: "calc(50% - 1px)" }}
-      />
-      {/* Circle at the junction */}
+
+      {/* Winner flag at the end of the output branch (centered at the left edge of this column) */}
       {match !== undefined && (
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-auto">
+        <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-auto">
           {renderTeamCircle(team, match, roundName || "", "winner")}
         </div>
       )}
@@ -429,7 +455,7 @@ export function MinimalistBracket({
                 const r16Match = getMatch(leftR16Ids[Math.floor(index / 2)]);
                 const highlightTop = isSameTeam(r32Match?.winner, r32Match?.homeTeam);
                 const highlightBottom = isSameTeam(r32Match?.winner, r32Match?.awayTeam);
-                const highlightOutput = !!(r32Match?.winner && r16Match?.winner && isSameTeam(r32Match.winner, r16Match.winner));
+                const highlightOutput = highlightTop || highlightBottom;
 
                 return (
                   <LeftConnector
@@ -453,7 +479,7 @@ export function MinimalistBracket({
                 const qfMatch = getMatch(leftQFIds[Math.floor(index / 2)]);
                 const highlightTop = isSameTeam(r16Match?.winner, r16Match?.homeTeam);
                 const highlightBottom = isSameTeam(r16Match?.winner, r16Match?.awayTeam);
-                const highlightOutput = !!(r16Match?.winner && qfMatch?.winner && isSameTeam(r16Match.winner, qfMatch.winner));
+                const highlightOutput = highlightTop || highlightBottom;
 
                 return (
                   <LeftConnector
@@ -477,7 +503,7 @@ export function MinimalistBracket({
                 const sfMatch = getMatch(leftSFIds[Math.floor(index / 2)]);
                 const highlightTop = isSameTeam(qfMatch?.winner, qfMatch?.homeTeam);
                 const highlightBottom = isSameTeam(qfMatch?.winner, qfMatch?.awayTeam);
-                const highlightOutput = !!(qfMatch?.winner && sfMatch?.winner && isSameTeam(qfMatch.winner, sfMatch.winner));
+                const highlightOutput = highlightTop || highlightBottom;
 
                 return (
                   <LeftConnector
@@ -501,7 +527,7 @@ export function MinimalistBracket({
                 const finalMatch = getMatch(finalMatchId);
                 const highlightTop = isSameTeam(sfMatch?.winner, sfMatch?.homeTeam);
                 const highlightBottom = isSameTeam(sfMatch?.winner, sfMatch?.awayTeam);
-                const highlightOutput = !!(sfMatch?.winner && finalMatch?.winner && isSameTeam(sfMatch.winner, finalMatch.winner));
+                const highlightOutput = highlightTop || highlightBottom;
 
                 return (
                   <LeftConnector
@@ -523,22 +549,34 @@ export function MinimalistBracket({
               {/* --- CENTER ZONE (Final & Trophy) --- */}
 
               <div className="col-start-6 row-start-1 row-span-full relative flex flex-col items-center justify-start pt-16 md:justify-center md:pt-0">
-                {/* Symmetrical central horizontal bracket connector line */}
-                <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-slate-800 dark:bg-slate-800 -translate-y-1/2 z-0 pointer-events-none" />
+                 {/* Symmetrical central horizontal bracket connector line */}
+                <div
+                  className="absolute top-1/2 left-0 right-0 -translate-y-1/2 z-0 pointer-events-none bg-[rgba(30,41,59,0.85)]"
+                  style={{ height: "1.5px" }}
+                />
 
                 {/* Active Highlight Lines for Finalists */}
                 {finalMatch?.homeTeam && !isPlaceholderTeam(finalMatch.homeTeam) && isSameTeam(champion, finalMatch.homeTeam) && (
-                  <div className="absolute top-1/2 left-0 right-1/2 h-[2px] bg-slate-200 dark:bg-slate-200 -translate-y-1/2 z-0 pointer-events-none" />
+                  <div
+                    className="absolute top-1/2 left-0 right-1/2 -translate-y-1/2 z-0 pointer-events-none bg-[rgba(226,232,240,0.85)]"
+                    style={{ height: "1.5px" }}
+                  />
                 )}
                 {finalMatch?.awayTeam && !isPlaceholderTeam(finalMatch.awayTeam) && isSameTeam(champion, finalMatch.awayTeam) && (
-                  <div className="absolute top-1/2 left-1/2 right-0 h-[2px] bg-slate-200 dark:bg-slate-200 -translate-y-1/2 z-0 pointer-events-none" />
+                  <div
+                    className="absolute top-1/2 left-1/2 right-0 -translate-y-1/2 z-0 pointer-events-none bg-[rgba(226,232,240,0.85)]"
+                    style={{ height: "1.5px" }}
+                  />
                 )}
 
                 {/* Symmetrical central vertical connector line for mobile */}
-                <div className={clsx(
-                  "absolute top-[100px] bottom-1/2 left-1/2 w-[2px] -translate-x-1/2 z-0 pointer-events-none transition-colors duration-300 md:hidden",
-                  champion ? "bg-yellow-500" : "bg-slate-800 dark:bg-slate-800"
-                )} />
+                <div
+                  className={clsx(
+                    "absolute top-[100px] bottom-1/2 left-1/2 -translate-x-1/2 z-0 pointer-events-none transition-colors duration-300 md:hidden",
+                    champion ? "bg-yellow-500" : "bg-[rgba(30,41,59,0.85)]"
+                  )}
+                  style={{ width: "1.5px" }}
+                />
 
                 {/* Symmetrical Central Content */}
                 <div className="z-10 flex flex-col items-center bg-slate-900 border border-slate-800 px-3 py-2.5 md:px-5 md:py-4 rounded-xl md:rounded-2xl shadow-xl backdrop-blur-md max-w-[115px] md:max-w-[140px] text-center">
@@ -600,7 +638,7 @@ export function MinimalistBracket({
                 const finalMatch = getMatch(finalMatchId);
                 const highlightTop = isSameTeam(sfMatch?.winner, sfMatch?.homeTeam);
                 const highlightBottom = isSameTeam(sfMatch?.winner, sfMatch?.awayTeam);
-                const highlightOutput = !!(sfMatch?.winner && finalMatch?.winner && isSameTeam(sfMatch.winner, finalMatch.winner));
+                const highlightOutput = highlightTop || highlightBottom;
 
                 return (
                   <RightConnector
@@ -624,7 +662,7 @@ export function MinimalistBracket({
                 const sfMatch = getMatch(rightSFIds[Math.floor(index / 2)]);
                 const highlightTop = isSameTeam(qfMatch?.winner, qfMatch?.homeTeam);
                 const highlightBottom = isSameTeam(qfMatch?.winner, qfMatch?.awayTeam);
-                const highlightOutput = !!(qfMatch?.winner && sfMatch?.winner && isSameTeam(qfMatch.winner, sfMatch.winner));
+                const highlightOutput = highlightTop || highlightBottom;
 
                 return (
                   <RightConnector
@@ -648,7 +686,7 @@ export function MinimalistBracket({
                 const qfMatch = getMatch(rightQFIds[Math.floor(index / 2)]);
                 const highlightTop = isSameTeam(r16Match?.winner, r16Match?.homeTeam);
                 const highlightBottom = isSameTeam(r16Match?.winner, r16Match?.awayTeam);
-                const highlightOutput = !!(r16Match?.winner && qfMatch?.winner && isSameTeam(r16Match.winner, qfMatch.winner));
+                const highlightOutput = highlightTop || highlightBottom;
 
                 return (
                   <RightConnector
@@ -672,7 +710,7 @@ export function MinimalistBracket({
                 const r16Match = getMatch(rightR16Ids[Math.floor(index / 2)]);
                 const highlightTop = isSameTeam(r32Match?.winner, r32Match?.homeTeam);
                 const highlightBottom = isSameTeam(r32Match?.winner, r32Match?.awayTeam);
-                const highlightOutput = !!(r32Match?.winner && r16Match?.winner && isSameTeam(r32Match.winner, r16Match.winner));
+                const highlightOutput = highlightTop || highlightBottom;
 
                 return (
                   <RightConnector
