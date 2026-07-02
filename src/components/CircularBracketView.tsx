@@ -520,13 +520,14 @@ export function CircularBracketView({
             const isFirstEdge = e.id.endsWith("-h") || e.id.endsWith("-1");
             if (!isFirstEdge) return null;
             const vtName = `dot-${mid}`;
+            const isMatchLit = edges.some((edge) => edge.id.split("-")[2] === mid && edge.lit);
 
             return (
               <div
                 key={`dot-html-${e.id}`}
                 className={clsx(
                   "absolute rounded-full transition-all duration-300 pointer-events-none z-10",
-                  e.lit
+                  isMatchLit
                     ? "w-[5px] h-[5px] bg-slate-200 border-[0.5px] border-slate-900 shadow-sm"
                     : "w-[4px] h-[4px] bg-slate-700"
                 )}
