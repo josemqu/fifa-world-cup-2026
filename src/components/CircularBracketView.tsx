@@ -381,21 +381,21 @@ export function CircularBracketView({
         {isPH
           ? null
           : (() => {
-              const code = getCountryIsoCode(name);
-              if (!code)
-                return (
-                  <div className="w-full h-full bg-slate-700 rounded-full" />
-                );
+            const code = getCountryIsoCode(name);
+            if (!code)
               return (
-                <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-white aspect-square">
-                  <Flag
-                    code={code}
-                    className="object-cover w-full h-full rounded-full scale-105"
-                    alt={name}
-                  />
-                </div>
+                <div className="w-full h-full bg-slate-700 rounded-full" />
               );
-            })()}
+            return (
+              <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-white aspect-square">
+                <Flag
+                  code={code}
+                  className="object-cover w-full h-full rounded-full scale-105"
+                  alt={name}
+                />
+              </div>
+            );
+          })()}
       </div>
     );
 
@@ -407,7 +407,7 @@ export function CircularBracketView({
             ? node.match.probabilisticData?.homeCandidates
             : node.type === "away"
               ? node.match.probabilisticData?.awayCandidates
-            : undefined
+              : undefined
         : undefined;
 
       if (candidates && candidates.length > 0) {
