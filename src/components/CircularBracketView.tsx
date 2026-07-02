@@ -369,7 +369,7 @@ export function CircularBracketView({
         className={clsx(
           "rounded-full flex items-center justify-center shadow-md select-none transition-all duration-200 border",
           isPH
-            ? "bg-slate-800/80 border-slate-700 text-slate-500"
+            ? "bg-slate-800 border-slate-700 text-slate-500"
             : "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-500 hover:scale-115 hover:shadow-lg cursor-default",
         )}
         style={{
@@ -452,19 +452,6 @@ export function CircularBracketView({
           viewBox={`0 0 ${VB} ${VB}`}
           className="absolute inset-0 w-full h-full pointer-events-none"
         >
-          {/* Subtle ring guides */}
-          {[R_R32T, R_R32W, R_R16, R_QF, R_FINALISTS].map((r, i) => (
-            <circle
-              key={`ring-${i}`}
-              cx={CX}
-              cy={CY}
-              r={r}
-              fill="none"
-              stroke="rgba(100,116,139,0.06)"
-              strokeWidth={1}
-            />
-          ))}
-
           {/* Center glow */}
           <defs>
             <radialGradient id="cg">
