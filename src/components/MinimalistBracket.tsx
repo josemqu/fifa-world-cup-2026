@@ -197,7 +197,16 @@ export function MinimalistBracket({
 
   useEffect(() => {
     setMounted(true);
+    const savedMode = localStorage.getItem("bracket_view_mode") as "linear" | "circular";
+    if (savedMode === "linear" || savedMode === "circular") {
+      setViewMode(savedMode);
+    }
   }, []);
+
+  const handleSetViewMode = (mode: "linear" | "circular") => {
+    setViewMode(mode);
+    localStorage.setItem("bracket_view_mode", mode);
+  };
 
   // Organize matches by IDs
   const matchesMap = useMemo(() => {
@@ -344,7 +353,7 @@ export function MinimalistBracket({
         {/* View Mode Toggle — centered on mobile, top-left on desktop */}
         <div className="absolute top-4 left-1/2 -translate-x-1/2 md:left-4 md:translate-x-0 z-30 flex items-center bg-slate-800/80 border border-slate-700/50 p-0.5 rounded-full backdrop-blur-md shadow-md">
           <button
-            onClick={() => setViewMode("linear")}
+            onClick={() => handleSetViewMode("linear")}
             className={clsx(
               "px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer",
               viewMode === "linear" ? "bg-blue-600 text-white shadow-sm" : "text-slate-400 hover:text-slate-200"
@@ -353,7 +362,7 @@ export function MinimalistBracket({
             Lineal
           </button>
           <button
-            onClick={() => setViewMode("circular")}
+            onClick={() => handleSetViewMode("circular")}
             className={clsx(
               "px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer",
               viewMode === "circular" ? "bg-blue-600 text-white shadow-sm" : "text-slate-400 hover:text-slate-200"
