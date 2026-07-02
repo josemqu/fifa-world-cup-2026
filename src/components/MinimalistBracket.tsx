@@ -41,7 +41,13 @@ interface ConnectorProps {
   team?: any;
   match?: KnockoutMatch;
   roundName?: string;
-  renderTeamCircle: (team: any, match: KnockoutMatch | undefined, roundName: string, type?: "home" | "away" | "winner") => React.ReactNode;
+  renderTeamCircle: (
+    team: any,
+    match: KnockoutMatch | undefined,
+    roundName: string,
+    type?: "home" | "away" | "winner",
+    customSize?: string
+  ) => React.ReactNode;
 }
 
 function LeftConnector({
@@ -116,7 +122,19 @@ function LeftConnector({
       {/* Winner flag at the end of the output branch (centered at the right edge of this column) */}
       {match !== undefined && (
         <div className="absolute left-full top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-auto">
-          {renderTeamCircle(team, match, roundName || "", "winner")}
+          {renderTeamCircle(
+            team,
+            match,
+            roundName || "",
+            "winner",
+            roundName === "Final"
+              ? "w-9 h-9 md:w-11 md:h-11"
+              : roundName === "Semifinal"
+              ? "w-7 h-7 md:w-9 md:h-9"
+              : roundName === "Cuartos"
+              ? "w-7 h-7 md:w-[34px] md:h-[34px]"
+              : "w-6 h-6 md:w-8 md:h-8"
+          )}
         </div>
       )}
     </div>
@@ -196,7 +214,19 @@ function RightConnector({
       {/* Winner flag at the end of the output branch (centered at the left edge of this column) */}
       {match !== undefined && (
         <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-auto">
-          {renderTeamCircle(team, match, roundName || "", "winner")}
+          {renderTeamCircle(
+            team,
+            match,
+            roundName || "",
+            "winner",
+            roundName === "Final"
+              ? "w-9 h-9 md:w-11 md:h-11"
+              : roundName === "Semifinal"
+              ? "w-7 h-7 md:w-9 md:h-9"
+              : roundName === "Cuartos"
+              ? "w-7 h-7 md:w-[34px] md:h-[34px]"
+              : "w-6 h-6 md:w-8 md:h-8"
+          )}
         </div>
       )}
     </div>
@@ -290,7 +320,8 @@ export function MinimalistBracket({
     team: any,
     match: KnockoutMatch | undefined,
     roundName: string,
-    type?: "home" | "away" | "winner"
+    type?: "home" | "away" | "winner",
+    customSize?: string
   ) => {
     const isPH = isPlaceholderTeam(team);
     const name = getTeamName(team, match);
@@ -300,7 +331,8 @@ export function MinimalistBracket({
     const circleContent = (
       <div
         className={clsx(
-          "w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center shadow-md select-none transition-all duration-200 border",
+          customSize || "w-6 h-6 md:w-8 md:h-8",
+          "rounded-full flex items-center justify-center shadow-md select-none transition-all duration-200 border",
           isPH
             ? "bg-slate-100 dark:bg-slate-800 border-slate-700 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-[8px] md:text-[10px] font-black"
             : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-200 hover:scale-115 hover:shadow-lg"
@@ -341,7 +373,7 @@ export function MinimalistBracket({
             content={<CandidatesTooltip candidates={candidates} />}
             placement="top"
             interactive={false}
-            wrapperClassName="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 z-20"
+            wrapperClassName={clsx("flex items-center justify-center z-20", customSize || "w-6 h-6 md:w-8 md:h-8")}
           >
             {circleContent}
           </Tooltip>
@@ -350,7 +382,9 @@ export function MinimalistBracket({
 
       return (
         <div className="flex items-center justify-center w-full h-full relative z-20">
-          {circleContent}
+          <div className={clsx("flex items-center justify-center", customSize || "w-6 h-6 md:w-8 md:h-8")}>
+            {circleContent}
+          </div>
         </div>
       );
     }
@@ -360,7 +394,7 @@ export function MinimalistBracket({
         content={<span className="font-bold text-xs">{name}</span>}
         placement="top"
         interactive={false}
-        wrapperClassName="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 z-20"
+        wrapperClassName={clsx("flex items-center justify-center z-20", customSize || "w-6 h-6 md:w-8 md:h-8")}
       >
         {circleContent}
       </Tooltip>
@@ -426,7 +460,7 @@ export function MinimalistBracket({
         {viewMode === "linear" ? (
           <div className="absolute inset-6 flex items-center justify-center overflow-hidden">
             <div
-              className="grid gap-y-0 w-full max-w-[800px] items-stretch justify-items-stretch grid-cols-[24px_1.2fr_1.4fr_1.6fr_1.8fr_0.5fr_1.8fr_1.6fr_1.4fr_1.2fr_24px] md:grid-cols-[32px_1.5fr_1.8fr_2.0fr_2.2fr_2.2fr_2.2fr_2.0fr_1.8fr_1.5fr_32px]"
+              className="grid gap-y-0 w-full max-w-[800px] items-stretch justify-items-stretch grid-cols-[24px_1.0fr_1.1fr_1.2fr_1.3fr_2.2fr_1.3fr_1.2fr_1.1fr_1.0fr_24px] md:grid-cols-[32px_1.2fr_1.4fr_1.6fr_1.8fr_3.5fr_1.8fr_1.6fr_1.4fr_1.2fr_32px]"
               style={{
                 gridTemplateRows: "repeat(16, minmax(0, 1fr))",
                 height: "min(calc(92vh - 56px), 780px)",
