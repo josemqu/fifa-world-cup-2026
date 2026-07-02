@@ -133,10 +133,10 @@ function LeftConnector({
             roundName === "Final"
               ? "w-9 h-9 md:w-11 md:h-11"
               : roundName === "Semifinal"
-              ? "w-7 h-7 md:w-9 md:h-9"
-              : roundName === "Cuartos"
-              ? "w-7 h-7 md:w-[34px] md:h-[34px]"
-              : "w-6 h-6 md:w-8 md:h-8"
+                ? "w-7 h-7 md:w-9 md:h-9"
+                : roundName === "Cuartos"
+                  ? "w-7 h-7 md:w-[34px] md:h-[34px]"
+                  : "w-6 h-6 md:w-8 md:h-8"
           )}
         </div>
       )}
@@ -228,10 +228,10 @@ function RightConnector({
             roundName === "Final"
               ? "w-9 h-9 md:w-11 md:h-11"
               : roundName === "Semifinal"
-              ? "w-7 h-7 md:w-9 md:h-9"
-              : roundName === "Cuartos"
-              ? "w-7 h-7 md:w-[34px] md:h-[34px]"
-              : "w-6 h-6 md:w-8 md:h-8"
+                ? "w-7 h-7 md:w-9 md:h-9"
+                : roundName === "Cuartos"
+                  ? "w-7 h-7 md:w-[34px] md:h-[34px]"
+                  : "w-6 h-6 md:w-8 md:h-8"
           )}
         </div>
       )}
@@ -589,7 +589,7 @@ export function MinimalistBracket({
               {/* --- CENTER ZONE (Final & Trophy) --- */}
 
               <div className="col-start-6 row-start-1 row-span-full relative flex flex-col items-center justify-start pt-16 md:justify-center md:pt-0">
-                 {/* Symmetrical central horizontal bracket connector line */}
+                {/* Symmetrical central horizontal bracket connector line */}
                 <div
                   className="absolute top-1/2 left-0 right-0 -translate-y-1/2 z-0 pointer-events-none bg-[rgba(30,41,59,0.85)]"
                   style={{ height: "1.5px" }}
@@ -630,17 +630,22 @@ export function MinimalistBracket({
                   {/* Premium Trophy Graphic or Champion Flag */}
                   <div
                     className={clsx(
-                      "relative flex items-center justify-center transition-all duration-500 rounded-full border shadow-xl select-none",
+                      "flex items-center justify-center rounded-full border shadow-xl transition-all duration-500",
                       champion
-                        ? "w-14 h-14 md:w-20 md:h-20 border-yellow-400 dark:border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.4)] bg-white dark:bg-slate-900 p-0.5 overflow-hidden"
-                        : "w-10 h-10 md:w-14 md:h-14 bg-slate-800 border-slate-700 text-slate-500 p-2 md:p-3"
+                        ? "border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.4)] bg-white dark:bg-slate-900 p-0.5 overflow-hidden"
+                        : "bg-slate-800 border-slate-700 text-slate-500"
                     )}
-                    style={{ viewTransitionName: "flag-champion" } as any}
+                    style={{
+                      width: champion ? 76 : 60,
+                      height: champion ? 76 : 60,
+                      padding: champion ? 2 : 12,
+                      viewTransitionName: "flag-champion",
+                    } as any}
                   >
                     {champion ? (() => {
                       const code = getCountryIsoCode(champion.name);
                       return (
-                        <div className="w-full h-full rounded-full overflow-hidden relative flex items-center justify-center bg-white aspect-square">
+                        <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-white aspect-square">
                           <Flag
                             code={code}
                             className="object-cover w-full h-full aspect-square rounded-full scale-105"
@@ -649,7 +654,7 @@ export function MinimalistBracket({
                         </div>
                       );
                     })() : (
-                      <Trophy className="w-5 h-5 md:w-8 md:h-8" />
+                      <Trophy className="w-6 h-6" />
                     )}
                   </div>
 
@@ -787,6 +792,16 @@ export function MinimalistBracket({
             resetTournament={resetTournament}
           />
         )}
+
+        {/* Temporary Slow Motion Style to Verify Transitions */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+          ::view-transition-group(*),
+          ::view-transition-old(*),
+          ::view-transition-new(*) {
+            animation-duration: 0.5s !important;
+          }
+        `}} />
 
         {/* Unified Admin Floating Buttons — centered/horizontal on mobile, bottom-left/vertical on desktop */}
         {isAdmin && (
