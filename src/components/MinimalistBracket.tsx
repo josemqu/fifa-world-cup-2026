@@ -579,22 +579,20 @@ export function MinimalistBracket({
                 />
 
                 {/* Symmetrical Central Content */}
-                <div className="z-10 flex flex-col items-center bg-slate-900 border border-slate-800 px-3 py-2.5 md:px-5 md:py-4 rounded-xl md:rounded-2xl shadow-xl backdrop-blur-md max-w-[115px] md:max-w-[140px] text-center">
+                <div className="z-10 flex flex-col items-center">
                   {/* Champion Banner above Trophy if resolved */}
                   {champion && (
-                    <div className="flex flex-col items-center justify-center h-5 md:h-6 mb-1.5 md:mb-3 animate-bounce-subtle">
-                      <span className="text-[7px] md:text-[9px] font-black text-yellow-500 tracking-widest uppercase">
-                        🏆 CAMPEÓN
-                      </span>
-                    </div>
+                    <span className="text-[7px] md:text-[9px] font-black text-yellow-500 tracking-widest uppercase mb-1.5 md:mb-3 animate-bounce-subtle">
+                      🏆 CAMPEÓN
+                    </span>
                   )}
 
                   {/* Premium Trophy Graphic or Champion Flag */}
                   <div
                     className={clsx(
-                      "relative flex items-center justify-center transition-all duration-500 rounded-full border shadow-inner select-none",
+                      "relative flex items-center justify-center transition-all duration-500 rounded-full border shadow-xl select-none",
                       champion
-                        ? "w-14 h-14 md:w-20 md:h-20 border-yellow-400 dark:border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.5)] bg-white dark:bg-slate-900 p-0.5 overflow-hidden"
+                        ? "w-14 h-14 md:w-20 md:h-20 border-yellow-400 dark:border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.4)] bg-white dark:bg-slate-900 p-0.5 overflow-hidden"
                         : "w-10 h-10 md:w-14 md:h-14 bg-slate-800 border-slate-700 text-slate-500 p-2 md:p-3"
                     )}
                     style={{ viewTransitionName: "flag-champion" } as any}
@@ -615,14 +613,11 @@ export function MinimalistBracket({
                     )}
                   </div>
 
-                  {/* Champion Name Chip below Trophy if resolved */}
+                  {/* Champion Name below Trophy if resolved */}
                   {champion && (
-                    <div className="flex flex-col items-center justify-center h-5 md:h-6 mt-1.5 md:mt-3">
-                      <div className="flex items-center gap-1 bg-yellow-500/10 dark:bg-yellow-500/20 border border-yellow-500/40 text-yellow-800 dark:text-yellow-400 px-1.5 py-0.5 rounded-full font-black text-[8px] md:text-[10px] shadow-xs">
-                        <Flag code={getCountryIsoCode(champion.name)} className="w-2.5 h-2 md:w-3.5 md:h-2.5 rounded-xs object-cover" />
-                        <span className="truncate max-w-[60px] md:max-w-[70px]">{champion.name}</span>
-                      </div>
-                    </div>
+                    <span className="text-[9px] md:text-[11px] font-black text-white tracking-wide mt-1.5 md:mt-3 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                      {champion.name}
+                    </span>
                   )}
                 </div>
 
