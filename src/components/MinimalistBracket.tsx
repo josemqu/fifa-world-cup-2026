@@ -85,6 +85,7 @@ function LeftConnector({
           vectorEffect="non-scaling-stroke"
           strokeLinecap="round"
           strokeLinejoin="round"
+          style={match ? { viewTransitionName: `path-${match.id}-top` } as any : undefined}
         />
 
         {/* Draw bottom branch */}
@@ -96,6 +97,7 @@ function LeftConnector({
           vectorEffect="non-scaling-stroke"
           strokeLinecap="round"
           strokeLinejoin="round"
+          style={match ? { viewTransitionName: `path-${match.id}-bottom` } as any : undefined}
         />
 
         {/* Draw output branch */}
@@ -117,6 +119,7 @@ function LeftConnector({
             ? "w-[5px] h-[5px] bg-slate-200 border-[0.5px] border-slate-900 shadow-sm"
             : "w-[4px] h-[4px] bg-slate-700"
         )}
+        style={match ? { viewTransitionName: `dot-${match.id}` } as any : undefined}
       />
 
       {/* Winner flag at the end of the output branch (centered at the right edge of this column) */}
@@ -177,6 +180,7 @@ function RightConnector({
           vectorEffect="non-scaling-stroke"
           strokeLinecap="round"
           strokeLinejoin="round"
+          style={match ? { viewTransitionName: `path-${match.id}-top` } as any : undefined}
         />
 
         {/* Draw bottom branch */}
@@ -188,6 +192,7 @@ function RightConnector({
           vectorEffect="non-scaling-stroke"
           strokeLinecap="round"
           strokeLinejoin="round"
+          style={match ? { viewTransitionName: `path-${match.id}-bottom` } as any : undefined}
         />
 
         {/* Draw output branch */}
@@ -209,6 +214,7 @@ function RightConnector({
             ? "w-[5px] h-[5px] bg-slate-200 border-[0.5px] border-slate-900 shadow-sm"
             : "w-[4px] h-[4px] bg-slate-700"
         )}
+        style={match ? { viewTransitionName: `dot-${match.id}` } as any : undefined}
       />
 
       {/* Winner flag at the end of the output branch (centered at the left edge of this column) */}

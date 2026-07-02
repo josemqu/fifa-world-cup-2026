@@ -475,55 +475,70 @@ export function CircularBracketView({
           {/* Connector edges — non-highlighted first, highlighted on top */}
           {edges
             .filter((e) => !e.lit)
-            .map((e) => (
-              <path
-                key={e.id}
-                d={e.pathD}
-                fill="none"
-                stroke="rgba(30,41,59,0.85)"
-                strokeWidth={1.5}
-                strokeLinecap="round"
-              />
-            ))}
+            .map((e) => {
+              const mid = e.id.split("-")[2];
+              const isTop = e.id.endsWith("-h") || e.id.endsWith("-1");
+              const vtName = `path-${mid}-${isTop ? "top" : "bottom"}`;
+              return (
+                <path
+                  key={e.id}
+                  d={e.pathD}
+                  fill="none"
+                  stroke="rgba(30,41,59,0.85)"
+                  strokeWidth={1.5}
+                  strokeLinecap="round"
+                  style={{ viewTransitionName: vtName } as any}
+                />
+              );
+            })}
           {edges
             .filter((e) => e.lit)
-            .map((e) => (
-              <path
-                key={e.id}
-                d={e.pathD}
-                fill="none"
-                stroke="rgba(226,232,240,0.85)"
-                strokeWidth={2.5}
-                strokeLinecap="round"
-              />
-            ))}
+            .map((e) => {
+              const mid = e.id.split("-")[2];
+              const isTop = e.id.endsWith("-h") || e.id.endsWith("-1");
+              const vtName = `path-${mid}-${isTop ? "top" : "bottom"}`;
+              return (
+                <path
+                  key={e.id}
+                  d={e.pathD}
+                  fill="none"
+                  stroke="rgba(226,232,240,0.85)"
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  style={{ viewTransitionName: vtName } as any}
+                />
+              );
+            })}
 
-          {/* Junction dots — non-highlighted first, highlighted on top */}
-          {edges
-            .filter((e) => !e.lit && e.jx !== null && e.jy !== null)
-            .map((e) => (
-              <circle
-                key={`dot-${e.id}`}
-                cx={e.jx!}
-                cy={e.jy!}
-                r={3}
-                fill="rgba(51,65,85,0.85)"
-              />
-            ))}
-          {edges
-            .filter((e) => e.lit && e.jx !== null && e.jy !== null)
-            .map((e) => (
-              <circle
-                key={`dot-${e.id}`}
-                cx={e.jx!}
-                cy={e.jy!}
-                r={3.5}
-                fill="rgba(226,232,240,1)"
-                stroke="rgba(30,41,59,1)"
-                strokeWidth={0.5}
-              />
-            ))}
         </svg>
+
+        {/* HTML Layer: junction dots */}
+        {edges
+          .filter((e) => e.jx !== null && e.jy !== null)
+          .map((e) => {
+            const mid = e.id.split("-")[2];
+            const isFirstEdge = e.id.endsWith("-h") || e.id.endsWith("-1");
+            if (!isFirstEdge) return null;
+            const vtName = `dot-${mid}`;
+
+            return (
+              <div
+                key={`dot-html-${e.id}`}
+                className={clsx(
+                  "absolute rounded-full transition-all duration-300 pointer-events-none z-10",
+                  e.lit
+                    ? "w-[5px] h-[5px] bg-slate-200 border-[0.5px] border-slate-900 shadow-sm"
+                    : "w-[4px] h-[4px] bg-slate-700"
+                )}
+                style={{
+                  left: `${(e.jx! / VB) * 100}%`,
+                  top: `${(e.jy! / VB) * 100}%`,
+                  transform: "translate(-50%, -50%)",
+                  viewTransitionName: vtName,
+                } as any}
+              />
+            );
+          })}
 
         {/* HTML Layer: team circle nodes */}
         {nodes.map((node) => (
