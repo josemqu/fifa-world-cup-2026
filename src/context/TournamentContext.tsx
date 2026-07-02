@@ -758,7 +758,6 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   };
 
   const exposedKnockoutMatches = useMemo(() => {
-    console.log("[TournamentContext] exposedKnockoutMatches recalculating. probabilities size:", probabilities.size, "keys:", Array.from(probabilities.keys()));
     return knockoutMatches.map((m) => {
       const prob = probabilities.get(m.id);
       if (prob) {
