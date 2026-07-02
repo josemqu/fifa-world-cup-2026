@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useCallback, useEffect } from "react";
-import { createPortal } from "react-dom";
+import { createPortal, flushSync } from "react-dom";
 import { KnockoutMatch, Team, Group } from "@/data/types";
 import { Tooltip } from "@/components/ui/Tooltip";
 import Flag from "react-world-flags";
@@ -204,8 +204,18 @@ export function MinimalistBracket({
   }, []);
 
   const handleSetViewMode = (mode: "linear" | "circular") => {
-    setViewMode(mode);
-    localStorage.setItem("bracket_view_mode", mode);
+    const doc = document as any;
+    if (doc.startViewTransition) {
+      doc.startViewTransition(() => {
+        flushSync(() => {
+          setViewMode(mode);
+        });
+        localStorage.setItem("bracket_view_mode", mode);
+      });
+    } else {
+      setViewMode(mode);
+      localStorage.setItem("bracket_view_mode", mode);
+    }
   };
 
   // Organize matches by IDs
@@ -259,6 +269,8 @@ export function MinimalistBracket({
     const isPH = isPlaceholderTeam(team);
     const name = getTeamName(team, match);
 
+    const vtName = match && type ? `flag-${match.id}-${type}` : undefined;
+
     const circleContent = (
       <div
         className={clsx(
@@ -267,6 +279,9 @@ export function MinimalistBracket({
             ? "bg-slate-100 dark:bg-slate-800 border-slate-700 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-[8px] md:text-[10px] font-black"
             : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-200 hover:scale-115 hover:shadow-lg"
         )}
+        style={{
+          viewTransitionName: vtName,
+        } as any}
       >
         {isPH ? (
           <span className="font-mono tracking-tighter text-[6px] md:text-[8px]"></span>
@@ -537,12 +552,15 @@ export function MinimalistBracket({
                   )}
 
                   {/* Premium Trophy Graphic or Champion Flag */}
-                  <div className={clsx(
-                    "relative flex items-center justify-center transition-all duration-500 rounded-full border shadow-inner select-none",
-                    champion
-                      ? "w-14 h-14 md:w-20 md:h-20 border-yellow-400 dark:border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.5)] bg-white dark:bg-slate-900 p-0.5 overflow-hidden"
-                      : "w-10 h-10 md:w-14 md:h-14 bg-slate-800 border-slate-700 text-slate-500 p-2 md:p-3"
-                  )}>
+                  <div
+                    className={clsx(
+                      "relative flex items-center justify-center transition-all duration-500 rounded-full border shadow-inner select-none",
+                      champion
+                        ? "w-14 h-14 md:w-20 md:h-20 border-yellow-400 dark:border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.5)] bg-white dark:bg-slate-900 p-0.5 overflow-hidden"
+                        : "w-10 h-10 md:w-14 md:h-14 bg-slate-800 border-slate-700 text-slate-500 p-2 md:p-3"
+                    )}
+                    style={{ viewTransitionName: "flag-champion" } as any}
+                  >
                     {champion ? (() => {
                       const code = getCountryIsoCode(champion.name);
                       return (

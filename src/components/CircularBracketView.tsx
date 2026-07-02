@@ -362,6 +362,8 @@ export function CircularBracketView({
     const isPH = isPlaceholder(node.team);
     const name = teamName(node.team, node.match);
 
+    const vtName = node.match ? `flag-${node.match.id}-${node.type}` : undefined;
+
     const circle = (
       <div
         className={clsx(
@@ -370,7 +372,11 @@ export function CircularBracketView({
             ? "bg-slate-800/80 border-slate-700 text-slate-500"
             : "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-500 hover:scale-115 hover:shadow-lg cursor-default",
         )}
-        style={{ width: node.size, height: node.size }}
+        style={{
+          width: node.size,
+          height: node.size,
+          viewTransitionName: vtName,
+        } as any}
       >
         {isPH
           ? null
@@ -563,7 +569,8 @@ export function CircularBracketView({
                 width: champion ? S_CHAMPION + 8 : S_CHAMPION - 8,
                 height: champion ? S_CHAMPION + 8 : S_CHAMPION - 8,
                 padding: champion ? 2 : 12,
-              }}
+                viewTransitionName: "flag-champion",
+              } as any}
             >
               {champion ? (
                 (() => {
