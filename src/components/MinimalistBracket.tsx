@@ -341,8 +341,8 @@ export function MinimalistBracket({
         className="bg-slate-900/95 border border-slate-800/80 rounded-3xl p-6 relative w-full max-w-[1400px] h-full max-h-[92vh] md:max-h-[850px] flex flex-col justify-between shadow-2xl backdrop-blur-xl"
       >
 
-        {/* View Mode Toggle — always at top-left (top-4 left-4) */}
-        <div className="absolute top-4 left-4 z-30 flex items-center bg-slate-800/80 border border-slate-700/50 p-0.5 rounded-full backdrop-blur-md shadow-md">
+        {/* View Mode Toggle — centered on mobile, top-left on desktop */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 md:left-4 md:translate-x-0 z-30 flex items-center bg-slate-800/80 border border-slate-700/50 p-0.5 rounded-full backdrop-blur-md shadow-md">
           <button
             onClick={() => setViewMode("linear")}
             className={clsx(
@@ -688,9 +688,9 @@ export function MinimalistBracket({
           />
         )}
 
-        {/* Unified Admin Floating Buttons — absolute bottom-6 left-6 */}
+        {/* Unified Admin Floating Buttons — centered/horizontal on mobile, bottom-left/vertical on desktop */}
         {isAdmin && (
-          <div className="absolute bottom-6 left-6 flex flex-col gap-2 z-30 animate-fade-in">
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 md:left-6 md:translate-x-0 flex flex-row md:flex-col gap-2 z-30 animate-fade-in">
             <button
               onClick={simulateAll}
               className="flex items-center justify-center gap-1.5 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95 cursor-pointer w-28"
