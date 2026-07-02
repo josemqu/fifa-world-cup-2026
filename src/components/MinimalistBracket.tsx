@@ -420,7 +420,7 @@ export function MinimalistBracket({
         {/* View Mode Toggle — centered on mobile, top-left on desktop */}
         <button
           onClick={() => handleSetViewMode(viewMode === "linear" ? "circular" : "linear")}
-          className="absolute top-4 left-1/2 -translate-x-1/2 md:left-4 md:translate-x-0 z-30 flex items-center bg-slate-800/80 border border-slate-700/50 p-0.5 rounded-full backdrop-blur-md shadow-md cursor-pointer select-none w-32 h-[26px] relative group"
+          className="absolute top-4 left-1/2 -translate-x-1/2 min-[1200px]:left-4 min-[1200px]:translate-x-0 z-30 flex items-center bg-slate-800/80 border border-slate-700/50 p-0.5 rounded-full backdrop-blur-md shadow-md cursor-pointer select-none w-32 h-[26px] relative group"
           title="Cambiar vista (Lineal / Circular)"
         >
           {/* Sliding indicator */}
@@ -815,7 +815,7 @@ export function MinimalistBracket({
 
         {/* Unified Admin Floating Buttons — centered/horizontal on mobile, bottom-left/vertical on desktop */}
         {isAdmin && (
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 md:left-6 md:translate-x-0 flex flex-row md:flex-col gap-2 z-30 animate-fade-in">
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 min-[1200px]:left-6 min-[1200px]:translate-x-0 flex flex-row min-[1200px]:flex-col gap-2 z-30 animate-fade-in">
             <button
               onClick={simulateAll}
               className="flex items-center justify-center gap-1.5 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95 cursor-pointer w-28"
