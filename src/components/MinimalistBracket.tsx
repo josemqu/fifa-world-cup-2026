@@ -418,26 +418,35 @@ export function MinimalistBracket({
       >
 
         {/* View Mode Toggle — centered on mobile, top-left on desktop */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 md:left-4 md:translate-x-0 z-30 flex items-center bg-slate-800/80 border border-slate-700/50 p-0.5 rounded-full backdrop-blur-md shadow-md">
-          <button
-            onClick={() => handleSetViewMode("linear")}
+        <button
+          onClick={() => handleSetViewMode(viewMode === "linear" ? "circular" : "linear")}
+          className="absolute top-4 left-1/2 -translate-x-1/2 md:left-4 md:translate-x-0 z-30 flex items-center bg-slate-800/80 border border-slate-700/50 p-0.5 rounded-full backdrop-blur-md shadow-md cursor-pointer select-none w-32 h-[26px] relative group"
+          title="Cambiar vista (Lineal / Circular)"
+        >
+          {/* Sliding indicator */}
+          <div
             className={clsx(
-              "px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer",
-              viewMode === "linear" ? "bg-blue-600 text-white shadow-sm" : "text-slate-400 hover:text-slate-200"
+              "absolute top-0.5 bottom-0.5 left-0.5 w-[calc(50%-2px)] rounded-full bg-blue-600 shadow-sm transition-transform duration-200 ease-out",
+              viewMode === "circular" ? "translate-x-full" : "translate-x-0"
+            )}
+          />
+          <span
+            className={clsx(
+              "w-1/2 text-center text-[10px] font-bold z-10 transition-colors duration-200",
+              viewMode === "linear" ? "text-white" : "text-slate-400 group-hover:text-slate-200"
             )}
           >
             Lineal
-          </button>
-          <button
-            onClick={() => handleSetViewMode("circular")}
+          </span>
+          <span
             className={clsx(
-              "px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer",
-              viewMode === "circular" ? "bg-blue-600 text-white shadow-sm" : "text-slate-400 hover:text-slate-200"
+              "w-1/2 text-center text-[10px] font-bold z-10 transition-colors duration-200",
+              viewMode === "circular" ? "text-white" : "text-slate-400 group-hover:text-slate-200"
             )}
           >
             Circular
-          </button>
-        </div>
+          </span>
+        </button>
 
         {/* Floating Close Button */}
         <button
