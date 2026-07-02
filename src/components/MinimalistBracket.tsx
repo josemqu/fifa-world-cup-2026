@@ -801,13 +801,13 @@ export function MinimalistBracket({
           />
         )}
 
-        {/* Temporary Slow Motion Style to Verify Transitions */}
+        {/* Slow Motion Style to Verify Transitions */}
         <style dangerouslySetInnerHTML={{
           __html: `
           ::view-transition-group(*),
           ::view-transition-old(*),
           ::view-transition-new(*) {
-            animation-duration: 0.5s !important;
+            animation-duration: 0.25s !important;
           }
         `}} />
 
