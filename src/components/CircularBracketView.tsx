@@ -568,7 +568,10 @@ export function CircularBracketView({
           <div className="flex flex-col items-center">
             {/* Champion label */}
             {champion && (
-              <span className="text-[7px] font-black text-yellow-500 tracking-widest uppercase mb-1.5 animate-bounce-subtle">
+              <span
+                className="text-[7px] font-black text-yellow-500 tracking-widest uppercase mb-1.5 animate-bounce-subtle"
+                style={{ viewTransitionName: "label-champion" } as any}
+              >
                 🏆 CAMPEÓN
               </span>
             )}
@@ -576,15 +579,12 @@ export function CircularBracketView({
             {/* Trophy / Flag circle */}
             <div
               className={clsx(
-                "flex items-center justify-center rounded-full border shadow-xl transition-all duration-500",
+                "flex items-center justify-center rounded-full border shadow-xl transition-all duration-500 select-none",
                 champion
-                  ? "border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.4)] bg-white dark:bg-slate-900 p-0.5 overflow-hidden"
-                  : "bg-slate-800 border-slate-700 text-slate-500",
+                  ? "w-14 h-14 md:w-20 md:h-20 border-yellow-400 dark:border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.4)] bg-white dark:bg-slate-900 p-0.5 overflow-hidden"
+                  : "w-10 h-10 md:w-14 md:h-14 bg-slate-800 border-slate-700 text-slate-500 p-2 md:p-3"
               )}
               style={{
-                width: champion ? S_CHAMPION + 8 : S_CHAMPION - 8,
-                height: champion ? S_CHAMPION + 8 : S_CHAMPION - 8,
-                padding: champion ? 2 : 12,
                 viewTransitionName: "flag-champion",
               } as any}
             >
@@ -608,12 +608,15 @@ export function CircularBracketView({
 
             {/* Champion name chip */}
             {champion && (
-              <div className="flex items-center gap-1 bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 px-1.5 py-0.5 rounded-full text-[8px] font-black mt-1.5 shadow-xs">
+              <div
+                className="flex items-center gap-1 bg-yellow-500/10 dark:bg-yellow-500/20 border border-yellow-500/40 text-yellow-800 dark:text-yellow-400 px-1.5 py-0.5 rounded-full font-black text-[8px] md:text-[10px] shadow-xs mt-1.5"
+                style={{ viewTransitionName: "name-champion" } as any}
+              >
                 <Flag
                   code={getCountryIsoCode(champion.name)}
-                  className="w-2.5 h-2 rounded-xs object-cover"
+                  className="w-2.5 h-2 md:w-3.5 md:h-2.5 rounded-xs object-cover"
                 />
-                <span className="truncate max-w-[70px]">{champion.name}</span>
+                <span className="truncate max-w-[60px] md:max-w-[70px]">{champion.name}</span>
               </div>
             )}
           </div>
