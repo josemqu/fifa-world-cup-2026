@@ -569,7 +569,7 @@ export function CircularBracketView({
             {/* Champion label */}
             {champion && (
               <span
-                className="text-[7px] font-black text-yellow-500 tracking-widest uppercase mb-1.5 animate-bounce-subtle"
+                className="text-[7px] md:text-[9px] font-black text-yellow-500 tracking-widest uppercase mb-1.5 md:mb-3 animate-bounce-subtle"
                 style={{ viewTransitionName: "label-champion" } as any}
               >
                 🏆 CAMPEÓN
