@@ -235,7 +235,7 @@ export function Tooltip({
               top: position.top,
               left: position.left,
               position: "fixed",
-              zIndex: 9999,
+              zIndex: 100000,
             }}
             className={clsx(
               interactive ? "pointer-events-auto" : "pointer-events-none",

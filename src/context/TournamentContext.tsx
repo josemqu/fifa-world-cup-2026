@@ -413,7 +413,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           if (savedProbs) {
             const parsed = JSON.parse(savedProbs);
             const entries = Object.entries(parsed);
-            const hasCandidatesData = entries.length > 0 && entries.some(([_, val]: any) => val && (val.winnerCandidates || val.homeCandidates));
+            const hasCandidatesData = entries.length > 0 && entries.some(([_, val]: any) => val && val.winnerCandidates);
             if (hasCandidatesData) {
               setProbabilities(new Map(entries as any));
               return;
@@ -758,6 +758,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   };
 
   const exposedKnockoutMatches = useMemo(() => {
+    console.log("[TournamentContext] exposedKnockoutMatches recalculating. probabilities size:", probabilities.size, "keys:", Array.from(probabilities.keys()));
     return knockoutMatches.map((m) => {
       const prob = probabilities.get(m.id);
       if (prob) {

@@ -373,6 +373,8 @@ export function MinimalistBracket({
       ) : undefined;
       const hasCandidates = candidates && candidates.length > 0;
 
+      console.log("renderTeamCircle PH: matchId:", match?.id, "hasProbData:", !!match?.probabilisticData, "probKeys:", match?.probabilisticData ? Object.keys(match.probabilisticData) : "none");
+
       if (hasCandidates) {
         return (
           <Tooltip

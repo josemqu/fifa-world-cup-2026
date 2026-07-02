@@ -405,8 +405,12 @@ export function CircularBracketView({
           ? node.match.probabilisticData?.winnerCandidates
           : node.type === "home"
             ? node.match.probabilisticData?.homeCandidates
-            : node.match.probabilisticData?.awayCandidates
+            : node.type === "away"
+              ? node.match.probabilisticData?.awayCandidates
+            : undefined
         : undefined;
+
+      console.log("renderNode PH: matchId:", node.match?.id, "hasProbData:", !!node.match?.probabilisticData, "probKeys:", node.match?.probabilisticData ? Object.keys(node.match.probabilisticData) : "none");
 
       if (candidates && candidates.length > 0) {
         return (
