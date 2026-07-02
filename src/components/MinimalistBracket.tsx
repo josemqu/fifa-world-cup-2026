@@ -618,6 +618,14 @@ export function MinimalistBracket({
                   style={{ width: "1.5px" }}
                 />
 
+                {/* Center Glow behind Trophy/Champion */}
+                <div
+                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 md:w-56 md:h-56 rounded-full pointer-events-none z-0"
+                  style={{
+                    background: "radial-gradient(circle, rgba(234,179,8,0.12) 0%, rgba(234,179,8,0) 70%)"
+                  }}
+                />
+
                 {/* Symmetrical Central Content */}
                 <div className="z-10 flex flex-col items-center">
                   {/* Champion Banner above Trophy if resolved */}
