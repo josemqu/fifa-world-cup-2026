@@ -370,7 +370,7 @@ export function CircularBracketView({
           "rounded-full flex items-center justify-center shadow-md select-none transition-all duration-200 border",
           isPH
             ? "bg-slate-800 border-slate-700 text-slate-500"
-            : "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-500 hover:scale-115 hover:shadow-lg cursor-default",
+            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-200 hover:scale-115 hover:shadow-lg cursor-default",
         )}
         style={{
           width: node.size,
