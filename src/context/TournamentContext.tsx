@@ -8,6 +8,7 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
+  useRef,
 } from "react";
 import { Group, Team, KnockoutMatch, MatchupData, Scorer } from "@/data/types";
 import { INITIAL_GROUPS } from "@/data/initialData";
@@ -65,6 +66,7 @@ interface TournamentContextType {
     elapsed?: number | null,
     homeScorers?: Scorer[],
     awayScorers?: Scorer[],
+    isLiveUpdate?: boolean,
   ) => void;
   updateKnockoutMatch: (
     matchId: string,
@@ -77,6 +79,7 @@ interface TournamentContextType {
     elapsed?: number | null,
     homeScorers?: Scorer[],
     awayScorers?: Scorer[],
+    isLiveUpdate?: boolean,
   ) => void;
   simulateGroups: () => void;
   simulateKnockout: () => void;
@@ -146,6 +149,17 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   const [probabilities, setProbabilities] = useState<Map<string, any>>(
     new Map(),
   );
+
+  const groupsRef = useRef(groups);
+  const knockoutMatchesRef = useRef(knockoutMatches);
+
+  useEffect(() => {
+    groupsRef.current = groups;
+  }, [groups]);
+
+  useEffect(() => {
+    knockoutMatchesRef.current = knockoutMatches;
+  }, [knockoutMatches]);
 
   // Unified simulation data
   const [predictions, setPredictionsState] = useState<PredictionResult[]>([]);
@@ -313,6 +327,13 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     const r32 = generateR32Matches(groups);
 
     setKnockoutMatches((prev) => {
+      // If the knockout matches are currently simulated, keep them exactly as they are.
+      // This prevents live group updates from interfering with the simulated bracket.
+      const isKnockoutSimulated = prev.some((m) => m.isSimulated);
+      if (isKnockoutSimulated) {
+        return prev;
+      }
+
       // Ensure we always have the base structure for all knockout stages
       const initialMatches = getInitialKnockoutMatches();
       
@@ -494,6 +515,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     elapsed?: number | null,
     homeScorers?: Scorer[],
     awayScorers?: Scorer[],
+    isLiveUpdate?: boolean,
   ) => {
     setGroups((currentGroups) => {
       const targetGroup = currentGroups.find((g) => g.name === groupId);
@@ -562,10 +584,17 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     elapsed?: number | null,
     homeScorers?: Scorer[],
     awayScorers?: Scorer[],
+    isLiveUpdate?: boolean,
   ) => {
     setKnockoutMatches((currentMatches) => {
       const targetMatch = currentMatches.find((m) => m.id === matchId);
       if (!targetMatch) return currentMatches;
+
+      // If this is a live score sync update and the knockout match is currently simulated,
+      // ignore the update to keep the simulated score, winner, and downstream progression.
+      if (isLiveUpdate && targetMatch.isSimulated) {
+        return currentMatches;
+      }
 
       const expectedFinished = finished !== undefined ? finished : (homeScore !== null && awayScore !== null);
       const expectedStatus = status || targetMatch.status;

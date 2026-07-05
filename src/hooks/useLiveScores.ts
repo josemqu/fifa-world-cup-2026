@@ -251,7 +251,8 @@ export function useLiveScores(
             score.status,
             score.elapsed,
             score.homeScorers,
-            score.awayScorers
+            score.awayScorers,
+            true // isLiveUpdate
           );
         } else if (score.stage === "knockout") {
           updateKnockoutMatch(
@@ -264,7 +265,8 @@ export function useLiveScores(
             score.status,
             score.elapsed,
             score.homeScorers,
-            score.awayScorers
+            score.awayScorers,
+            true // isLiveUpdate
           );
         }
       }
