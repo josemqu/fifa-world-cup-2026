@@ -225,7 +225,7 @@ function computeStandings(
 function getStageLabel(stage: string): string {
   switch (stage) {
     case "R32":
-      return "32avos";
+      return "16avos";
     case "R16":
       return "Octavos";
     case "QF":
@@ -721,7 +721,7 @@ export function TournamentStatsCard({
         case "knockoutRound":
           const roundOrder: Record<string, number> = {
             "Grupos": 0,
-            "32avos": 1,
+            "16avos": 1,
             "Octavos": 2,
             "Cuartos": 3,
             "Semifinal": 4,
