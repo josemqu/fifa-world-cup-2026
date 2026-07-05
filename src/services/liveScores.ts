@@ -399,6 +399,29 @@ export function normalizeFixtures(
     const homeScorers = parseScorerString(game.home_scorers);
     const awayScorers = parseScorerString(game.away_scorers);
 
+    // Patch missing scorers from external API bugs
+    if (matchId === "89") {
+      const hasMbappe = awayScorers.some((s) => s.name.includes("Mbappé") || s.name.includes("Mbappe"));
+      if (!hasMbappe) {
+        awayScorers.push({
+          name: "Kylian Mbappé",
+          minute: "69'",
+          isPenalty: true,
+          isOwnGoal: false,
+        });
+      }
+    } else if (matchId === "91") {
+      const hasNeymar = homeScorers.some((s) => s.name.includes("Neymar"));
+      if (!hasNeymar) {
+        homeScorers.push({
+          name: "Neymar",
+          minute: "90+10'",
+          isPenalty: true,
+          isOwnGoal: false,
+        });
+      }
+    }
+
     results.push({
       matchId,
       externalId: Number(game.id),
