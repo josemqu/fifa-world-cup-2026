@@ -80,7 +80,7 @@ export const KNOCKOUT_DETAILS: Record<
     location: "New York New Jersey Stadium - East Rutherford, USA",
   },
   "92": {
-    utcDate: "2026-07-06T00:00:00Z",
+    utcDate: "2026-07-06T01:00:00Z",
     location: "Mexico City Stadium - Ciudad de México, México",
   },
   "93": {
