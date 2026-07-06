@@ -86,7 +86,7 @@ self.onmessage = async (e: MessageEvent) => {
     };
 
     // Run simulations in chunks
-    const numChunks = 20;
+    const numChunks = 50;
     const chunkSize = Math.max(10, Math.ceil(iterations / numChunks));
 
     for (let chunkStart = 0; chunkStart < iterations; chunkStart += chunkSize) {

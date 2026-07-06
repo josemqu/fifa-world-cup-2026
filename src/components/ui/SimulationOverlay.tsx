@@ -247,7 +247,7 @@ export function SimulationOverlay({
                 <motion.div
                   className={`h-full rounded-full bg-gradient-to-r ${gradientClass}`}
                   animate={{ width: `${progress}%` }}
-                  transition={{ duration: 0.1 }}
+                  transition={{ type: "spring", stiffness: 45, damping: 15, mass: 0.6 }}
                 />
               </div>
             </div>
