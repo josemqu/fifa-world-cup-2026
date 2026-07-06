@@ -73,10 +73,18 @@ function translateTeamName(englishName: string): string {
  * Normalizes a player name for consistent aggregation.
  */
 function normalizePlayerName(name: string): string {
-  return name
+  const cleaned = name
     .trim()
     .replace(/\u00A0/g, " ")  // replace non-breaking spaces
     .replace(/\s+/g, " ");     // collapse multiple spaces
+
+  // Correct API transliteration typos/errors
+  const corrections: Record<string, string> = {
+    "Jvlian Kviinvnz": "J. Quiñones",
+    "Jvd Blingham": "J. Bellingham",
+  };
+
+  return corrections[cleaned] || cleaned;
 }
 
 /**
