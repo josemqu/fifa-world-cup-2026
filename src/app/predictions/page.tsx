@@ -5,6 +5,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useTournament } from "@/context/TournamentContext";
 import { useTheme } from "next-themes";
 import { simulateTournament } from "@/utils/simulationUtils";
+import { sortGroupTeams } from "@/utils/groupSorting";
+import { generateR32Matches } from "@/utils/knockoutUtils";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { TeamFlag } from "@/components/ui/TeamFlag";
 import {
@@ -291,8 +293,93 @@ function PredictionsPageContent() {
   } | null>(null);
 
   const teamNames = useMemo(() => {
-    return groups.flatMap((g) => g.teams).map((t) => t.name);
-  }, [groups]);
+    // 1. Identify which teams are still in play (have any chances of winning the World Cup)
+    const activeTeamIds = new Set<string>();
+
+    const allGroupsFinished = groups.every((g) =>
+      g.matches.every((m) => m.finished)
+    );
+
+    if (allGroupsFinished) {
+      // If group stage is finished, only teams in R32 matches are in play.
+      // (which handles both fixed top-2 and best thirds combinations)
+      const r32Matches = generateR32Matches(groups);
+      r32Matches.forEach((m) => {
+        if (m.homeTeam && !("placeholder" in m.homeTeam)) {
+          activeTeamIds.add(m.homeTeam.id);
+        }
+        if (m.awayTeam && !("placeholder" in m.awayTeam)) {
+          activeTeamIds.add(m.awayTeam.id);
+        }
+      });
+    } else {
+      // Group stage is NOT finished.
+      groups.forEach((group) => {
+        const unplayedMatches = group.matches.filter((m) => !m.finished);
+
+        if (unplayedMatches.length === 0) {
+          // If group is finished, only top 3 are in play (4th is eliminated)
+          const standings = sortGroupTeams(group.teams, group.matches);
+          standings.slice(0, 3).forEach((team) => {
+            activeTeamIds.add(team.id);
+          });
+        } else {
+          // If group is not finished:
+          // A team is active if it can still mathematically finish in the top 3.
+          // T is eliminated if there are at least 3 other teams in the group whose current points
+          // are strictly greater than T's max possible points.
+          group.teams.forEach((team) => {
+            const playedInGroup = group.matches.filter(
+              (m) => m.finished && (m.homeTeamId === team.id || m.awayTeamId === team.id)
+            ).length;
+            const remainingInGroup = 3 - playedInGroup;
+            const maxPts = team.pts + remainingInGroup * 3;
+
+            const betterTeamsCount = group.teams.filter(
+              (other) => other.id !== team.id && other.pts > maxPts
+            ).length;
+
+            if (betterTeamsCount < 3) {
+              activeTeamIds.add(team.id);
+            }
+          });
+        }
+      });
+    }
+
+    // 2. Filter out any teams that lost a finished knockout match (except 3rdPlace)
+    const eliminatedKnockoutTeamIds = new Set<string>();
+    knockoutMatches.forEach((match) => {
+      if (match.stage !== "3rdPlace" && match.finished) {
+        const homeTeam = match.homeTeam;
+        const awayTeam = match.awayTeam;
+        const winner = match.winner;
+
+        if (winner && winner.id) {
+          if (homeTeam && !("placeholder" in homeTeam) && homeTeam.id !== winner.id) {
+            eliminatedKnockoutTeamIds.add(homeTeam.id);
+          }
+          if (awayTeam && !("placeholder" in awayTeam) && awayTeam.id !== winner.id) {
+            eliminatedKnockoutTeamIds.add(awayTeam.id);
+          }
+        }
+      }
+    });
+
+    // Remove eliminated knockout teams from active
+    eliminatedKnockoutTeamIds.forEach((id) => {
+      activeTeamIds.delete(id);
+    });
+
+    // 3. Fallback: if somehow activeTeamIds is empty (e.g. at the end of tournament or initial state error),
+    // return all teams. Otherwise, filter groups by active team IDs.
+    const allTeams = groups.flatMap((g) => g.teams);
+    if (activeTeamIds.size === 0) {
+      return allTeams.map((t) => t.name);
+    }
+
+    return allTeams.filter((t) => activeTeamIds.has(t.id)).map((t) => t.name);
+  }, [groups, knockoutMatches]);
 
   // Flat teams list for Matchups tab
   const allTeams = useMemo(() => {
