@@ -82,6 +82,13 @@ function normalizePlayerName(name: string): string {
   const corrections: Record<string, string> = {
     "Jvlian Kviinvnz": "J. Quiñones",
     "Jvd Blingham": "J. Bellingham",
+    "Hri Kin": "H. Kane",
+    "Kvdi Khakpv": "C. Gakpo",
+    "Dnil Mvnvz": "D. Muñoz",
+    "Aiash Ivida": "A. Ueda",
+    "Dniz Avndav": "D. Undav",
+    "Nikvlas Ph Ph": "N. Pépé",
+    "Azdin Avnahi": "A. Ounahi",
   };
 
   return corrections[cleaned] || cleaned;
