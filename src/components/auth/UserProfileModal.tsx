@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { clsx } from "clsx";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function UserProfileModal() {
   const {
@@ -136,28 +137,40 @@ export function UserProfileModal() {
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200 relative">
-        <button
-          onClick={handleClose}
-          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
         >
-          <X className="w-5 h-5" />
-        </button>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 15 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800 relative"
+          >
+            <button
+              onClick={handleClose}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
 
-        <div className="p-6">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-              Completa tu Perfil
-            </h2>
-            <p className="text-slate-500 dark:text-slate-400 text-sm">
-              Para continuar, necesitamos conocerte un poco mejor. Esta
-              información aparecerá en tu perfil de jugador.
-            </p>
-          </div>
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                  Completa tu Perfil
+                </h2>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">
+                  Para continuar, necesitamos conocerte un poco mejor. Esta
+                  información aparecerá en tu perfil de jugador.
+                </p>
+              </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Display Name */}
@@ -303,7 +316,9 @@ export function UserProfileModal() {
             </div>
           </form>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

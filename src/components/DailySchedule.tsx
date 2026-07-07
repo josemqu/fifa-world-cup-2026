@@ -14,6 +14,7 @@ import { clsx } from "clsx";
 import { FlashScoreInput } from "@/components/ui/FlashScoreInput";
 import { getPlaceholderExplanation } from "@/utils/knockoutUtils";
 import { MatchOverrideModal } from "@/components/MatchOverrideModal";
+import { AnimatePresence } from "framer-motion";
 
 
 interface DailyScheduleProps {
@@ -677,26 +678,28 @@ export function DailySchedule({
       </div>
 
       {/* Override Modal */}
-      {editingMatch && (
-        <MatchOverrideModal
-          matchId={editingMatch.id}
-          homeTeamName={editingMatch.homeTeamName}
-          awayTeamName={editingMatch.awayTeamName}
-          homeScore={editingMatch.homeScore ?? null}
-          awayScore={editingMatch.awayScore ?? null}
-          homePenalties={editingMatch.homePenalties ?? null}
-          awayPenalties={editingMatch.awayPenalties ?? null}
-          finished={!!editingMatch.finished}
-          stageLabel={editingMatch.stage}
-          isKnockout={editingMatch.isKnockout}
-          groupId={editingMatch.groupId}
-          dbScores={dbScores}
-          onClose={() => setEditingMatch(null)}
-          onSave={handleSaveOverride}
-          dbUser={dbUser}
-          user={user}
-        />
-      )}
+      <AnimatePresence>
+        {editingMatch && (
+          <MatchOverrideModal
+            matchId={editingMatch.id}
+            homeTeamName={editingMatch.homeTeamName}
+            awayTeamName={editingMatch.awayTeamName}
+            homeScore={editingMatch.homeScore ?? null}
+            awayScore={editingMatch.awayScore ?? null}
+            homePenalties={editingMatch.homePenalties ?? null}
+            awayPenalties={editingMatch.awayPenalties ?? null}
+            finished={!!editingMatch.finished}
+            stageLabel={editingMatch.stage}
+            isKnockout={editingMatch.isKnockout}
+            groupId={editingMatch.groupId}
+            dbScores={dbScores}
+            onClose={() => setEditingMatch(null)}
+            onSave={handleSaveOverride}
+            dbUser={dbUser}
+            user={user}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

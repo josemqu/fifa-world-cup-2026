@@ -189,9 +189,7 @@ export function ModelPredictionModal({
   const esAnfitrionB = awayTeamObj?.name === "México" || awayTeamObj?.name === "Canadá" || awayTeamObj?.name === "Estados Unidos" || !!(awayTeamObj?.es_anfitrion || awayTeamObj?.isHost || awayTeamObj?.host);
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
+    <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -492,8 +490,6 @@ export function ModelPredictionModal({
               </button>
             </div>
           </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    </motion.div>
   );
 }

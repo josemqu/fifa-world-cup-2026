@@ -1816,51 +1816,61 @@ function PredictionsTab({
         )}
       </div>
 
-      {selectedMatchForRivals && (
-        <RivalPredictionsModal
-          isOpen={!!selectedMatchForRivals}
-          onClose={() => setSelectedMatchForRivals(null)}
-          matchId={selectedMatchForRivals.matchId}
-          homeTeamName={selectedMatchForRivals.homeTeamName}
-          awayTeamName={selectedMatchForRivals.awayTeamName}
-          utcDate={selectedMatchForRivals.utcDate}
-          currentUserUid={firebaseUid}
-        />
-      )}
+      <AnimatePresence>
+        {selectedMatchForRivals && (
+          <RivalPredictionsModal
+            isOpen={!!selectedMatchForRivals}
+            onClose={() => setSelectedMatchForRivals(null)}
+            matchId={selectedMatchForRivals.matchId}
+            homeTeamName={selectedMatchForRivals.homeTeamName}
+            awayTeamName={selectedMatchForRivals.awayTeamName}
+            utcDate={selectedMatchForRivals.utcDate}
+            currentUserUid={firebaseUid}
+          />
+        )}
+      </AnimatePresence>
 
-      {selectedModelPred && (
-        <ModelPredictionModal
-          isOpen={!!selectedModelPred}
-          onClose={() => setSelectedModelPred(null)}
-          matchId={selectedModelPred.matchId}
-          isAdmin={isAdmin}
-          firebaseUid={firebaseUid}
-          homeTeamName={selectedModelPred.homeTeamName}
-          awayTeamName={selectedModelPred.awayTeamName}
-          homeTeamObj={selectedModelPred.homeTeamObj}
-          awayTeamObj={selectedModelPred.awayTeamObj}
-          isKnockout={selectedModelPred.isKnockout}
-          predictionDetails={selectedModelPred.predictionDetails}
-          userHomeScore={predictions.get(selectedModelPred.matchId)?.homeScore ?? ""}
-          userAwayScore={predictions.get(selectedModelPred.matchId)?.awayScore ?? ""}
-          userHomePenalties={predictions.get(selectedModelPred.matchId)?.homePenalties ?? ""}
-          userAwayPenalties={predictions.get(selectedModelPred.matchId)?.awayPenalties ?? ""}
-          modelPrediction={selectedModelPred.modelPrediction}
-          actualStatus={selectedModelPred.actualStatus}
-          actualElapsed={selectedModelPred.actualElapsed}
-          actualHomeScore={selectedModelPred.actualHomeScore}
-          actualAwayScore={selectedModelPred.actualAwayScore}
-        />
-      )}
+      <AnimatePresence>
+        {selectedModelPred && (
+          <ModelPredictionModal
+            isOpen={!!selectedModelPred}
+            onClose={() => setSelectedModelPred(null)}
+            matchId={selectedModelPred.matchId}
+            isAdmin={isAdmin}
+            firebaseUid={firebaseUid}
+            homeTeamName={selectedModelPred.homeTeamName}
+            awayTeamName={selectedModelPred.awayTeamName}
+            homeTeamObj={selectedModelPred.homeTeamObj}
+            awayTeamObj={selectedModelPred.awayTeamObj}
+            isKnockout={selectedModelPred.isKnockout}
+            predictionDetails={selectedModelPred.predictionDetails}
+            userHomeScore={predictions.get(selectedModelPred.matchId)?.homeScore ?? ""}
+            userAwayScore={predictions.get(selectedModelPred.matchId)?.awayScore ?? ""}
+            userHomePenalties={predictions.get(selectedModelPred.matchId)?.homePenalties ?? ""}
+            userAwayPenalties={predictions.get(selectedModelPred.matchId)?.awayPenalties ?? ""}
+            modelPrediction={selectedModelPred.modelPrediction}
+            actualStatus={selectedModelPred.actualStatus}
+            actualElapsed={selectedModelPred.actualElapsed}
+            actualHomeScore={selectedModelPred.actualHomeScore}
+            actualAwayScore={selectedModelPred.actualAwayScore}
+          />
+        )}
+      </AnimatePresence>
 
-      {resettingMatch && (
-        <AnimatePresence>
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md">
+      <AnimatePresence>
+        {resettingMatch && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md"
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-sm w-full p-6 flex flex-col items-center text-center gap-4 overflow-hidden"
             >
               {/* Icon Container */}
@@ -1903,9 +1913,9 @@ function PredictionsTab({
                 </button>
               </div>
             </motion.div>
-          </div>
-        </AnimatePresence>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

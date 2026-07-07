@@ -12,6 +12,7 @@ import { FlashScoreInput } from "@/components/ui/FlashScoreInput";
 import { GroupPositionProbMap } from "@/utils/groupPositionMonteCarlo";
 import { useAuth } from "@/context/AuthContext";
 import { MatchOverrideModal } from "@/components/MatchOverrideModal";
+import { AnimatePresence } from "framer-motion";
 
 
 interface GroupCardProps {
@@ -734,45 +735,47 @@ export function GroupCard({
       )}
 
       {/* Override Modal */}
-      {editingMatch && (
-        <MatchOverrideModal
-          matchId={editingMatch.id}
-          homeTeamName={getTeamName(editingMatch.homeTeamId)}
-          awayTeamName={getTeamName(editingMatch.awayTeamId)}
-          homeScore={editingMatch.homeScore ?? null}
-          awayScore={editingMatch.awayScore ?? null}
-          finished={editingMatch.finished}
-          stageLabel={`Grupo ${group.name}`}
-          isKnockout={false}
-          groupId={group.name}
-          dbScores={dbScores}
-          onClose={() => setEditingMatch(null)}
-          onSave={(updatedScore: any) => {
-            setDbScores((prev) => {
-              const existingIdx = prev.findIndex((s) => s.matchId === updatedScore.matchId);
-              if (existingIdx !== -1) {
-                const copy = [...prev];
-                copy[existingIdx] = updatedScore;
-                return copy;
-              } else {
-                return [...prev, updatedScore];
-              }
-            });
-            onMatchUpdate(
-              group.name,
-              updatedScore.matchId,
-              updatedScore.homeScore,
-              updatedScore.awayScore,
-              updatedScore.status === "finished",
-              updatedScore.status,
-              updatedScore.elapsed
-            );
-            setEditingMatch(null);
-          }}
-          dbUser={dbUser}
-          user={user}
-        />
-      )}
+      <AnimatePresence>
+        {editingMatch && (
+          <MatchOverrideModal
+            matchId={editingMatch.id}
+            homeTeamName={getTeamName(editingMatch.homeTeamId)}
+            awayTeamName={getTeamName(editingMatch.awayTeamId)}
+            homeScore={editingMatch.homeScore ?? null}
+            awayScore={editingMatch.awayScore ?? null}
+            finished={editingMatch.finished}
+            stageLabel={`Grupo ${group.name}`}
+            isKnockout={false}
+            groupId={group.name}
+            dbScores={dbScores}
+            onClose={() => setEditingMatch(null)}
+            onSave={(updatedScore: any) => {
+              setDbScores((prev) => {
+                const existingIdx = prev.findIndex((s) => s.matchId === updatedScore.matchId);
+                if (existingIdx !== -1) {
+                  const copy = [...prev];
+                  copy[existingIdx] = updatedScore;
+                  return copy;
+                } else {
+                  return [...prev, updatedScore];
+                }
+              });
+              onMatchUpdate(
+                group.name,
+                updatedScore.matchId,
+                updatedScore.homeScore,
+                updatedScore.awayScore,
+                updatedScore.status === "finished",
+                updatedScore.status,
+                updatedScore.elapsed
+              );
+              setEditingMatch(null);
+            }}
+            dbUser={dbUser}
+            user={user}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

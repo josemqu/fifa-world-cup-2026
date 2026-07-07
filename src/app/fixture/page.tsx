@@ -167,14 +167,16 @@ function FixturePageContent() {
         />
       </div>
 
-      {isMinimalistOpen && (
-        <MinimalistBracket
-          groups={groups}
-          matches={knockoutMatches}
-          onMatchUpdate={updateKnockoutMatch}
-          onClose={() => setIsMinimalistOpen(false)}
-        />
-      )}
+      <AnimatePresence>
+        {isMinimalistOpen && (
+          <MinimalistBracket
+            groups={groups}
+            matches={knockoutMatches}
+            onMatchUpdate={updateKnockoutMatch}
+            onClose={() => setIsMinimalistOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </PageTransition>
   );
 }

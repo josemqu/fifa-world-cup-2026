@@ -652,23 +652,25 @@ export default function AdminGroupsPage() {
       </AnimatePresence>
 
       {/* Prediction Comparison Modal */}
-      {selectedCompareUser && dbUser?.firebaseUid && (
-        <PredictionComparisonModal
-          isOpen={!!selectedCompareUser}
-          onClose={() => setSelectedCompareUser(null)}
-          targetUser={{
-            _id: "",
-            firebaseUid: selectedCompareUser.firebaseUid,
-            email: selectedCompareUser.email,
-            displayName: selectedCompareUser.displayName,
-            nickname: selectedCompareUser.nickname,
-            country: selectedCompareUser.country,
-            favoriteTeam: selectedCompareUser.favoriteTeam,
-            predictionCount: selectedCompareUser.predictionCount || 0,
-          }}
-          adminUid={dbUser.firebaseUid}
-        />
-      )}
+      <AnimatePresence>
+        {selectedCompareUser && dbUser?.firebaseUid && (
+          <PredictionComparisonModal
+            isOpen={!!selectedCompareUser}
+            onClose={() => setSelectedCompareUser(null)}
+            targetUser={{
+              _id: "",
+              firebaseUid: selectedCompareUser.firebaseUid,
+              email: selectedCompareUser.email,
+              displayName: selectedCompareUser.displayName,
+              nickname: selectedCompareUser.nickname,
+              country: selectedCompareUser.country,
+              favoriteTeam: selectedCompareUser.favoriteTeam,
+              predictionCount: selectedCompareUser.predictionCount || 0,
+            }}
+            adminUid={dbUser.firebaseUid}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Delete Group Confirmation Modal */}
       <AnimatePresence>

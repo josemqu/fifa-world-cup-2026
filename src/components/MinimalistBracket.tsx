@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { createPortal, flushSync } from "react-dom";
+import { motion } from "framer-motion";
 import { KnockoutMatch, Team, Group } from "@/data/types";
 import { Tooltip } from "@/components/ui/Tooltip";
 import Flag from "react-world-flags";
@@ -408,11 +409,19 @@ export function MinimalistBracket({
   if (!mounted) return null;
 
   return createPortal(
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.25, ease: "easeInOut" }}
       onClick={onClose}
-      className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 md:p-6 animate-fade-in"
+      className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 md:p-6"
     >
-      <div
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 15 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 15 }}
+        transition={{ duration: 0.25, ease: "easeInOut" }}
         onClick={(e) => e.stopPropagation()}
         className="bg-slate-900/95 border border-slate-800/80 rounded-3xl p-6 relative w-full max-w-[1400px] h-full max-h-[92vh] md:max-h-[850px] flex flex-col justify-between shadow-2xl backdrop-blur-xl"
       >
@@ -834,8 +843,8 @@ export function MinimalistBracket({
             </button>
           </div>
         )}
-      </div>
-    </div>,
+      </motion.div>
+    </motion.div>,
     document.body
   );
 }

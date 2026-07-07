@@ -15,6 +15,7 @@ import { useMatchTime } from "@/hooks/useMatchTime";
 import confetti from "canvas-confetti";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { MatchOverrideModal } from "@/components/MatchOverrideModal";
+import { AnimatePresence } from "framer-motion";
 import {
   FloatingContainer,
   FloatingButton,
@@ -623,47 +624,49 @@ function MatchCard({
           </div>
         )}
       </div>
-      {showOverrideModal && (
-        <MatchOverrideModal
-          matchId={match.id}
-          homeTeamName={homeName || "Por definir"}
-          awayTeamName={awayName || "Por definir"}
-          homeScore={match.homeScore ?? null}
-          awayScore={match.awayScore ?? null}
-          homePenalties={match.homePenalties ?? null}
-          awayPenalties={match.awayPenalties ?? null}
-          finished={!!match.finished}
-          stageLabel={roundName}
-          isKnockout={true}
-          dbScores={dbScores}
-          onClose={() => setShowOverrideModal(false)}
-          onSave={(updatedScore: any) => {
-            setDbScores((prev) => {
-              const existingIdx = prev.findIndex((s) => s.matchId === updatedScore.matchId);
-              if (existingIdx !== -1) {
-                const copy = [...prev];
-                copy[existingIdx] = updatedScore;
-                return copy;
-              } else {
-                return [...prev, updatedScore];
-              }
-            });
-            onUpdate(
-              updatedScore.matchId,
-              updatedScore.homeScore,
-              updatedScore.awayScore,
-              updatedScore.homePenalties,
-              updatedScore.awayPenalties,
-              updatedScore.status === "finished",
-              updatedScore.status,
-              updatedScore.elapsed
-            );
-            setShowOverrideModal(false);
-          }}
-          dbUser={dbUser}
-          user={user}
-        />
-      )}
+      <AnimatePresence>
+        {showOverrideModal && (
+          <MatchOverrideModal
+            matchId={match.id}
+            homeTeamName={homeName || "Por definir"}
+            awayTeamName={awayName || "Por definir"}
+            homeScore={match.homeScore ?? null}
+            awayScore={match.awayScore ?? null}
+            homePenalties={match.homePenalties ?? null}
+            awayPenalties={match.awayPenalties ?? null}
+            finished={!!match.finished}
+            stageLabel={roundName}
+            isKnockout={true}
+            dbScores={dbScores}
+            onClose={() => setShowOverrideModal(false)}
+            onSave={(updatedScore: any) => {
+              setDbScores((prev) => {
+                const existingIdx = prev.findIndex((s) => s.matchId === updatedScore.matchId);
+                if (existingIdx !== -1) {
+                  const copy = [...prev];
+                  copy[existingIdx] = updatedScore;
+                  return copy;
+                } else {
+                  return [...prev, updatedScore];
+                }
+              });
+              onUpdate(
+                updatedScore.matchId,
+                updatedScore.homeScore,
+                updatedScore.awayScore,
+                updatedScore.homePenalties,
+                updatedScore.awayPenalties,
+                updatedScore.status === "finished",
+                updatedScore.status,
+                updatedScore.elapsed
+              );
+              setShowOverrideModal(false);
+            }}
+            dbUser={dbUser}
+            user={user}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

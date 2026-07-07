@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { clsx } from "clsx";
 import { PredictionComparisonModal } from "@/components/PredictionComparisonModal";
+import { AnimatePresence } from "framer-motion";
 
 interface DbUser {
   _id: string;
@@ -533,14 +534,16 @@ export default function AdminUsersPage() {
           </div>
         )}
       </div>
-      {selectedCompareUser && dbUser?.firebaseUid && (
-        <PredictionComparisonModal
-          isOpen={!!selectedCompareUser}
-          onClose={() => setSelectedCompareUser(null)}
-          targetUser={selectedCompareUser}
-          adminUid={dbUser.firebaseUid}
-        />
-      )}
+      <AnimatePresence>
+        {selectedCompareUser && dbUser?.firebaseUid && (
+          <PredictionComparisonModal
+            isOpen={!!selectedCompareUser}
+            onClose={() => setSelectedCompareUser(null)}
+            targetUser={selectedCompareUser}
+            adminUid={dbUser.firebaseUid}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

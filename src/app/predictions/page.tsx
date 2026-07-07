@@ -1570,138 +1570,153 @@ function PredictionsPageContent() {
       />
 
       {/* ─── Verification Modal ─── */}
-      {showVerification && sampleResult && (
-        <div className="fixed inset-0 z-80 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="verification-modal-scroll bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800">
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                  Verificación de Simulación
-                </h3>
+      {/* ─── Verification Modal ─── */}
+      <AnimatePresence>
+        {showVerification && sampleResult && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="fixed inset-0 z-80 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="verification-modal-scroll bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm z-10">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                    Verificación de Simulación
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowVerification(false)}
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5 text-slate-500" />
+                </button>
               </div>
-              <button
-                onClick={() => setShowVerification(false)}
-                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5 text-slate-500" />
-              </button>
-            </div>
 
-            {/* Content */}
-            <div className="p-6 space-y-8">
-              <div className="text-sm text-slate-600 dark:text-slate-400 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-900/50">
-                Esta es una <strong>simulación única completa</strong> generada
-                en este momento para verificar que la lógica del torneo se
-                ejecuta correctamente paso a paso.
-              </div>
+              {/* Content */}
+              <div className="p-6 space-y-8">
+                <div className="text-sm text-slate-600 dark:text-slate-400 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-900/50">
+                  Esta es una <strong>simulación única completa</strong> generada
+                  en este momento para verificar que la lógica del torneo se
+                  ejecuta correctamente paso a paso.
+                </div>
 
-              {/* Summary */}
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6 border border-slate-100 dark:border-slate-800">
-                <div className="text-center sm:text-left">
-                  <div className="text-sm text-slate-500 dark:text-slate-400 mb-1 font-medium uppercase tracking-wide">
-                    Campeón Simulado
+                {/* Summary */}
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6 border border-slate-100 dark:border-slate-800">
+                  <div className="text-center sm:text-left">
+                    <div className="text-sm text-slate-500 dark:text-slate-400 mb-1 font-medium uppercase tracking-wide">
+                      Campeón Simulado
+                    </div>
+                    <div className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2 justify-center sm:justify-start">
+                      {sampleResult.champion?.name}
+                      {sampleResult.champion?.ranking && (
+                        <span className="text-sm font-normal text-slate-400 bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded-full">
+                          #{sampleResult.champion.ranking}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2 justify-center sm:justify-start">
-                    {sampleResult.champion?.name}
-                    {sampleResult.champion?.ranking && (
-                      <span className="text-sm font-normal text-slate-400 bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded-full">
-                        #{sampleResult.champion.ranking}
-                      </span>
-                    )}
+                  <div className="text-center sm:text-right">
+                    <div className="text-sm text-slate-500 dark:text-slate-400 mb-1 font-medium uppercase tracking-wide">
+                      Final
+                    </div>
+                    <div className="text-lg font-medium text-slate-700 dark:text-slate-300">
+                      {sampleResult.finalists[0]?.name} vs{" "}
+                      {sampleResult.finalists[1]?.name}
+                    </div>
                   </div>
                 </div>
-                <div className="text-center sm:text-right">
-                  <div className="text-sm text-slate-500 dark:text-slate-400 mb-1 font-medium uppercase tracking-wide">
-                    Final
-                  </div>
-                  <div className="text-lg font-medium text-slate-700 dark:text-slate-300">
-                    {sampleResult.finalists[0]?.name} vs{" "}
-                    {sampleResult.finalists[1]?.name}
-                  </div>
-                </div>
-              </div>
 
-              {/* Path to Glory */}
-              <div>
-                <h4 className="font-semibold mb-4 text-sm uppercase text-slate-500 dark:text-slate-400 tracking-wider">
-                  Camino del Campeón
-                </h4>
-                <div className="space-y-3 relative">
-                  {/* Line connector */}
-                  <div className="absolute left-[27px] top-4 bottom-4 w-0.5 bg-slate-200 dark:bg-slate-800"></div>
+                {/* Path to Glory */}
+                <div>
+                  <h4 className="font-semibold mb-4 text-sm uppercase text-slate-500 dark:text-slate-400 tracking-wider">
+                    Camino del Campeón
+                  </h4>
+                  <div className="space-y-3 relative">
+                    {/* Line connector */}
+                    <div className="absolute left-[27px] top-4 bottom-4 w-0.5 bg-slate-200 dark:bg-slate-800"></div>
 
-                  {sampleResult.matches
-                    .filter((m) => m.winner?.id === sampleResult.champion?.id)
-                    .map((m) => (
-                      <div
-                        key={m.id}
-                        className="relative flex items-center gap-4 text-sm p-3 bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm"
-                      >
-                        <div className="w-14 h-14 shrink-0 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-900 font-mono text-xs font-bold text-slate-500 dark:text-slate-400 z-10 border border-slate-200 dark:border-slate-800">
-                          {m.stage}
-                        </div>
-                        <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
-                          <div className="flex-1 flex items-center justify-between sm:justify-end gap-2 text-right">
-                            <span
-                              className={clsx(
-                                "font-medium",
-                                m.winner?.id === (m.homeTeam as Team).id
-                                  ? "text-green-600 dark:text-green-400 font-bold"
-                                  : "text-slate-600 dark:text-slate-400",
+                    {sampleResult.matches
+                      .filter((m) => m.winner?.id === sampleResult.champion?.id)
+                      .map((m) => (
+                        <div
+                          key={m.id}
+                          className="relative flex items-center gap-4 text-sm p-3 bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm"
+                        >
+                          <div className="w-14 h-14 shrink-0 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-900 font-mono text-xs font-bold text-slate-500 dark:text-slate-400 z-10 border border-slate-200 dark:border-slate-800">
+                            {m.stage}
+                          </div>
+                          <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
+                            <div className="flex-1 flex items-center justify-between sm:justify-end gap-2 text-right">
+                              <span
+                                className={clsx(
+                                  "font-medium",
+                                  m.winner?.id === (m.homeTeam as Team).id
+                                    ? "text-green-600 dark:text-green-400 font-bold"
+                                    : "text-slate-600 dark:text-slate-400",
+                                )}
+                              >
+                                {(m.homeTeam as Team).name}
+                              </span>
+                              <TeamFlag
+                                teamName={(m.homeTeam as Team).name}
+                                className="w-5 h-3.5 shadow-sm shrink-0"
+                              />
+                            </div>
+                            <div className="font-mono font-bold bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded text-center min-w-[80px]">
+                              {m.homeScore} - {m.awayScore}
+                              {(m.homePenalties || m.awayPenalties) && (
+                                <div className="text-[10px] text-slate-500 font-normal">
+                                  ({m.homePenalties}-{m.awayPenalties})
+                                </div>
                               )}
-                            >
-                              {(m.homeTeam as Team).name}
-                            </span>
-                            <TeamFlag
-                              teamName={(m.homeTeam as Team).name}
-                              className="w-5 h-3.5 shadow-sm shrink-0"
-                            />
-                          </div>
-                          <div className="font-mono font-bold bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded text-center min-w-[80px]">
-                            {m.homeScore} - {m.awayScore}
-                            {(m.homePenalties || m.awayPenalties) && (
-                              <div className="text-[10px] text-slate-500 font-normal">
-                                ({m.homePenalties}-{m.awayPenalties})
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 flex items-center justify-between sm:justify-start gap-2 text-left">
-                            <TeamFlag
-                              teamName={(m.awayTeam as Team).name}
-                              className="w-5 h-3.5 shadow-sm shrink-0"
-                            />
-                            <span
-                              className={clsx(
-                                "font-medium",
-                                m.winner?.id === (m.awayTeam as Team).id
-                                  ? "text-green-600 dark:text-green-400 font-bold"
-                                  : "text-slate-600 dark:text-slate-400",
-                              )}
-                            >
-                              {(m.awayTeam as Team).name}
-                            </span>
+                            </div>
+                            <div className="flex-1 flex items-center justify-between sm:justify-start gap-2 text-left">
+                              <TeamFlag
+                                teamName={(m.awayTeam as Team).name}
+                                className="w-5 h-3.5 shadow-sm shrink-0"
+                              />
+                              <span
+                                className={clsx(
+                                  "font-medium",
+                                  m.winner?.id === (m.awayTeam as Team).id
+                                    ? "text-green-600 dark:text-green-400 font-bold"
+                                    : "text-slate-600 dark:text-slate-400",
+                                )}
+                              >
+                                {(m.awayTeam as Team).name}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Footer */}
-            <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 rounded-b-2xl flex justify-end">
-              <button
-                onClick={() => handleVerify()}
-                className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-slate-700 dark:text-slate-200 cursor-pointer"
-              >
-                Generar otra prueba
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              {/* Footer */}
+              <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 rounded-b-2xl flex justify-end">
+                <button
+                  onClick={() => handleVerify()}
+                  className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-slate-700 dark:text-slate-200 cursor-pointer"
+                >
+                  Generar otra prueba
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </PageTransition>
   );
 }
