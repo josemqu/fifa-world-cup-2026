@@ -19,8 +19,10 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
+  Activity,
 } from "lucide-react";
 import { clsx } from "clsx";
+import Link from "next/link";
 import { PredictionComparisonModal } from "@/components/PredictionComparisonModal";
 import { AnimatePresence } from "framer-motion";
 
@@ -478,25 +480,34 @@ export default function AdminUsersPage() {
 
                       {/* Acciones */}
                       <td className="px-3 py-3 text-center">
-                        <button
-                          disabled={u.predictionCount === 0 || u.firebaseUid === dbUser?.firebaseUid}
-                          onClick={() => setSelectedCompareUser(u)}
-                          className={clsx(
-                            "inline-flex items-center justify-center p-2 text-xs font-bold rounded-lg transition-all",
-                            u.predictionCount > 0 && u.firebaseUid !== dbUser?.firebaseUid
-                              ? "bg-indigo-600/10 hover:bg-indigo-600 text-indigo-600 dark:text-indigo-400 hover:text-white dark:hover:text-white border border-indigo-500/20 cursor-pointer"
-                              : "bg-slate-100 dark:bg-slate-800/40 text-slate-450 dark:text-slate-600 border border-slate-200 dark:border-slate-800/20 cursor-not-allowed"
-                          )}
-                          title={
-                            u.firebaseUid === dbUser?.firebaseUid
-                              ? "Eres tú mismo"
-                              : u.predictionCount === 0
-                              ? "El usuario no tiene pronósticos"
-                              : "Comparar pronósticos"
-                          }
-                        >
-                          <ArrowLeftRight className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          <Link
+                            href={`/admin/users/${u.firebaseUid}`}
+                            className="inline-flex items-center justify-center p-2 text-xs font-bold rounded-lg transition-all bg-indigo-600/10 hover:bg-indigo-650 text-indigo-600 dark:text-indigo-400 hover:text-white dark:hover:text-white border border-indigo-500/20 cursor-pointer"
+                            title="Ver comportamiento y estadísticas de uso"
+                          >
+                            <Activity className="w-4 h-4" />
+                          </Link>
+                          <button
+                            disabled={u.predictionCount === 0 || u.firebaseUid === dbUser?.firebaseUid}
+                            onClick={() => setSelectedCompareUser(u)}
+                            className={clsx(
+                              "inline-flex items-center justify-center p-2 text-xs font-bold rounded-lg transition-all",
+                              u.predictionCount > 0 && u.firebaseUid !== dbUser?.firebaseUid
+                                ? "bg-blue-600/10 hover:bg-blue-600 text-blue-600 dark:text-blue-400 hover:text-white dark:hover:text-white border border-blue-500/20 cursor-pointer"
+                                : "bg-slate-100 dark:bg-slate-800/40 text-slate-450 dark:text-slate-600 border border-slate-200 dark:border-slate-800/20 cursor-not-allowed"
+                            )}
+                            title={
+                              u.firebaseUid === dbUser?.firebaseUid
+                                ? "Eres tú mismo"
+                                : u.predictionCount === 0
+                                ? "El usuario no tiene pronósticos"
+                                : "Comparar pronósticos"
+                            }
+                          >
+                            <ArrowLeftRight className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import ProdePrediction from "@/models/ProdePrediction";
+import UserActivity from "@/models/UserActivity";
 import LiveScore from "@/models/LiveScore";
 import { hasMatchStarted } from "@/utils/prodeUtils";
 import { INITIAL_GROUPS } from "@/data/initialData";
@@ -146,6 +147,19 @@ export async function POST(request: Request) {
 
     if (ops.length > 0) {
       await ProdePrediction.bulkWrite(ops);
+
+      // Track prediction activity
+      try {
+        await UserActivity.create({
+          firebaseUid,
+          action: "PREDICTION_UPDATED",
+          metadata: {
+            savedCount: saved,
+          },
+        });
+      } catch (logError) {
+        console.error("Error logging PREDICTION_UPDATED activity:", logError);
+      }
     }
 
     return NextResponse.json({ success: true, saved, locked });

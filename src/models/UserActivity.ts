@@ -5,7 +5,10 @@ export type ActivityAction =
   | "PAGE_VIEW"
   | "PREDICTION_MADE"
   | "PREDICTION_UPDATED"
-  | "PROFILE_UPDATED";
+  | "PROFILE_UPDATED"
+  | "GROUP_CREATED"
+  | "GROUP_JOINED"
+  | "FEEDBACK_SUBMITTED";
 
 export interface IUserActivity extends Document {
   firebaseUid: string;
@@ -25,6 +28,9 @@ const UserActivitySchema: Schema = new Schema(
         "PREDICTION_MADE",
         "PREDICTION_UPDATED",
         "PROFILE_UPDATED",
+        "GROUP_CREATED",
+        "GROUP_JOINED",
+        "FEEDBACK_SUBMITTED",
       ],
       required: true,
     },

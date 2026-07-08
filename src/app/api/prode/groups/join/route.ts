@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import ProdeGroup from "@/models/ProdeGroup";
+import UserActivity from "@/models/UserActivity";
 
 export async function POST(request: Request) {
   try {
@@ -33,6 +34,21 @@ export async function POST(request: Request) {
         { error: "Group not found" },
         { status: 404 }
       );
+    }
+
+    // Track group joining activity
+    try {
+      await UserActivity.create({
+        firebaseUid,
+        action: "GROUP_JOINED",
+        metadata: {
+          groupId: group._id,
+          name: group.name,
+          code: group.code,
+        },
+      });
+    } catch (logError) {
+      console.error("Error logging GROUP_JOINED activity:", logError);
     }
 
     return NextResponse.json({ success: true, data: group });

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Feedback from "@/models/Feedback";
 import User from "@/models/User";
+import UserActivity from "@/models/UserActivity";
 
 export async function GET(request: Request) {
   try {
@@ -111,6 +112,23 @@ export async function POST(request: Request) {
       status: "pending",
       upvotes: firebaseUid ? [firebaseUid] : [], // Auto-upvote by creator if authenticated
     });
+
+    // Track feedback submission activity
+    if (firebaseUid) {
+      try {
+        await UserActivity.create({
+          firebaseUid,
+          action: "FEEDBACK_SUBMITTED",
+          metadata: {
+            feedbackId: newFeedback._id,
+            category: newFeedback.category,
+            title: newFeedback.title,
+          },
+        });
+      } catch (logError) {
+        console.error("Error logging FEEDBACK_SUBMITTED activity:", logError);
+      }
+    }
 
     return NextResponse.json({ success: true, data: newFeedback });
   } catch (error: any) {

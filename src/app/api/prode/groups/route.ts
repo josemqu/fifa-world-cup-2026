@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import ProdeGroup from "@/models/ProdeGroup";
 import ProdePrediction from "@/models/ProdePrediction";
+import UserActivity from "@/models/UserActivity";
 import LiveScore from "@/models/LiveScore";
 import {
   generateGroupCode,
@@ -215,6 +216,21 @@ export async function POST(request: Request) {
       ownerUid: firebaseUid,
       members: [firebaseUid],
     });
+
+    // Track group creation activity
+    try {
+      await UserActivity.create({
+        firebaseUid,
+        action: "GROUP_CREATED",
+        metadata: {
+          groupId: group._id,
+          name: group.name,
+          code: group.code,
+        },
+      });
+    } catch (logError) {
+      console.error("Error logging GROUP_CREATED activity:", logError);
+    }
 
     return NextResponse.json({ success: true, data: group });
   } catch (error) {

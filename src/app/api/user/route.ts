@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
+import UserActivity from "@/models/UserActivity";
 
 export async function POST(request: Request) {
   try {
@@ -67,12 +68,32 @@ export async function POST(request: Request) {
       updateOp.$inc = { loginCount: 1 };
     }
 
-    // Find user by firebaseUid and update, or create if doesn't exist (upsert)
     const user = await User.findOneAndUpdate(
       { firebaseUid },
       updateOp,
       { upsert: true, returnDocument: "after", setDefaultsOnInsert: true, strict: false }
     ).lean();
+
+    // Track profile updates (when not login check-in)
+    if (!lastLoginAt) {
+      try {
+        await UserActivity.create({
+          firebaseUid,
+          action: "PROFILE_UPDATED",
+          metadata: {
+            displayName: updateData.displayName,
+            nickname: updateData.nickname,
+            country: updateData.country,
+            favoriteTeam: updateData.favoriteTeam,
+            gender: updateData.gender,
+            age: updateData.age,
+            birthDate: updateData.birthDate,
+          },
+        });
+      } catch (logError) {
+        console.error("Error logging PROFILE_UPDATED activity:", logError);
+      }
+    }
 
     // user update successful
     return NextResponse.json({ success: true, data: user });
