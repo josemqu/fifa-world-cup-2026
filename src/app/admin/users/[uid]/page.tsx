@@ -157,17 +157,16 @@ export default function UserBehaviorPage({
     fetchBehaviorData(true);
   };
 
-  // Curated color palette for page paths
+  // Highly distinct flat color palette for page paths
   const PATH_COLORS = useMemo(() => [
-    "#6366f1", // Indigo
-    "#06b6d4", // Cyan
-    "#10b981", // Emerald
-    "#8b5cf6", // Violet
-    "#f59e0b", // Amber
-    "#ec4899", // Pink
-    "#ef4444", // Red
-    "#14b8a6", // Teal
-    "#f97316", // Orange
+    "#4f46e5", // Indigo
+    "#16a34a", // Emerald Green
+    "#db2777", // Hot Pink
+    "#0891b2", // Cyan Blue
+    "#d97706", // Amber Gold
+    "#7c3aed", // Purple
+    "#ea580c", // Bright Orange
+    "#dc2626", // Crimson Red
   ], []);
 
   // Extract all unique paths visited by the user
@@ -751,44 +750,6 @@ export default function UserBehaviorPage({
                 }
               }}
             >
-              <defs>
-                <linearGradient id="color-path-0" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#818cf8" stopOpacity={0.95}/>
-                  <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.75}/>
-                </linearGradient>
-                <linearGradient id="color-path-1" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.95}/>
-                  <stop offset="95%" stopColor="#0891b2" stopOpacity={0.75}/>
-                </linearGradient>
-                <linearGradient id="color-path-2" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#34d399" stopOpacity={0.95}/>
-                  <stop offset="95%" stopColor="#059669" stopOpacity={0.75}/>
-                </linearGradient>
-                <linearGradient id="color-path-3" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#c084fc" stopOpacity={0.95}/>
-                  <stop offset="95%" stopColor="#9333ea" stopOpacity={0.75}/>
-                </linearGradient>
-                <linearGradient id="color-path-4" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.95}/>
-                  <stop offset="95%" stopColor="#d97706" stopOpacity={0.75}/>
-                </linearGradient>
-                <linearGradient id="color-path-5" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f472b6" stopOpacity={0.95}/>
-                  <stop offset="95%" stopColor="#db2777" stopOpacity={0.75}/>
-                </linearGradient>
-                <linearGradient id="color-path-6" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f87171" stopOpacity={0.95}/>
-                  <stop offset="95%" stopColor="#dc2626" stopOpacity={0.75}/>
-                </linearGradient>
-                <linearGradient id="color-path-7" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#2dd4bf" stopOpacity={0.95}/>
-                  <stop offset="95%" stopColor="#0d9488" stopOpacity={0.75}/>
-                </linearGradient>
-                <linearGradient id="color-path-8" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#fb923c" stopOpacity={0.95}/>
-                  <stop offset="95%" stopColor="#ea580c" stopOpacity={0.75}/>
-                </linearGradient>
-              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
               <XAxis
                 dataKey="date"
@@ -827,15 +788,19 @@ export default function UserBehaviorPage({
                           <p className="text-[10px] text-slate-400 italic py-1">Sin visitas este día</p>
                         ) : (
                           <div className="space-y-1.5 max-h-[150px] overflow-y-auto pr-1">
-                            {activePaths.map((p: any) => (
-                              <div key={p.name} className="flex items-center justify-between gap-4">
-                                <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-350 truncate max-w-[155px]">
-                                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: p.color || p.fill }} />
-                                  <span className="font-mono text-[10px] truncate">{p.name}</span>
-                                </span>
-                                <span className="font-bold text-slate-900 dark:text-white">{p.value}</span>
-                              </div>
-                            ))}
+                             {activePaths.map((p: any) => {
+                               const pathIdx = uniquePaths.indexOf(p.name);
+                               const solidColor = PATH_COLORS[pathIdx !== -1 ? pathIdx % PATH_COLORS.length : 0];
+                               return (
+                                 <div key={p.name} className="flex items-center justify-between gap-4">
+                                   <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-350 truncate max-w-[155px]">
+                                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: solidColor }} />
+                                     <span className="font-mono text-[10px] truncate">{p.name}</span>
+                                   </span>
+                                   <span className="font-bold text-slate-900 dark:text-white">{p.value}</span>
+                                 </div>
+                               );
+                             })}
                           </div>
                         )}
                         <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-750 pt-1.5 font-bold">
@@ -851,8 +816,9 @@ export default function UserBehaviorPage({
                   return null;
                 }}
               />
-              {pathsToRender.map((path, pathIdx) => {
-                const gradientId = `color-path-${pathIdx % 9}`;
+              {pathsToRender.map((path) => {
+                const originalIdx = uniquePaths.indexOf(path);
+                const baseColor = PATH_COLORS[originalIdx !== -1 ? originalIdx % PATH_COLORS.length : 0];
                 return (
                   <Bar
                     key={path}
@@ -869,7 +835,7 @@ export default function UserBehaviorPage({
                       return (
                         <Cell
                           key={`cell-${index}`}
-                          fill={`url(#${gradientId})`}
+                          fill={baseColor}
                           fillOpacity={opacity}
                           style={{ transition: "fill-opacity 0.2s ease" }}
                         />
