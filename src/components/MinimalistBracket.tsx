@@ -49,7 +49,7 @@ interface ConnectorProps {
     type?: "home" | "away" | "winner",
     customSize?: string
   ) => React.ReactNode;
-  hoveredTeamName?: string | null;
+  hoveredTeamNames?: string[] | null;
 }
 
 function LeftConnector({
@@ -62,7 +62,7 @@ function LeftConnector({
   match,
   roundName,
   renderTeamCircle,
-  hoveredTeamName,
+  hoveredTeamNames,
 }: ConnectorProps) {
   const strokeNonLit = "rgba(30, 41, 59, 0.85)";
   const strokeLit = "rgba(226, 232, 240, 0.85)";
@@ -70,12 +70,12 @@ function LeftConnector({
   const widthLit = 1.5;
 
   const isHovered = (t: any) => {
-    if (!hoveredTeamName || !t || "placeholder" in t) return false;
-    return t.name === hoveredTeamName;
+    if (!hoveredTeamNames || hoveredTeamNames.length === 0 || !t || "placeholder" in t) return false;
+    return hoveredTeamNames.includes(t.name);
   };
 
   const getPathStyle = (isPathForTeam: boolean, defaultLit: boolean) => {
-    if (hoveredTeamName) {
+    if (hoveredTeamNames) {
       if (isPathForTeam) {
         return {
           stroke: "rgba(96, 165, 250, 1)",
@@ -150,7 +150,7 @@ function LeftConnector({
       <div
         className={clsx(
           "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-300",
-          hoveredTeamName
+          hoveredTeamNames
             ? isHovered(match?.winner)
               ? "w-[6px] h-[6px] bg-blue-400 border-[0.5px] border-blue-900 shadow-[0_0_8px_rgba(96,165,250,0.6)]"
               : "w-[4px] h-[4px] bg-slate-800 opacity-20"
@@ -187,7 +187,7 @@ function RightConnector({
   match,
   roundName,
   renderTeamCircle,
-  hoveredTeamName,
+  hoveredTeamNames,
 }: ConnectorProps) {
   const strokeNonLit = "rgba(30, 41, 59, 0.85)";
   const strokeLit = "rgba(226, 232, 240, 0.85)";
@@ -195,12 +195,12 @@ function RightConnector({
   const widthLit = 1.5;
 
   const isHovered = (t: any) => {
-    if (!hoveredTeamName || !t || "placeholder" in t) return false;
-    return t.name === hoveredTeamName;
+    if (!hoveredTeamNames || hoveredTeamNames.length === 0 || !t || "placeholder" in t) return false;
+    return hoveredTeamNames.includes(t.name);
   };
 
   const getPathStyle = (isPathForTeam: boolean, defaultLit: boolean) => {
-    if (hoveredTeamName) {
+    if (hoveredTeamNames) {
       if (isPathForTeam) {
         return {
           stroke: "rgba(96, 165, 250, 1)",
@@ -275,7 +275,7 @@ function RightConnector({
       <div
         className={clsx(
           "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-300",
-          hoveredTeamName
+          hoveredTeamNames
             ? isHovered(match?.winner)
               ? "w-[6px] h-[6px] bg-blue-400 border-[0.5px] border-blue-900 shadow-[0_0_8px_rgba(96,165,250,0.6)]"
               : "w-[4px] h-[4px] bg-slate-800 opacity-20"
@@ -318,7 +318,8 @@ export function MinimalistBracket({
 
   const [mounted, setMounted] = useState(false);
   const [viewMode, setViewMode] = useState<"linear" | "circular">("linear");
-  const [hoveredTeamName, setHoveredTeamName] = useState<string | null>(null);
+  const [hoveredTeamNames, setHoveredTeamNames] = useState<string[] | null>(null);
+  const [hoveredMatchKey, setHoveredMatchKey] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -384,6 +385,11 @@ export function MinimalistBracket({
     return teamA.name === teamB.name;
   };
 
+  const isTeamInHovered = (team: any) => {
+    if (!hoveredTeamNames || hoveredTeamNames.length === 0 || !team || "placeholder" in team) return false;
+    return hoveredTeamNames.includes(team.name);
+  };
+
   // Render a team circle (flag or placeholder)
   const renderTeamCircle = (
     team: any,
@@ -394,19 +400,31 @@ export function MinimalistBracket({
   ) => {
     const isPH = isPlaceholderTeam(team);
     const name = getTeamName(team, match);
-    const isHoveredTeam = team && !isPH && hoveredTeamName === team.name;
-    const isAnyHovered = hoveredTeamName !== null;
+
+    const candidates = match ? (
+      type === "winner"
+        ? match.probabilisticData?.winnerCandidates
+        : (type === "home" ? match.probabilisticData?.homeCandidates : match.probabilisticData?.awayCandidates)
+    ) : undefined;
+    const hasCandidates = candidates && candidates.length > 0;
+
+    const matchKey = match && type ? `${match.id}-${type}` : null;
+    const isSelfHovered = matchKey && hoveredMatchKey === matchKey;
+    const isHoveredTeam = team && !isPH && hoveredTeamNames && hoveredTeamNames.includes(team.name);
+    const isAnyHovered = hoveredTeamNames !== null;
 
     const handleMouseEnter = () => {
+      setHoveredMatchKey(matchKey);
       if (!isPH && team && team.name) {
-        setHoveredTeamName(team.name);
+        setHoveredTeamNames([team.name]);
+      } else if (isPH && hasCandidates && candidates) {
+        setHoveredTeamNames(candidates.map((c) => c.team.name));
       }
     };
 
     const handleMouseLeave = () => {
-      if (!isPH) {
-        setHoveredTeamName(null);
-      }
+      setHoveredMatchKey(null);
+      setHoveredTeamNames(null);
     };
 
     const vtName = match && type ? `flag-${match.id}-${type}` : undefined;
@@ -423,11 +441,11 @@ export function MinimalistBracket({
             : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-200",
           !isPH && "hover:scale-115 hover:shadow-lg",
           isAnyHovered && (
-            isHoveredTeam
+            (isHoveredTeam || isSelfHovered)
               ? "scale-115 ring-2 ring-blue-500 dark:ring-blue-400 border-blue-500 dark:border-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.6)] z-30"
               : "opacity-20"
           ),
-          isAnyHovered && isPH && "opacity-20"
+          isAnyHovered && isPH && !isSelfHovered && "opacity-20"
         )}
         style={{
           viewTransitionName: vtName,
@@ -452,13 +470,6 @@ export function MinimalistBracket({
     );
 
     if (isPH) {
-      const candidates = match ? (
-        type === "winner"
-          ? match.probabilisticData?.winnerCandidates
-          : (type === "home" ? match.probabilisticData?.homeCandidates : match.probabilisticData?.awayCandidates)
-      ) : undefined;
-      const hasCandidates = candidates && candidates.length > 0;
-
       if (hasCandidates) {
         return (
           <Tooltip
@@ -598,9 +609,7 @@ export function MinimalistBracket({
                 const r16Match = getMatch(leftR16Ids[Math.floor(index / 2)]);
                 const highlightTop = isSameTeam(r32Match?.winner, r32Match?.homeTeam);
                 const highlightBottom = isSameTeam(r32Match?.winner, r32Match?.awayTeam);
-                const highlightOutput = highlightTop || highlightBottom;
-
-                return (
+                const highlightOutput = highlightTop || highlightBottom;                return (
                   <LeftConnector
                     key={`l-conn-r32-${id}`}
                     rowSpan={2}
@@ -612,7 +621,7 @@ export function MinimalistBracket({
                     match={r32Match}
                     roundName="Octavos"
                     renderTeamCircle={renderTeamCircle}
-                    hoveredTeamName={hoveredTeamName}
+                    hoveredTeamNames={hoveredTeamNames}
                   />
                 );
               })}
@@ -637,7 +646,7 @@ export function MinimalistBracket({
                     match={r16Match}
                     roundName="Cuartos"
                     renderTeamCircle={renderTeamCircle}
-                    hoveredTeamName={hoveredTeamName}
+                    hoveredTeamNames={hoveredTeamNames}
                   />
                 );
               })}
@@ -662,7 +671,7 @@ export function MinimalistBracket({
                     match={qfMatch}
                     roundName="Semifinal"
                     renderTeamCircle={renderTeamCircle}
-                    hoveredTeamName={hoveredTeamName}
+                    hoveredTeamNames={hoveredTeamNames}
                   />
                 );
               })}
@@ -687,7 +696,7 @@ export function MinimalistBracket({
                     match={sfMatch}
                     roundName="Final"
                     renderTeamCircle={renderTeamCircle}
-                    hoveredTeamName={hoveredTeamName}
+                    hoveredTeamNames={hoveredTeamNames}
                   />
                 );
               })}
@@ -700,8 +709,8 @@ export function MinimalistBracket({
                 <div
                   className={clsx(
                     "absolute top-1/2 left-0 right-1/2 -translate-y-1/2 z-0 pointer-events-none transition-all duration-300",
-                    hoveredTeamName
-                      ? (isSameTeam(finalMatch?.homeTeam, { name: hoveredTeamName }) && isSameTeam(champion, { name: hoveredTeamName }))
+                    hoveredTeamNames
+                      ? (isTeamInHovered(finalMatch?.homeTeam) && isTeamInHovered(champion))
                         ? "bg-blue-400 h-[2.5px]"
                         : "bg-[rgba(30,41,59,0.15)] h-[1px]"
                       : (finalMatch?.homeTeam && !isPlaceholderTeam(finalMatch.homeTeam) && isSameTeam(champion, finalMatch.homeTeam))
@@ -714,8 +723,8 @@ export function MinimalistBracket({
                 <div
                   className={clsx(
                     "absolute top-1/2 left-1/2 right-0 -translate-y-1/2 z-0 pointer-events-none transition-all duration-300",
-                    hoveredTeamName
-                      ? (isSameTeam(finalMatch?.awayTeam, { name: hoveredTeamName }) && isSameTeam(champion, { name: hoveredTeamName }))
+                    hoveredTeamNames
+                      ? (isTeamInHovered(finalMatch?.awayTeam) && isTeamInHovered(champion))
                         ? "bg-blue-400 h-[2.5px]"
                         : "bg-[rgba(30,41,59,0.15)] h-[1px]"
                       : (finalMatch?.awayTeam && !isPlaceholderTeam(finalMatch.awayTeam) && isSameTeam(champion, finalMatch.awayTeam))
@@ -728,8 +737,8 @@ export function MinimalistBracket({
                 <div
                   className={clsx(
                     "absolute top-[100px] bottom-1/2 left-1/2 -translate-x-1/2 z-0 pointer-events-none transition-all duration-300 md:hidden",
-                    hoveredTeamName
-                      ? (champion && champion.name === hoveredTeamName)
+                    hoveredTeamNames
+                      ? (champion && hoveredTeamNames.includes(champion.name))
                         ? "bg-blue-400 w-[2.5px]"
                         : "bg-[rgba(30,41,59,0.15)] w-[1px]"
                       : champion
@@ -753,7 +762,7 @@ export function MinimalistBracket({
                     <span
                       className={clsx(
                         "text-[7px] md:text-[9px] font-black text-yellow-500 tracking-widest uppercase mb-1.5 md:mb-3 animate-bounce-subtle transition-all duration-300",
-                        hoveredTeamName && hoveredTeamName !== champion.name && "opacity-20"
+                        hoveredTeamNames && !hoveredTeamNames.includes(champion.name) && hoveredMatchKey !== "champion" && "opacity-20"
                       )}
                       style={{ viewTransitionName: "label-champion" } as any}
                     >
@@ -763,16 +772,29 @@ export function MinimalistBracket({
 
                   {/* Premium Trophy Graphic or Champion Flag */}
                   <div
-                    onMouseEnter={() => champion && setHoveredTeamName(champion.name)}
-                    onMouseLeave={() => setHoveredTeamName(null)}
+                    onMouseEnter={() => {
+                      setHoveredMatchKey("champion");
+                      if (champion) {
+                        setHoveredTeamNames([champion.name]);
+                      } else {
+                        const finalCandidates = finalMatch?.probabilisticData?.winnerCandidates;
+                        if (finalCandidates && finalCandidates.length > 0) {
+                          setHoveredTeamNames(finalCandidates.map(c => c.team.name));
+                        }
+                      }
+                    }}
+                    onMouseLeave={() => {
+                      setHoveredMatchKey(null);
+                      setHoveredTeamNames(null);
+                    }}
                     className={clsx(
                       "flex items-center justify-center rounded-full border shadow-xl transition-all duration-300 select-none cursor-pointer",
                       champion
                         ? "w-14 h-14 md:w-20 md:h-20 border-yellow-400 dark:border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.4)] bg-white dark:bg-slate-900 p-0.5 overflow-hidden"
                         : "w-10 h-10 md:w-14 md:h-14 bg-slate-800 border-slate-700 text-slate-500 p-2 md:p-3",
-                      hoveredTeamName && (
-                        hoveredTeamName === champion?.name
-                          ? "scale-110 ring-2 ring-yellow-400 border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.6)]"
+                      hoveredTeamNames && (
+                        (champion && hoveredTeamNames.includes(champion.name)) || hoveredMatchKey === "champion"
+                          ? "scale-110 ring-2 ring-yellow-400 border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.6)] animate-pulse"
                           : "opacity-20"
                       )
                     )}
@@ -801,7 +823,7 @@ export function MinimalistBracket({
                     <div
                       className={clsx(
                         "flex items-center gap-1 bg-yellow-500/10 dark:bg-yellow-500/20 border border-yellow-500/40 text-yellow-800 dark:text-yellow-400 px-1.5 py-0.5 rounded-full font-black text-[8px] md:text-[10px] shadow-xs mt-1.5 transition-all duration-300",
-                        hoveredTeamName && hoveredTeamName !== champion.name && "opacity-20"
+                        hoveredTeamNames && !hoveredTeamNames.includes(champion.name) && hoveredMatchKey !== "champion" && "opacity-20"
                       )}
                       style={{ viewTransitionName: "name-champion" } as any}
                     >
@@ -840,7 +862,7 @@ export function MinimalistBracket({
                     match={sfMatch}
                     roundName="Final"
                     renderTeamCircle={renderTeamCircle}
-                    hoveredTeamName={hoveredTeamName}
+                    hoveredTeamNames={hoveredTeamNames}
                   />
                 );
               })}
@@ -865,7 +887,7 @@ export function MinimalistBracket({
                     match={qfMatch}
                     roundName="Semifinal"
                     renderTeamCircle={renderTeamCircle}
-                    hoveredTeamName={hoveredTeamName}
+                    hoveredTeamNames={hoveredTeamNames}
                   />
                 );
               })}
@@ -890,7 +912,7 @@ export function MinimalistBracket({
                     match={r16Match}
                     roundName="Cuartos"
                     renderTeamCircle={renderTeamCircle}
-                    hoveredTeamName={hoveredTeamName}
+                    hoveredTeamNames={hoveredTeamNames}
                   />
                 );
               })}
@@ -915,7 +937,7 @@ export function MinimalistBracket({
                     match={r32Match}
                     roundName="Octavos"
                     renderTeamCircle={renderTeamCircle}
-                    hoveredTeamName={hoveredTeamName}
+                    hoveredTeamNames={hoveredTeamNames}
                   />
                 );
               })}
@@ -942,8 +964,10 @@ export function MinimalistBracket({
             isAdmin={isAdmin}
             simulateAll={simulateAll}
             resetTournament={resetTournament}
-            hoveredTeamName={hoveredTeamName}
-            setHoveredTeamName={setHoveredTeamName}
+            hoveredTeamNames={hoveredTeamNames}
+            setHoveredTeamNames={setHoveredTeamNames}
+            hoveredMatchKey={hoveredMatchKey}
+            setHoveredMatchKey={setHoveredMatchKey}
           />
         )}
 

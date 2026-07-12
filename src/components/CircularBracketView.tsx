@@ -125,8 +125,10 @@ interface CircularBracketViewProps {
   isAdmin: boolean;
   simulateAll: () => void;
   resetTournament: () => void;
-  hoveredTeamName: string | null;
-  setHoveredTeamName: (name: string | null) => void;
+  hoveredTeamNames: string[] | null;
+  setHoveredTeamNames: (names: string[] | null) => void;
+  hoveredMatchKey: string | null;
+  setHoveredMatchKey: (key: string | null) => void;
 }
 
 export function CircularBracketView({
@@ -134,12 +136,14 @@ export function CircularBracketView({
   isAdmin,
   simulateAll,
   resetTournament,
-  hoveredTeamName,
-  setHoveredTeamName,
+  hoveredTeamNames,
+  setHoveredTeamNames,
+  hoveredMatchKey,
+  setHoveredMatchKey,
 }: CircularBracketViewProps) {
   const isHovered = (t: any) => {
-    if (!hoveredTeamName || !t || "placeholder" in t) return false;
-    return t.name === hoveredTeamName;
+    if (!hoveredTeamNames || hoveredTeamNames.length === 0 || !t || "placeholder" in t) return false;
+    return hoveredTeamNames.includes(t.name);
   };
 
   // ── Compute nodes + edges ──────────────────────────
@@ -380,19 +384,35 @@ export function CircularBracketView({
   const renderNode = (node: Node) => {
     const isPH = isPlaceholder(node.team);
     const name = teamName(node.team, node.match);
-    const isHoveredTeam = node.team && !isPH && hoveredTeamName === node.team.name;
-    const isAnyHovered = hoveredTeamName !== null;
+
+    const candidates = node.match
+      ? node.type === "winner"
+        ? node.match.probabilisticData?.winnerCandidates
+        : node.type === "home"
+          ? node.match.probabilisticData?.homeCandidates
+          : node.type === "away"
+            ? node.match.probabilisticData?.awayCandidates
+            : undefined
+      : undefined;
+    const hasCandidates = candidates && candidates.length > 0;
+
+    const matchKey = node.match ? `${node.match.id}-${node.type}` : null;
+    const isSelfHovered = matchKey && hoveredMatchKey === matchKey;
+    const isHoveredTeam = node.team && !isPH && hoveredTeamNames && hoveredTeamNames.includes(node.team.name);
+    const isAnyHovered = hoveredTeamNames !== null;
 
     const handleMouseEnter = () => {
+      setHoveredMatchKey(matchKey);
       if (!isPH && node.team && node.team.name) {
-        setHoveredTeamName(node.team.name);
+        setHoveredTeamNames([node.team.name]);
+      } else if (isPH && hasCandidates && candidates) {
+        setHoveredTeamNames(candidates.map((c) => c.team.name));
       }
     };
 
     const handleMouseLeave = () => {
-      if (!isPH) {
-        setHoveredTeamName(null);
-      }
+      setHoveredMatchKey(null);
+      setHoveredTeamNames(null);
     };
 
     const vtName = node.match ? `flag-${node.match.id}-${node.type}` : undefined;
@@ -408,11 +428,11 @@ export function CircularBracketView({
             : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-200",
           !isPH && "hover:scale-115 hover:shadow-lg",
           isAnyHovered && (
-            isHoveredTeam
+            (isHoveredTeam || isSelfHovered)
               ? "scale-115 ring-2 ring-blue-500 dark:ring-blue-400 border-blue-500 dark:border-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.6)] z-30"
               : "opacity-20"
           ),
-          isAnyHovered && isPH && "opacity-20"
+          isAnyHovered && isPH && !isSelfHovered && "opacity-20"
         )}
         style={{
           width: node.size,
@@ -442,17 +462,7 @@ export function CircularBracketView({
     );
 
     if (isPH) {
-      const candidates = node.match
-        ? node.type === "winner"
-          ? node.match.probabilisticData?.winnerCandidates
-          : node.type === "home"
-            ? node.match.probabilisticData?.homeCandidates
-            : node.type === "away"
-              ? node.match.probabilisticData?.awayCandidates
-              : undefined
-        : undefined;
-
-      if (candidates && candidates.length > 0) {
+      if (hasCandidates && candidates) {
         return (
           <Tooltip
             content={<CandidatesTooltip candidates={candidates} />}
@@ -497,7 +507,7 @@ export function CircularBracketView({
           {/* Connector edges — non-highlighted first, highlighted on top */}
           {edges
             .filter((e) => {
-              if (hoveredTeamName) {
+              if (hoveredTeamNames) {
                 return !isHovered(e.team);
               }
               return !e.lit;
@@ -511,8 +521,8 @@ export function CircularBracketView({
                   key={e.id}
                   d={e.pathD}
                   fill="none"
-                  stroke={hoveredTeamName ? "rgba(30,41,59,0.15)" : "rgba(30,41,59,0.85)"}
-                  strokeWidth={hoveredTeamName ? 1.0 : 1.5}
+                  stroke={hoveredTeamNames ? "rgba(30,41,59,0.15)" : "rgba(30,41,59,0.85)"}
+                  strokeWidth={hoveredTeamNames ? 1.0 : 1.5}
                   strokeLinecap="round"
                   className="transition-all duration-300"
                   style={{ viewTransitionName: vtName } as any}
@@ -521,7 +531,7 @@ export function CircularBracketView({
             })}
           {edges
             .filter((e) => {
-              if (hoveredTeamName) {
+              if (hoveredTeamNames) {
                 return isHovered(e.team);
               }
               return e.lit;
@@ -535,7 +545,7 @@ export function CircularBracketView({
                   key={e.id}
                   d={e.pathD}
                   fill="none"
-                  stroke={hoveredTeamName ? "rgba(96, 165, 250, 1)" : "rgba(226, 232, 240, 0.85)"}
+                  stroke={hoveredTeamNames ? "rgba(96, 165, 250, 1)" : "rgba(226, 232, 240, 0.85)"}
                   strokeWidth={2.5}
                   strokeLinecap="round"
                   className="transition-all duration-300"
@@ -555,15 +565,15 @@ export function CircularBracketView({
             const vtName = `dot-${mid}`;
 
             // Check if this match contains any lit/hovered edge
-            const isMatchHovered = hoveredTeamName && edges.some((edge) => edge.id.split("-")[2] === mid && isHovered(edge.team));
-            const isMatchLit = !hoveredTeamName && edges.some((edge) => edge.id.split("-")[2] === mid && edge.lit);
+            const isMatchHovered = hoveredTeamNames && edges.some((edge) => edge.id.split("-")[2] === mid && isHovered(edge.team));
+            const isMatchLit = !hoveredTeamNames && edges.some((edge) => edge.id.split("-")[2] === mid && edge.lit);
 
             return (
               <div
                 key={`dot-html-${e.id}`}
                 className={clsx(
                   "absolute rounded-full transition-all duration-300 pointer-events-none z-10",
-                  hoveredTeamName
+                  hoveredTeamNames
                     ? isMatchHovered
                       ? "w-[6px] h-[6px] bg-blue-400 border-[0.5px] border-blue-900 shadow-[0_0_8px_rgba(96,165,250,0.6)]"
                       : "w-[4px] h-[4px] bg-slate-800 opacity-20"
@@ -619,7 +629,7 @@ export function CircularBracketView({
               <span
                 className={clsx(
                   "text-[7px] md:text-[9px] font-black text-yellow-500 tracking-widest uppercase mb-1.5 md:mb-3 animate-bounce-subtle transition-all duration-300",
-                  hoveredTeamName && hoveredTeamName !== champion.name && "opacity-20"
+                  hoveredTeamNames && !hoveredTeamNames.includes(champion.name) && hoveredMatchKey !== "champion" && "opacity-20"
                 )}
                 style={{ viewTransitionName: "label-champion" } as any}
               >
@@ -629,16 +639,30 @@ export function CircularBracketView({
 
             {/* Trophy / Flag circle */}
             <div
-              onMouseEnter={() => champion && setHoveredTeamName(champion.name)}
-              onMouseLeave={() => setHoveredTeamName(null)}
+              onMouseEnter={() => {
+                setHoveredMatchKey("champion");
+                if (champion) {
+                  setHoveredTeamNames([champion.name]);
+                } else {
+                  const finalMatch = matches.find((m) => m.id === FINAL_ID);
+                  const finalCandidates = finalMatch?.probabilisticData?.winnerCandidates;
+                  if (finalCandidates && finalCandidates.length > 0) {
+                    setHoveredTeamNames(finalCandidates.map((c) => c.team.name));
+                  }
+                }
+              }}
+              onMouseLeave={() => {
+                setHoveredMatchKey(null);
+                setHoveredTeamNames(null);
+              }}
               className={clsx(
                 "flex items-center justify-center rounded-full border shadow-xl transition-all duration-300 select-none cursor-pointer",
                 champion
                   ? "w-14 h-14 md:w-20 md:h-20 border-yellow-400 dark:border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.4)] bg-white dark:bg-slate-900 p-0.5 overflow-hidden"
                   : "w-10 h-10 md:w-14 md:h-14 bg-slate-800 border-slate-700 text-slate-500 p-2 md:p-3",
-                hoveredTeamName && (
-                  hoveredTeamName === champion?.name
-                    ? "scale-110 ring-2 ring-yellow-400 border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.6)]"
+                hoveredTeamNames && (
+                  (champion && hoveredTeamNames.includes(champion.name)) || hoveredMatchKey === "champion"
+                    ? "scale-110 ring-2 ring-yellow-400 border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.6)] animate-pulse"
                     : "opacity-20"
                 )
               )}
@@ -669,7 +693,7 @@ export function CircularBracketView({
               <div
                 className={clsx(
                   "flex items-center gap-1 bg-yellow-500/10 dark:bg-yellow-500/20 border border-yellow-500/40 text-yellow-800 dark:text-yellow-400 px-1.5 py-0.5 rounded-full font-black text-[8px] md:text-[10px] shadow-xs mt-1.5 transition-all duration-300",
-                  hoveredTeamName && hoveredTeamName !== champion.name && "opacity-20"
+                  hoveredTeamNames && !hoveredTeamNames.includes(champion.name) && hoveredMatchKey !== "champion" && "opacity-20"
                 )}
                 style={{ viewTransitionName: "name-champion" } as any}
               >
