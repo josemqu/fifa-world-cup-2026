@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -9,9 +10,7 @@ import {
   Activity,
   ArrowRight,
   Cpu,
-  Database,
   ShieldCheck,
-  Calendar,
   Zap,
 } from "lucide-react";
 import Countdown from "@/components/Countdown";
@@ -42,6 +41,20 @@ const itemVariants = {
 } as const;
 
 export default function Home() {
+  const [targetDate, setTargetDate] = useState("2026-06-11T19:00:00Z");
+  const [countdownLabel, setCountdownLabel] = useState("Faltan para el Kickoff");
+
+  useEffect(() => {
+    const kickoff = new Date("2026-06-11T19:00:00Z").getTime();
+    const now = new Date().getTime();
+    if (now >= kickoff) {
+      setTimeout(() => {
+        setTargetDate("2026-07-19T19:00:00Z");
+        setCountdownLabel("Faltan para la Final");
+      }, 0);
+    }
+  }, []);
+
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 md:py-14 space-y-12 md:space-y-16">
       {/* SECTION 1: HERO & COUNTDOWN */}
@@ -102,9 +115,9 @@ export default function Home() {
 
             <div className="flex flex-col items-center lg:items-end shrink-0">
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600/80 dark:text-blue-400/80 mb-2">
-                Faltan para el Kickoff
+                {countdownLabel}
               </span>
-              <Countdown targetDate="2026-06-11T19:00:00Z" />
+              <Countdown targetDate={targetDate} />
             </div>
           </div>
         </div>

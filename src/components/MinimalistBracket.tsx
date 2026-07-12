@@ -771,52 +771,67 @@ export function MinimalistBracket({
                   )}
 
                   {/* Premium Trophy Graphic or Champion Flag */}
-                  <div
-                    onMouseEnter={() => {
-                      setHoveredMatchKey("champion");
-                      if (champion) {
-                        setHoveredTeamNames([champion.name]);
-                      } else {
-                        const finalCandidates = finalMatch?.probabilisticData?.winnerCandidates;
-                        if (finalCandidates && finalCandidates.length > 0) {
-                          setHoveredTeamNames(finalCandidates.map(c => c.team.name));
-                        }
-                      }
-                    }}
-                    onMouseLeave={() => {
-                      setHoveredMatchKey(null);
-                      setHoveredTeamNames(null);
-                    }}
-                    className={clsx(
-                      "flex items-center justify-center rounded-full border shadow-xl transition-all duration-300 select-none cursor-pointer",
-                      champion
-                        ? "w-14 h-14 md:w-20 md:h-20 border-yellow-400 dark:border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.4)] bg-white dark:bg-slate-900 p-0.5 overflow-hidden"
-                        : "w-10 h-10 md:w-14 md:h-14 bg-slate-800 border-slate-700 text-slate-500 p-2 md:p-3",
-                      hoveredTeamNames && (
-                        (champion && hoveredTeamNames.includes(champion.name)) || hoveredMatchKey === "champion"
-                          ? "scale-110 ring-2 ring-yellow-400 border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.6)] animate-pulse"
-                          : "opacity-20"
+                  <Tooltip
+                    content={
+                      champion ? (
+                        <span className="font-bold text-xs">Campeón: {champion.name}</span>
+                      ) : finalMatch?.probabilisticData?.winnerCandidates && finalMatch.probabilisticData.winnerCandidates.length > 0 ? (
+                        <CandidatesTooltip candidates={finalMatch.probabilisticData.winnerCandidates} />
+                      ) : (
+                        <span className="font-bold text-xs">Campeón TBD</span>
                       )
-                    )}
-                    style={{
-                      viewTransitionName: "flag-champion",
-                    } as any}
+                    }
+                    placement="top"
+                    interactive={false}
+                    wrapperClassName="z-20"
                   >
-                    {champion ? (() => {
-                      const code = getCountryIsoCode(champion.name);
-                      return (
-                        <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-white aspect-square">
-                          <Flag
-                            code={code}
-                            className="object-cover w-full h-full aspect-square rounded-full scale-105"
-                            alt={champion.name}
-                          />
-                        </div>
-                      );
-                    })() : (
-                      <Trophy className="w-6 h-6" />
-                    )}
-                  </div>
+                    <div
+                      onMouseEnter={() => {
+                        setHoveredMatchKey("champion");
+                        if (champion) {
+                          setHoveredTeamNames([champion.name]);
+                        } else {
+                          const finalCandidates = finalMatch?.probabilisticData?.winnerCandidates;
+                          if (finalCandidates && finalCandidates.length > 0) {
+                            setHoveredTeamNames(finalCandidates.map(c => c.team.name));
+                          }
+                        }
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredMatchKey(null);
+                        setHoveredTeamNames(null);
+                      }}
+                      className={clsx(
+                        "flex items-center justify-center rounded-full border shadow-xl transition-all duration-300 select-none cursor-pointer",
+                        champion
+                          ? "w-14 h-14 md:w-20 md:h-20 border-yellow-400 dark:border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.4)] bg-white dark:bg-slate-900 p-0.5 overflow-hidden"
+                          : "w-10 h-10 md:w-14 md:h-14 bg-slate-800 border-slate-700 text-slate-500 p-2 md:p-3",
+                        hoveredTeamNames && (
+                          (champion && hoveredTeamNames.includes(champion.name)) || hoveredMatchKey === "champion"
+                            ? "scale-110 ring-2 ring-yellow-400 border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.6)] animate-pulse"
+                            : "opacity-20"
+                        )
+                      )}
+                      style={{
+                        viewTransitionName: "flag-champion",
+                      } as any}
+                    >
+                      {champion ? (() => {
+                        const code = getCountryIsoCode(champion.name);
+                        return (
+                          <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-white aspect-square">
+                            <Flag
+                              code={code}
+                              className="object-cover w-full h-full aspect-square rounded-full scale-105"
+                              alt={champion.name}
+                            />
+                          </div>
+                        );
+                      })() : (
+                        <Trophy className="w-6 h-6" />
+                      )}
+                    </div>
+                  </Tooltip>
 
                   {/* Champion Name Chip below Trophy if resolved */}
                   {champion && (
