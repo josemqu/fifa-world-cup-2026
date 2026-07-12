@@ -433,6 +433,7 @@ export function MinimalistBracket({
       <div
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
+        data-winning-path-flag={(!isPH && isHoveredTeam) ? "true" : undefined}
         className={clsx(
           customSize || "w-6 h-6 md:w-8 md:h-8",
           "rounded-full flex items-center justify-center shadow-md select-none transition-all duration-300 border cursor-pointer",
@@ -476,6 +477,7 @@ export function MinimalistBracket({
             content={<CandidatesTooltip candidates={candidates} />}
             placement="top"
             interactive={false}
+            autoAdjustPlacement={true}
             wrapperClassName={clsx("flex items-center justify-center z-20", customSize || "w-6 h-6 md:w-8 md:h-8")}
           >
             {circleContent}
@@ -497,6 +499,7 @@ export function MinimalistBracket({
         content={<span className="font-bold text-xs">{name}</span>}
         placement="top"
         interactive={false}
+        autoAdjustPlacement={true}
         wrapperClassName={clsx("flex items-center justify-center z-20", customSize || "w-6 h-6 md:w-8 md:h-8")}
       >
         {circleContent}
@@ -783,6 +786,7 @@ export function MinimalistBracket({
                     }
                     placement="top"
                     interactive={false}
+                    autoAdjustPlacement={true}
                     wrapperClassName="z-20"
                   >
                     <div
@@ -801,6 +805,7 @@ export function MinimalistBracket({
                         setHoveredMatchKey(null);
                         setHoveredTeamNames(null);
                       }}
+                      data-winning-path-flag={(champion && hoveredTeamNames && hoveredTeamNames.includes(champion.name)) ? "true" : undefined}
                       className={clsx(
                         "flex items-center justify-center rounded-full border shadow-xl transition-all duration-300 select-none cursor-pointer",
                         champion

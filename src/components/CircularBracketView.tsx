@@ -421,6 +421,7 @@ export function CircularBracketView({
       <div
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
+        data-winning-path-flag={(!isPH && isHoveredTeam) ? "true" : undefined}
         className={clsx(
           "rounded-full flex items-center justify-center shadow-md select-none transition-all duration-300 border cursor-pointer",
           isPH
@@ -468,6 +469,7 @@ export function CircularBracketView({
             content={<CandidatesTooltip candidates={candidates} />}
             placement="top"
             interactive={false}
+            autoAdjustPlacement={true}
           >
             {circle}
           </Tooltip>
@@ -481,6 +483,7 @@ export function CircularBracketView({
         content={<span className="font-bold text-xs">{name}</span>}
         placement="top"
         interactive={false}
+        autoAdjustPlacement={true}
       >
         {circle}
       </Tooltip>
@@ -654,6 +657,7 @@ export function CircularBracketView({
               }
               placement="top"
               interactive={false}
+              autoAdjustPlacement={true}
             >
               <div
                 onMouseEnter={() => {
@@ -672,6 +676,7 @@ export function CircularBracketView({
                   setHoveredMatchKey(null);
                   setHoveredTeamNames(null);
                 }}
+                data-winning-path-flag={(champion && hoveredTeamNames && hoveredTeamNames.includes(champion.name)) ? "true" : undefined}
                 className={clsx(
                   "flex items-center justify-center rounded-full border shadow-xl transition-all duration-300 select-none cursor-pointer",
                   champion

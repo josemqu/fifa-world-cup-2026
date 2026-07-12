@@ -13,7 +13,91 @@ interface TooltipProps {
   placement?: "top" | "right" | "bottom" | "left";
   interactive?: boolean;
   onlyShowIfTruncated?: boolean;
+  autoAdjustPlacement?: boolean;
 }
+
+const getCandidateRect = (
+  p: "top" | "bottom" | "left" | "right",
+  triggerRect: DOMRect,
+  tooltipWidth: number,
+  tooltipHeight: number
+) => {
+  const gap = 8;
+  const padding = 10;
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  let refTop = 0;
+  let refLeft = 0;
+
+  switch (p) {
+    case "top":
+      refTop = triggerRect.top - gap;
+      refLeft = triggerRect.left + triggerRect.width / 2;
+      break;
+    case "bottom":
+      refTop = triggerRect.bottom + gap;
+      refLeft = triggerRect.left + triggerRect.width / 2;
+      break;
+    case "left":
+      refTop = triggerRect.top + triggerRect.height / 2;
+      refLeft = triggerRect.left - gap;
+      break;
+    case "right":
+      refTop = triggerRect.top + triggerRect.height / 2;
+      refLeft = triggerRect.right + gap;
+      break;
+  }
+
+  let actualLeft = 0;
+  let actualTop = 0;
+  let shift = 0;
+
+  if (p === "top" || p === "bottom") {
+    actualTop = p === "top" ? refTop - tooltipHeight : refTop;
+    const naturalLeft = refLeft - tooltipWidth / 2;
+    actualLeft = naturalLeft;
+
+    const expectedRight = naturalLeft + tooltipWidth;
+    if (expectedRight > viewportWidth - padding) {
+      shift = expectedRight - (viewportWidth - padding);
+      actualLeft -= shift;
+    } else if (naturalLeft < padding) {
+      shift = padding - naturalLeft;
+      actualLeft += shift;
+    }
+  } else {
+    actualLeft = p === "left" ? refLeft - tooltipWidth : refLeft;
+    const naturalTop = refTop - tooltipHeight / 2;
+    actualTop = naturalTop;
+
+    const expectedBottom = naturalTop + tooltipHeight;
+    if (expectedBottom > viewportHeight - padding) {
+      shift = expectedBottom - (viewportHeight - padding);
+      actualTop -= shift;
+    } else if (naturalTop < padding) {
+      shift = padding - naturalTop;
+      actualTop += shift;
+    }
+  }
+
+  const finalShiftX = p === "top" || p === "bottom" ? (actualLeft - (refLeft - tooltipWidth / 2)) : 0;
+  const finalShiftY = p === "left" || p === "right" ? (actualTop - (refTop - tooltipHeight / 2)) : 0;
+
+  return {
+    rect: {
+      left: actualLeft,
+      top: actualTop,
+      width: tooltipWidth,
+      height: tooltipHeight,
+      right: actualLeft + tooltipWidth,
+      bottom: actualTop + tooltipHeight,
+    },
+    refTop: p === "top" || p === "bottom" ? refTop : refTop + finalShiftY,
+    refLeft: p === "left" || p === "right" ? refLeft : refLeft + finalShiftX,
+    shift: p === "top" || p === "bottom" ? finalShiftX : finalShiftY,
+  };
+};
 
 export function Tooltip({
   children,
@@ -23,9 +107,11 @@ export function Tooltip({
   placement = "top",
   interactive = false,
   onlyShowIfTruncated = false,
+  autoAdjustPlacement = false,
 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
+  const [actualPlacement, setActualPlacement] = useState<"top" | "right" | "bottom" | "left">(placement);
   const [arrowStyle, setArrowStyle] = useState<React.CSSProperties>({});
   const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -63,7 +149,7 @@ export function Tooltip({
     if (interactive) {
       hideTimeoutRef.current = setTimeout(() => {
         setIsVisible(false);
-      }, 150); // short delay to hover between trigger and tooltip
+      }, 150);
     } else {
       setIsVisible(false);
     }
@@ -77,6 +163,11 @@ export function Tooltip({
     };
   }, []);
 
+  useEffect(() => {
+    if (!isVisible) {
+      setActualPlacement(placement);
+    }
+  }, [isVisible, placement]);
 
   useEffect(() => {
     if (isVisible && triggerRef.current) {
@@ -86,77 +177,172 @@ export function Tooltip({
           const gap = 8;
           let top = 0;
           let left = 0;
+          let chosenPlacement = placement;
+          let newArrowStyle: React.CSSProperties = {};
 
-          switch (placement) {
-            case "top":
-              top = rect.top - gap;
-              left = rect.left + rect.width / 2;
-              break;
-            case "right":
-              top = rect.top + rect.height / 2;
-              left = rect.right + gap;
-              break;
-            case "bottom":
-              top = rect.bottom + gap;
-              left = rect.left + rect.width / 2;
-              break;
-            case "left":
-              top = rect.top + rect.height / 2;
-              left = rect.left - gap;
-              break;
+          const tooltipRect = tooltipRef.current ? tooltipRef.current.getBoundingClientRect() : null;
+
+          if (autoAdjustPlacement && tooltipRect) {
+            const tooltipWidth = tooltipRect.width;
+            const tooltipHeight = tooltipRect.height;
+
+            const activeFlags = Array.from(document.querySelectorAll('[data-winning-path-flag="true"]'))
+              .filter((flag) => triggerRef.current && flag !== triggerRef.current && !triggerRef.current.contains(flag));
+
+            if (activeFlags.length > 0) {
+              const placements: ("top" | "bottom" | "left" | "right")[] = [placement];
+              const others: ("top" | "bottom" | "left" | "right")[] = ["top", "bottom", "left", "right"];
+              others.forEach((p) => {
+                if (!placements.includes(p)) {
+                  placements.push(p);
+                }
+              });
+
+              const candidateData = placements.map((p) => {
+                const res = getCandidateRect(p, rect, tooltipWidth, tooltipHeight);
+                let collisions = 0;
+                let minDistance = Infinity;
+
+                activeFlags.forEach((flag) => {
+                  const flagRect = flag.getBoundingClientRect();
+                  
+                  const buffer = 4;
+                  const overlaps = !(
+                    res.rect.right < flagRect.left - buffer ||
+                    res.rect.left > flagRect.right + buffer ||
+                    res.rect.bottom < flagRect.top - buffer ||
+                    res.rect.top > flagRect.bottom + buffer
+                  );
+
+                  if (overlaps) {
+                    collisions++;
+                  }
+
+                  const cCenter = {
+                    x: res.rect.left + res.rect.width / 2,
+                    y: res.rect.top + res.rect.height / 2,
+                  };
+                  const fCenter = {
+                    x: flagRect.left + flagRect.width / 2,
+                    y: flagRect.top + flagRect.height / 2,
+                  };
+                  const dist = Math.hypot(cCenter.x - fCenter.x, cCenter.y - fCenter.y);
+                  if (dist < minDistance) {
+                    minDistance = dist;
+                  }
+                });
+
+                return {
+                  placement: p,
+                  refTop: res.refTop,
+                  refLeft: res.refLeft,
+                  shift: res.shift,
+                  collisions,
+                  minDistance,
+                };
+              });
+
+              let best = candidateData[0];
+              for (let i = 1; i < candidateData.length; i++) {
+                const cand = candidateData[i];
+                if (cand.collisions < best.collisions) {
+                  best = cand;
+                } else if (cand.collisions === best.collisions) {
+                  if (best.collisions > 0 && cand.minDistance > best.minDistance) {
+                    best = cand;
+                  }
+                }
+              }
+
+              chosenPlacement = best.placement;
+              top = best.refTop;
+              left = best.refLeft;
+
+              if (chosenPlacement === "top" || chosenPlacement === "bottom") {
+                if (Math.abs(best.shift) > 0.1) {
+                  newArrowStyle = { left: `calc(50% - ${best.shift}px)` };
+                }
+              } else if (chosenPlacement === "left" || chosenPlacement === "right") {
+                if (Math.abs(best.shift) > 0.1) {
+                  newArrowStyle = { top: `calc(50% - ${best.shift}px)` };
+                }
+              }
+            } else {
+              calculateStandard();
+            }
+          } else {
+            calculateStandard();
           }
 
-          // Adjust for viewport boundaries if tooltip is rendered
-          let newArrowStyle: React.CSSProperties = {};
-          if (tooltipRef.current) {
-            const tooltipRect = tooltipRef.current.getBoundingClientRect();
-            const padding = 10;
-            const viewportWidth = window.innerWidth;
-            const viewportHeight = window.innerHeight;
+          function calculateStandard() {
+            chosenPlacement = placement;
+            switch (placement) {
+              case "top":
+                top = rect.top - gap;
+                left = rect.left + rect.width / 2;
+                break;
+              case "right":
+                top = rect.top + rect.height / 2;
+                left = rect.right + gap;
+                break;
+              case "bottom":
+                top = rect.bottom + gap;
+                left = rect.left + rect.width / 2;
+                break;
+              case "left":
+                top = rect.top + rect.height / 2;
+                left = rect.left - gap;
+                break;
+            }
 
-            if (placement === "top" || placement === "bottom") {
-              const tooltipHalfWidth = tooltipRect.width / 2;
-              const expectedLeft = left - tooltipHalfWidth;
-              const expectedRight = left + tooltipHalfWidth;
+            if (tooltipRect) {
+              const padding = 10;
+              const viewportWidth = window.innerWidth;
+              const viewportHeight = window.innerHeight;
 
-              if (expectedRight > viewportWidth - padding) {
-                const shift = expectedRight - (viewportWidth - padding);
-                left -= shift;
-                newArrowStyle = { left: `calc(50% + ${shift}px)` };
-              } else if (expectedLeft < padding) {
-                const shift = padding - expectedLeft;
-                left += shift;
-                newArrowStyle = { left: `calc(50% - ${shift}px)` };
-              }
-            } else if (placement === "left" || placement === "right") {
-              const tooltipHalfHeight = tooltipRect.height / 2;
-              const expectedTop = top - tooltipHalfHeight;
-              const expectedBottom = top + tooltipHalfHeight;
+              if (placement === "top" || placement === "bottom") {
+                const tooltipHalfWidth = tooltipRect.width / 2;
+                const expectedLeft = left - tooltipHalfWidth;
+                const expectedRight = left + tooltipHalfWidth;
 
-              if (expectedBottom > viewportHeight - padding) {
-                const shift = expectedBottom - (viewportHeight - padding);
-                top -= shift;
-                newArrowStyle = { top: `calc(50% + ${shift}px)` };
-              } else if (expectedTop < padding) {
-                const shift = padding - expectedTop;
-                top += shift;
-                newArrowStyle = { top: `calc(50% - ${shift}px)` };
+                if (expectedRight > viewportWidth - padding) {
+                  const shift = expectedRight - (viewportWidth - padding);
+                  left -= shift;
+                  newArrowStyle = { left: `calc(50% + ${shift}px)` };
+                } else if (expectedLeft < padding) {
+                  const shift = padding - expectedLeft;
+                  left += shift;
+                  newArrowStyle = { left: `calc(50% - ${shift}px)` };
+                }
+              } else if (placement === "left" || placement === "right") {
+                const tooltipHalfHeight = tooltipRect.height / 2;
+                const expectedTop = top - tooltipHalfHeight;
+                const expectedBottom = top + tooltipHalfHeight;
+
+                if (expectedBottom > viewportHeight - padding) {
+                  const shift = expectedBottom - (viewportHeight - padding);
+                  top -= shift;
+                  newArrowStyle = { top: `calc(50% + ${shift}px)` };
+                } else if (expectedTop < padding) {
+                  const shift = padding - expectedTop;
+                  top += shift;
+                  newArrowStyle = { top: `calc(50% - ${shift}px)` };
+                }
               }
             }
           }
 
           setPosition({ top, left });
+          setActualPlacement(chosenPlacement);
           setArrowStyle(newArrowStyle);
         }
       };
 
       updatePosition();
-      // We need to measure it once it's rendered to adjust bounds
       const raf = requestAnimationFrame(() => {
         updatePosition();
       });
 
-      // Update on scroll/resize
       window.addEventListener("scroll", updatePosition, true);
       window.addEventListener("resize", updatePosition);
 
@@ -166,30 +352,13 @@ export function Tooltip({
         window.removeEventListener("resize", updatePosition);
       };
     }
-  }, [isVisible, placement, content]);
+  }, [isVisible, placement, content, autoAdjustPlacement]);
 
-
-  const variants = {
-    top: {
-      initial: { opacity: 0, scale: 0.9, y: 10, x: "-50%" },
-      animate: { opacity: 1, scale: 1, y: 0, x: "-50%" },
-      exit: { opacity: 0, scale: 0.9, y: 10, x: "-50%" },
-    },
-    bottom: {
-      initial: { opacity: 0, scale: 0.9, y: -10, x: "-50%" },
-      animate: { opacity: 1, scale: 1, y: 0, x: "-50%" },
-      exit: { opacity: 0, scale: 0.9, y: -10, x: "-50%" },
-    },
-    right: {
-      initial: { opacity: 0, scale: 0.9, x: -10, y: "-50%" },
-      animate: { opacity: 1, scale: 1, x: 0, y: "-50%" },
-      exit: { opacity: 0, scale: 0.9, x: -10, y: "-50%" },
-    },
-    left: {
-      initial: { opacity: 0, scale: 0.9, x: 10, y: "-50%" },
-      animate: { opacity: 1, scale: 1, x: 0, y: "-50%" },
-      exit: { opacity: 0, scale: 0.9, x: 10, y: "-50%" },
-    },
+  const baseClasses = {
+    top: "-translate-x-1/2 -translate-y-full",
+    bottom: "-translate-x-1/2",
+    right: "-translate-y-1/2",
+    left: "-translate-x-full -translate-y-1/2",
   };
 
   const arrowClasses = {
@@ -197,13 +366,6 @@ export function Tooltip({
     bottom: "left-1/2 -top-1 -translate-x-1/2 border-l border-t",
     right: "left-[-5px] top-1/2 -translate-y-1/2 border-l border-b",
     left: "right-[-5px] top-1/2 -translate-y-1/2 border-r border-t",
-  };
-
-  const baseClasses = {
-    top: "-translate-x-1/2 -translate-y-full",
-    bottom: "-translate-x-1/2",
-    right: "-translate-y-1/2",
-    left: "-translate-x-full -translate-y-1/2",
   };
 
   const animationClasses = {
@@ -235,13 +397,13 @@ export function Tooltip({
             }}
             className={clsx(
               interactive ? "pointer-events-auto" : "pointer-events-none",
-              baseClasses[placement]
+              baseClasses[actualPlacement]
             )}
           >
             <div
               className={twMerge(
                 "relative px-3 py-1.5 text-xs font-semibold text-white bg-slate-900/80 dark:bg-slate-950/85 dark:text-slate-200 rounded-lg shadow-xl border border-slate-700/50 dark:border-slate-800 backdrop-blur-md text-center",
-                animationClasses[placement],
+                animationClasses[actualPlacement],
                 className
               )}
             >
@@ -251,7 +413,7 @@ export function Tooltip({
                 style={arrowStyle}
                 className={clsx(
                   "absolute w-2 h-2 bg-slate-900/80 dark:bg-slate-950/85 rotate-45 border-slate-700/50 dark:border-slate-800",
-                  arrowClasses[placement]
+                  arrowClasses[actualPlacement]
                 )}
               />
             </div>
