@@ -29,7 +29,6 @@ export function Tooltip({
   const [arrowStyle, setArrowStyle] = useState<React.CSSProperties>({});
   const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
-  const [mounted, setMounted] = useState(false);
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const isElementTruncated = (element: HTMLElement): boolean => {
@@ -78,9 +77,6 @@ export function Tooltip({
     };
   }, []);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (isVisible && triggerRef.current) {
@@ -244,7 +240,7 @@ export function Tooltip({
           >
             <div
               className={twMerge(
-                "relative px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 dark:bg-slate-950 dark:text-slate-200 rounded-lg shadow-xl border border-slate-700/50 dark:border-slate-800 backdrop-blur-sm text-center",
+                "relative px-3 py-1.5 text-xs font-semibold text-white bg-slate-900/80 dark:bg-slate-950/85 dark:text-slate-200 rounded-lg shadow-xl border border-slate-700/50 dark:border-slate-800 backdrop-blur-md text-center",
                 animationClasses[placement],
                 className
               )}
@@ -254,7 +250,7 @@ export function Tooltip({
               <div
                 style={arrowStyle}
                 className={clsx(
-                  "absolute w-2 h-2 bg-slate-900 dark:bg-slate-950 rotate-45 border-slate-700/50 dark:border-slate-800",
+                  "absolute w-2 h-2 bg-slate-900/80 dark:bg-slate-950/85 rotate-45 border-slate-700/50 dark:border-slate-800",
                   arrowClasses[placement]
                 )}
               />
