@@ -49,6 +49,7 @@ interface ConnectorProps {
     type?: "home" | "away" | "winner",
     customSize?: string
   ) => React.ReactNode;
+  hoveredTeamName?: string | null;
 }
 
 function LeftConnector({
@@ -61,11 +62,41 @@ function LeftConnector({
   match,
   roundName,
   renderTeamCircle,
+  hoveredTeamName,
 }: ConnectorProps) {
   const strokeNonLit = "rgba(30, 41, 59, 0.85)";
   const strokeLit = "rgba(226, 232, 240, 0.85)";
   const widthNonLit = 1.5;
   const widthLit = 1.5;
+
+  const isHovered = (t: any) => {
+    if (!hoveredTeamName || !t || "placeholder" in t) return false;
+    return t.name === hoveredTeamName;
+  };
+
+  const getPathStyle = (isPathForTeam: boolean, defaultLit: boolean) => {
+    if (hoveredTeamName) {
+      if (isPathForTeam) {
+        return {
+          stroke: "rgba(96, 165, 250, 1)",
+          strokeWidth: 2.5,
+        };
+      } else {
+        return {
+          stroke: "rgba(30, 41, 59, 0.15)",
+          strokeWidth: 1.0,
+        };
+      }
+    }
+    return {
+      stroke: defaultLit ? strokeLit : strokeNonLit,
+      strokeWidth: defaultLit ? widthLit : widthNonLit,
+    };
+  };
+
+  const topStyle = getPathStyle(isHovered(match?.homeTeam) && isHovered(match?.winner), !!highlightTop);
+  const bottomStyle = getPathStyle(isHovered(match?.awayTeam) && isHovered(match?.winner), !!highlightBottom);
+  const outputStyle = getPathStyle(isHovered(match?.winner), !!highlightOutput);
 
   return (
     <div
@@ -81,11 +112,12 @@ function LeftConnector({
         <path
           d="M 0 25 L 50 25 L 50 50"
           fill="none"
-          stroke={highlightTop ? strokeLit : strokeNonLit}
-          strokeWidth={highlightTop ? widthLit : widthNonLit}
+          stroke={topStyle.stroke}
+          strokeWidth={topStyle.strokeWidth}
           vectorEffect="non-scaling-stroke"
           strokeLinecap="round"
           strokeLinejoin="round"
+          className="transition-all duration-300"
           style={match ? { viewTransitionName: `path-${match.id}-top` } as any : undefined}
         />
 
@@ -93,11 +125,12 @@ function LeftConnector({
         <path
           d="M 0 75 L 50 75 L 50 50"
           fill="none"
-          stroke={highlightBottom ? strokeLit : strokeNonLit}
-          strokeWidth={highlightBottom ? widthLit : widthNonLit}
+          stroke={bottomStyle.stroke}
+          strokeWidth={bottomStyle.strokeWidth}
           vectorEffect="non-scaling-stroke"
           strokeLinecap="round"
           strokeLinejoin="round"
+          className="transition-all duration-300"
           style={match ? { viewTransitionName: `path-${match.id}-bottom` } as any : undefined}
         />
 
@@ -105,10 +138,11 @@ function LeftConnector({
         <path
           d="M 50 50 L 100 50"
           fill="none"
-          stroke={highlightOutput ? strokeLit : strokeNonLit}
-          strokeWidth={highlightOutput ? widthLit : widthNonLit}
+          stroke={outputStyle.stroke}
+          strokeWidth={outputStyle.strokeWidth}
           vectorEffect="non-scaling-stroke"
           strokeLinecap="round"
+          className="transition-all duration-300"
         />
       </svg>
 
@@ -116,9 +150,13 @@ function LeftConnector({
       <div
         className={clsx(
           "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-300",
-          highlightOutput
-            ? "w-[5px] h-[5px] bg-slate-200 border-[0.5px] border-slate-900 shadow-sm"
-            : "w-[4px] h-[4px] bg-slate-700"
+          hoveredTeamName
+            ? isHovered(match?.winner)
+              ? "w-[6px] h-[6px] bg-blue-400 border-[0.5px] border-blue-900 shadow-[0_0_8px_rgba(96,165,250,0.6)]"
+              : "w-[4px] h-[4px] bg-slate-800 opacity-20"
+            : highlightOutput
+              ? "w-[5px] h-[5px] bg-slate-200 border-[0.5px] border-slate-900 shadow-sm"
+              : "w-[4px] h-[4px] bg-slate-700"
         )}
         style={match ? { viewTransitionName: `dot-${match.id}` } as any : undefined}
       />
@@ -149,11 +187,41 @@ function RightConnector({
   match,
   roundName,
   renderTeamCircle,
+  hoveredTeamName,
 }: ConnectorProps) {
   const strokeNonLit = "rgba(30, 41, 59, 0.85)";
   const strokeLit = "rgba(226, 232, 240, 0.85)";
   const widthNonLit = 1.5;
   const widthLit = 1.5;
+
+  const isHovered = (t: any) => {
+    if (!hoveredTeamName || !t || "placeholder" in t) return false;
+    return t.name === hoveredTeamName;
+  };
+
+  const getPathStyle = (isPathForTeam: boolean, defaultLit: boolean) => {
+    if (hoveredTeamName) {
+      if (isPathForTeam) {
+        return {
+          stroke: "rgba(96, 165, 250, 1)",
+          strokeWidth: 2.5,
+        };
+      } else {
+        return {
+          stroke: "rgba(30, 41, 59, 0.15)",
+          strokeWidth: 1.0,
+        };
+      }
+    }
+    return {
+      stroke: defaultLit ? strokeLit : strokeNonLit,
+      strokeWidth: defaultLit ? widthLit : widthNonLit,
+    };
+  };
+
+  const topStyle = getPathStyle(isHovered(match?.homeTeam) && isHovered(match?.winner), !!highlightTop);
+  const bottomStyle = getPathStyle(isHovered(match?.awayTeam) && isHovered(match?.winner), !!highlightBottom);
+  const outputStyle = getPathStyle(isHovered(match?.winner), !!highlightOutput);
 
   return (
     <div
@@ -169,11 +237,12 @@ function RightConnector({
         <path
           d="M 100 25 L 50 25 L 50 50"
           fill="none"
-          stroke={highlightTop ? strokeLit : strokeNonLit}
-          strokeWidth={highlightTop ? widthLit : widthNonLit}
+          stroke={topStyle.stroke}
+          strokeWidth={topStyle.strokeWidth}
           vectorEffect="non-scaling-stroke"
           strokeLinecap="round"
           strokeLinejoin="round"
+          className="transition-all duration-300"
           style={match ? { viewTransitionName: `path-${match.id}-top` } as any : undefined}
         />
 
@@ -181,11 +250,12 @@ function RightConnector({
         <path
           d="M 100 75 L 50 75 L 50 50"
           fill="none"
-          stroke={highlightBottom ? strokeLit : strokeNonLit}
-          strokeWidth={highlightBottom ? widthLit : widthNonLit}
+          stroke={bottomStyle.stroke}
+          strokeWidth={bottomStyle.strokeWidth}
           vectorEffect="non-scaling-stroke"
           strokeLinecap="round"
           strokeLinejoin="round"
+          className="transition-all duration-300"
           style={match ? { viewTransitionName: `path-${match.id}-bottom` } as any : undefined}
         />
 
@@ -193,10 +263,11 @@ function RightConnector({
         <path
           d="M 50 50 L 0 50"
           fill="none"
-          stroke={highlightOutput ? strokeLit : strokeNonLit}
-          strokeWidth={highlightOutput ? widthLit : widthNonLit}
+          stroke={outputStyle.stroke}
+          strokeWidth={outputStyle.strokeWidth}
           vectorEffect="non-scaling-stroke"
           strokeLinecap="round"
+          className="transition-all duration-300"
         />
       </svg>
 
@@ -204,9 +275,13 @@ function RightConnector({
       <div
         className={clsx(
           "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-300",
-          highlightOutput
-            ? "w-[5px] h-[5px] bg-slate-200 border-[0.5px] border-slate-900 shadow-sm"
-            : "w-[4px] h-[4px] bg-slate-700"
+          hoveredTeamName
+            ? isHovered(match?.winner)
+              ? "w-[6px] h-[6px] bg-blue-400 border-[0.5px] border-blue-900 shadow-[0_0_8px_rgba(96,165,250,0.6)]"
+              : "w-[4px] h-[4px] bg-slate-800 opacity-20"
+            : highlightOutput
+              ? "w-[5px] h-[5px] bg-slate-200 border-[0.5px] border-slate-900 shadow-sm"
+              : "w-[4px] h-[4px] bg-slate-700"
         )}
         style={match ? { viewTransitionName: `dot-${match.id}` } as any : undefined}
       />
@@ -243,6 +318,7 @@ export function MinimalistBracket({
 
   const [mounted, setMounted] = useState(false);
   const [viewMode, setViewMode] = useState<"linear" | "circular">("linear");
+  const [hoveredTeamName, setHoveredTeamName] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -318,17 +394,40 @@ export function MinimalistBracket({
   ) => {
     const isPH = isPlaceholderTeam(team);
     const name = getTeamName(team, match);
+    const isHoveredTeam = team && !isPH && hoveredTeamName === team.name;
+    const isAnyHovered = hoveredTeamName !== null;
+
+    const handleMouseEnter = () => {
+      if (!isPH && team && team.name) {
+        setHoveredTeamName(team.name);
+      }
+    };
+
+    const handleMouseLeave = () => {
+      if (!isPH) {
+        setHoveredTeamName(null);
+      }
+    };
 
     const vtName = match && type ? `flag-${match.id}-${type}` : undefined;
 
     const circleContent = (
       <div
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         className={clsx(
           customSize || "w-6 h-6 md:w-8 md:h-8",
-          "rounded-full flex items-center justify-center shadow-md select-none transition-all duration-200 border",
+          "rounded-full flex items-center justify-center shadow-md select-none transition-all duration-300 border cursor-pointer",
           isPH
             ? "bg-slate-100 dark:bg-slate-800 border-slate-700 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-[8px] md:text-[10px] font-black"
-            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-200 hover:scale-115 hover:shadow-lg"
+            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-200",
+          !isPH && "hover:scale-115 hover:shadow-lg",
+          isAnyHovered && (
+            isHoveredTeam
+              ? "scale-115 ring-2 ring-blue-500 dark:ring-blue-400 border-blue-500 dark:border-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.6)] z-30"
+              : "opacity-20"
+          ),
+          isAnyHovered && isPH && "opacity-20"
         )}
         style={{
           viewTransitionName: vtName,
@@ -513,6 +612,7 @@ export function MinimalistBracket({
                     match={r32Match}
                     roundName="Octavos"
                     renderTeamCircle={renderTeamCircle}
+                    hoveredTeamName={hoveredTeamName}
                   />
                 );
               })}
@@ -537,6 +637,7 @@ export function MinimalistBracket({
                     match={r16Match}
                     roundName="Cuartos"
                     renderTeamCircle={renderTeamCircle}
+                    hoveredTeamName={hoveredTeamName}
                   />
                 );
               })}
@@ -561,6 +662,7 @@ export function MinimalistBracket({
                     match={qfMatch}
                     roundName="Semifinal"
                     renderTeamCircle={renderTeamCircle}
+                    hoveredTeamName={hoveredTeamName}
                   />
                 );
               })}
@@ -585,6 +687,7 @@ export function MinimalistBracket({
                     match={sfMatch}
                     roundName="Final"
                     renderTeamCircle={renderTeamCircle}
+                    hoveredTeamName={hoveredTeamName}
                   />
                 );
               })}
@@ -593,33 +696,46 @@ export function MinimalistBracket({
               {/* --- CENTER ZONE (Final & Trophy) --- */}
 
               <div className="col-start-6 row-start-1 row-span-full relative flex flex-col items-center justify-start pt-16 md:justify-center md:pt-0">
-                {/* Symmetrical central horizontal bracket connector line */}
+                {/* Left side of center line */}
                 <div
-                  className="absolute top-1/2 left-0 right-0 -translate-y-1/2 z-0 pointer-events-none bg-[rgba(30,41,59,0.85)]"
-                  style={{ height: "1.5px" }}
+                  className={clsx(
+                    "absolute top-1/2 left-0 right-1/2 -translate-y-1/2 z-0 pointer-events-none transition-all duration-300",
+                    hoveredTeamName
+                      ? (isSameTeam(finalMatch?.homeTeam, { name: hoveredTeamName }) && isSameTeam(champion, { name: hoveredTeamName }))
+                        ? "bg-blue-400 h-[2.5px]"
+                        : "bg-[rgba(30,41,59,0.15)] h-[1px]"
+                      : (finalMatch?.homeTeam && !isPlaceholderTeam(finalMatch.homeTeam) && isSameTeam(champion, finalMatch.homeTeam))
+                        ? "bg-[rgba(226,232,240,0.85)] h-[1.5px]"
+                        : "bg-[rgba(30,41,59,0.85)] h-[1.5px]"
+                  )}
                 />
 
-                {/* Active Highlight Lines for Finalists */}
-                {finalMatch?.homeTeam && !isPlaceholderTeam(finalMatch.homeTeam) && isSameTeam(champion, finalMatch.homeTeam) && (
-                  <div
-                    className="absolute top-1/2 left-0 right-1/2 -translate-y-1/2 z-0 pointer-events-none bg-[rgba(226,232,240,0.85)]"
-                    style={{ height: "1.5px" }}
-                  />
-                )}
-                {finalMatch?.awayTeam && !isPlaceholderTeam(finalMatch.awayTeam) && isSameTeam(champion, finalMatch.awayTeam) && (
-                  <div
-                    className="absolute top-1/2 left-1/2 right-0 -translate-y-1/2 z-0 pointer-events-none bg-[rgba(226,232,240,0.85)]"
-                    style={{ height: "1.5px" }}
-                  />
-                )}
+                {/* Right side of center line */}
+                <div
+                  className={clsx(
+                    "absolute top-1/2 left-1/2 right-0 -translate-y-1/2 z-0 pointer-events-none transition-all duration-300",
+                    hoveredTeamName
+                      ? (isSameTeam(finalMatch?.awayTeam, { name: hoveredTeamName }) && isSameTeam(champion, { name: hoveredTeamName }))
+                        ? "bg-blue-400 h-[2.5px]"
+                        : "bg-[rgba(30,41,59,0.15)] h-[1px]"
+                      : (finalMatch?.awayTeam && !isPlaceholderTeam(finalMatch.awayTeam) && isSameTeam(champion, finalMatch.awayTeam))
+                        ? "bg-[rgba(226,232,240,0.85)] h-[1.5px]"
+                        : "bg-[rgba(30,41,59,0.85)] h-[1.5px]"
+                  )}
+                />
 
                 {/* Symmetrical central vertical connector line for mobile */}
                 <div
                   className={clsx(
-                    "absolute top-[100px] bottom-1/2 left-1/2 -translate-x-1/2 z-0 pointer-events-none transition-colors duration-300 md:hidden",
-                    champion ? "bg-yellow-500" : "bg-[rgba(30,41,59,0.85)]"
+                    "absolute top-[100px] bottom-1/2 left-1/2 -translate-x-1/2 z-0 pointer-events-none transition-all duration-300 md:hidden",
+                    hoveredTeamName
+                      ? (champion && champion.name === hoveredTeamName)
+                        ? "bg-blue-400 w-[2.5px]"
+                        : "bg-[rgba(30,41,59,0.15)] w-[1px]"
+                      : champion
+                        ? "bg-yellow-500 w-[1.5px]"
+                        : "bg-[rgba(30,41,59,0.85)] w-[1.5px]"
                   )}
-                  style={{ width: "1.5px" }}
                 />
 
                 {/* Center Glow behind Trophy/Champion */}
@@ -635,7 +751,10 @@ export function MinimalistBracket({
                   {/* Champion Banner above Trophy if resolved */}
                   {champion && (
                     <span
-                      className="text-[7px] md:text-[9px] font-black text-yellow-500 tracking-widest uppercase mb-1.5 md:mb-3 animate-bounce-subtle"
+                      className={clsx(
+                        "text-[7px] md:text-[9px] font-black text-yellow-500 tracking-widest uppercase mb-1.5 md:mb-3 animate-bounce-subtle transition-all duration-300",
+                        hoveredTeamName && hoveredTeamName !== champion.name && "opacity-20"
+                      )}
                       style={{ viewTransitionName: "label-champion" } as any}
                     >
                       🏆 CAMPEÓN
@@ -644,11 +763,18 @@ export function MinimalistBracket({
 
                   {/* Premium Trophy Graphic or Champion Flag */}
                   <div
+                    onMouseEnter={() => champion && setHoveredTeamName(champion.name)}
+                    onMouseLeave={() => setHoveredTeamName(null)}
                     className={clsx(
-                      "flex items-center justify-center rounded-full border shadow-xl transition-all duration-500 select-none",
+                      "flex items-center justify-center rounded-full border shadow-xl transition-all duration-300 select-none cursor-pointer",
                       champion
                         ? "w-14 h-14 md:w-20 md:h-20 border-yellow-400 dark:border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.4)] bg-white dark:bg-slate-900 p-0.5 overflow-hidden"
-                        : "w-10 h-10 md:w-14 md:h-14 bg-slate-800 border-slate-700 text-slate-500 p-2 md:p-3"
+                        : "w-10 h-10 md:w-14 md:h-14 bg-slate-800 border-slate-700 text-slate-500 p-2 md:p-3",
+                      hoveredTeamName && (
+                        hoveredTeamName === champion?.name
+                          ? "scale-110 ring-2 ring-yellow-400 border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.6)]"
+                          : "opacity-20"
+                      )
                     )}
                     style={{
                       viewTransitionName: "flag-champion",
@@ -673,7 +799,10 @@ export function MinimalistBracket({
                   {/* Champion Name Chip below Trophy if resolved */}
                   {champion && (
                     <div
-                      className="flex items-center gap-1 bg-yellow-500/10 dark:bg-yellow-500/20 border border-yellow-500/40 text-yellow-800 dark:text-yellow-400 px-1.5 py-0.5 rounded-full font-black text-[8px] md:text-[10px] shadow-xs mt-1.5"
+                      className={clsx(
+                        "flex items-center gap-1 bg-yellow-500/10 dark:bg-yellow-500/20 border border-yellow-500/40 text-yellow-800 dark:text-yellow-400 px-1.5 py-0.5 rounded-full font-black text-[8px] md:text-[10px] shadow-xs mt-1.5 transition-all duration-300",
+                        hoveredTeamName && hoveredTeamName !== champion.name && "opacity-20"
+                      )}
                       style={{ viewTransitionName: "name-champion" } as any}
                     >
                       <Flag
@@ -711,6 +840,7 @@ export function MinimalistBracket({
                     match={sfMatch}
                     roundName="Final"
                     renderTeamCircle={renderTeamCircle}
+                    hoveredTeamName={hoveredTeamName}
                   />
                 );
               })}
@@ -735,6 +865,7 @@ export function MinimalistBracket({
                     match={qfMatch}
                     roundName="Semifinal"
                     renderTeamCircle={renderTeamCircle}
+                    hoveredTeamName={hoveredTeamName}
                   />
                 );
               })}
@@ -759,6 +890,7 @@ export function MinimalistBracket({
                     match={r16Match}
                     roundName="Cuartos"
                     renderTeamCircle={renderTeamCircle}
+                    hoveredTeamName={hoveredTeamName}
                   />
                 );
               })}
@@ -783,6 +915,7 @@ export function MinimalistBracket({
                     match={r32Match}
                     roundName="Octavos"
                     renderTeamCircle={renderTeamCircle}
+                    hoveredTeamName={hoveredTeamName}
                   />
                 );
               })}
@@ -809,6 +942,8 @@ export function MinimalistBracket({
             isAdmin={isAdmin}
             simulateAll={simulateAll}
             resetTournament={resetTournament}
+            hoveredTeamName={hoveredTeamName}
+            setHoveredTeamName={setHoveredTeamName}
           />
         )}
 

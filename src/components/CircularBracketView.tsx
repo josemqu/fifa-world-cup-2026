@@ -116,6 +116,7 @@ interface Edge {
   jx: number | null;
   jy: number | null;
   lit: boolean;
+  team?: any;
 }
 
 // ─── Component Props ─────────────────────────────────
@@ -124,6 +125,8 @@ interface CircularBracketViewProps {
   isAdmin: boolean;
   simulateAll: () => void;
   resetTournament: () => void;
+  hoveredTeamName: string | null;
+  setHoveredTeamName: (name: string | null) => void;
 }
 
 export function CircularBracketView({
@@ -131,7 +134,14 @@ export function CircularBracketView({
   isAdmin,
   simulateAll,
   resetTournament,
+  hoveredTeamName,
+  setHoveredTeamName,
 }: CircularBracketViewProps) {
+  const isHovered = (t: any) => {
+    if (!hoveredTeamName || !t || "placeholder" in t) return false;
+    return t.name === hoveredTeamName;
+  };
+
   // ── Compute nodes + edges ──────────────────────────
   const { nodes, edges, champion } = useMemo(() => {
     const map = new Map<string, KnockoutMatch>(matches.map((m) => [m.id, m]));
@@ -213,6 +223,7 @@ export function CircularBracketView({
           jx: jxH,
           jy: jyH,
           lit: !!(m?.winner && same(m.homeTeam, m.winner)),
+          team: m?.winner && same(m.homeTeam, m.winner) ? m.winner : undefined,
         });
         allEdges.push({
           id: `${tag}-e0-${mid}-a`,
@@ -220,6 +231,7 @@ export function CircularBracketView({
           jx: jxA,
           jy: jyA,
           lit: !!(m?.winner && same(m.awayTeam, m.winner)),
+          team: m?.winner && same(m.awayTeam, m.winner) ? m.winner : undefined,
         });
       });
 
@@ -252,6 +264,7 @@ export function CircularBracketView({
           jx: jx1,
           jy: jy1,
           lit: !!(c1?.winner && m?.winner && same(c1.winner, m.winner)),
+          team: c1?.winner && m?.winner && same(c1.winner, m.winner) ? m.winner : undefined,
         });
         allEdges.push({
           id: `${tag}-e1-${mid}-2`,
@@ -259,6 +272,7 @@ export function CircularBracketView({
           jx: jx2,
           jy: jy2,
           lit: !!(c2?.winner && m?.winner && same(c2.winner, m.winner)),
+          team: c2?.winner && m?.winner && same(c2.winner, m.winner) ? m.winner : undefined,
         });
       });
 
@@ -291,6 +305,7 @@ export function CircularBracketView({
           jx: jx1,
           jy: jy1,
           lit: !!(c1?.winner && m?.winner && same(c1.winner, m.winner)),
+          team: c1?.winner && m?.winner && same(c1.winner, m.winner) ? m.winner : undefined,
         });
         allEdges.push({
           id: `${tag}-e2-${mid}-2`,
@@ -298,6 +313,7 @@ export function CircularBracketView({
           jx: jx2,
           jy: jy2,
           lit: !!(c2?.winner && m?.winner && same(c2.winner, m.winner)),
+          team: c2?.winner && m?.winner && same(c2.winner, m.winner) ? m.winner : undefined,
         });
       });
 
@@ -329,6 +345,7 @@ export function CircularBracketView({
           jx: jx1,
           jy: jy1,
           lit: !!(c1?.winner && m?.winner && same(c1.winner, m.winner)),
+          team: c1?.winner && m?.winner && same(c1.winner, m.winner) ? m.winner : undefined,
         });
         allEdges.push({
           id: `${tag}-e3-${mid}-2`,
@@ -336,6 +353,7 @@ export function CircularBracketView({
           jx: jx2,
           jy: jy2,
           lit: !!(c2?.winner && m?.winner && same(c2.winner, m.winner)),
+          team: c2?.winner && m?.winner && same(c2.winner, m.winner) ? m.winner : undefined,
         });
 
         // edge: SF winner → center (champion)
@@ -346,6 +364,7 @@ export function CircularBracketView({
           jx: null,
           jy: null,
           lit: !!(m?.winner && fm?.winner && same(m.winner, fm.winner)),
+          team: m?.winner && fm?.winner && same(m.winner, fm.winner) ? fm.winner : undefined,
         });
       });
     };
@@ -361,16 +380,39 @@ export function CircularBracketView({
   const renderNode = (node: Node) => {
     const isPH = isPlaceholder(node.team);
     const name = teamName(node.team, node.match);
+    const isHoveredTeam = node.team && !isPH && hoveredTeamName === node.team.name;
+    const isAnyHovered = hoveredTeamName !== null;
+
+    const handleMouseEnter = () => {
+      if (!isPH && node.team && node.team.name) {
+        setHoveredTeamName(node.team.name);
+      }
+    };
+
+    const handleMouseLeave = () => {
+      if (!isPH) {
+        setHoveredTeamName(null);
+      }
+    };
 
     const vtName = node.match ? `flag-${node.match.id}-${node.type}` : undefined;
 
     const circle = (
       <div
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         className={clsx(
-          "rounded-full flex items-center justify-center shadow-md select-none transition-all duration-200 border",
+          "rounded-full flex items-center justify-center shadow-md select-none transition-all duration-300 border cursor-pointer",
           isPH
             ? "bg-slate-800 border-slate-700 text-slate-500"
-            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-200 hover:scale-115 hover:shadow-lg cursor-default",
+            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-200",
+          !isPH && "hover:scale-115 hover:shadow-lg",
+          isAnyHovered && (
+            isHoveredTeam
+              ? "scale-115 ring-2 ring-blue-500 dark:ring-blue-400 border-blue-500 dark:border-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.6)] z-30"
+              : "opacity-20"
+          ),
+          isAnyHovered && isPH && "opacity-20"
         )}
         style={{
           width: node.size,
@@ -390,7 +432,7 @@ export function CircularBracketView({
               <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-white aspect-square">
                 <Flag
                   code={code}
-                  className="object-cover w-full h-full rounded-full scale-105"
+                  className="object-cover w-full h-full aspect-square rounded-full scale-105"
                   alt={name}
                 />
               </div>
@@ -452,11 +494,14 @@ export function CircularBracketView({
           viewBox={`0 0 ${VB} ${VB}`}
           className="absolute inset-0 w-full h-full pointer-events-none"
         >
-
-
           {/* Connector edges — non-highlighted first, highlighted on top */}
           {edges
-            .filter((e) => !e.lit)
+            .filter((e) => {
+              if (hoveredTeamName) {
+                return !isHovered(e.team);
+              }
+              return !e.lit;
+            })
             .map((e) => {
               const mid = e.id.split("-")[2];
               const isTop = e.id.endsWith("-h") || e.id.endsWith("-1");
@@ -466,15 +511,21 @@ export function CircularBracketView({
                   key={e.id}
                   d={e.pathD}
                   fill="none"
-                  stroke="rgba(30,41,59,0.85)"
-                  strokeWidth={1.5}
+                  stroke={hoveredTeamName ? "rgba(30,41,59,0.15)" : "rgba(30,41,59,0.85)"}
+                  strokeWidth={hoveredTeamName ? 1.0 : 1.5}
                   strokeLinecap="round"
+                  className="transition-all duration-300"
                   style={{ viewTransitionName: vtName } as any}
                 />
               );
             })}
           {edges
-            .filter((e) => e.lit)
+            .filter((e) => {
+              if (hoveredTeamName) {
+                return isHovered(e.team);
+              }
+              return e.lit;
+            })
             .map((e) => {
               const mid = e.id.split("-")[2];
               const isTop = e.id.endsWith("-h") || e.id.endsWith("-1");
@@ -484,14 +535,14 @@ export function CircularBracketView({
                   key={e.id}
                   d={e.pathD}
                   fill="none"
-                  stroke="rgba(226,232,240,0.85)"
+                  stroke={hoveredTeamName ? "rgba(96, 165, 250, 1)" : "rgba(226, 232, 240, 0.85)"}
                   strokeWidth={2.5}
                   strokeLinecap="round"
+                  className="transition-all duration-300"
                   style={{ viewTransitionName: vtName } as any}
                 />
               );
             })}
-
         </svg>
 
         {/* HTML Layer: junction dots */}
@@ -502,16 +553,23 @@ export function CircularBracketView({
             const isFirstEdge = e.id.endsWith("-h") || e.id.endsWith("-1");
             if (!isFirstEdge) return null;
             const vtName = `dot-${mid}`;
-            const isMatchLit = edges.some((edge) => edge.id.split("-")[2] === mid && edge.lit);
+
+            // Check if this match contains any lit/hovered edge
+            const isMatchHovered = hoveredTeamName && edges.some((edge) => edge.id.split("-")[2] === mid && isHovered(edge.team));
+            const isMatchLit = !hoveredTeamName && edges.some((edge) => edge.id.split("-")[2] === mid && edge.lit);
 
             return (
               <div
                 key={`dot-html-${e.id}`}
                 className={clsx(
                   "absolute rounded-full transition-all duration-300 pointer-events-none z-10",
-                  isMatchLit
-                    ? "w-[5px] h-[5px] bg-slate-200 border-[0.5px] border-slate-900 shadow-sm"
-                    : "w-[4px] h-[4px] bg-slate-700"
+                  hoveredTeamName
+                    ? isMatchHovered
+                      ? "w-[6px] h-[6px] bg-blue-400 border-[0.5px] border-blue-900 shadow-[0_0_8px_rgba(96,165,250,0.6)]"
+                      : "w-[4px] h-[4px] bg-slate-800 opacity-20"
+                    : isMatchLit
+                      ? "w-[5px] h-[5px] bg-slate-200 border-[0.5px] border-slate-900 shadow-sm"
+                      : "w-[4px] h-[4px] bg-slate-700"
                 )}
                 style={{
                   left: `${(e.jx! / VB) * 100}%`,
@@ -559,7 +617,10 @@ export function CircularBracketView({
             {/* Champion label */}
             {champion && (
               <span
-                className="text-[7px] md:text-[9px] font-black text-yellow-500 tracking-widest uppercase mb-1.5 md:mb-3 animate-bounce-subtle"
+                className={clsx(
+                  "text-[7px] md:text-[9px] font-black text-yellow-500 tracking-widest uppercase mb-1.5 md:mb-3 animate-bounce-subtle transition-all duration-300",
+                  hoveredTeamName && hoveredTeamName !== champion.name && "opacity-20"
+                )}
                 style={{ viewTransitionName: "label-champion" } as any}
               >
                 🏆 CAMPEÓN
@@ -568,11 +629,18 @@ export function CircularBracketView({
 
             {/* Trophy / Flag circle */}
             <div
+              onMouseEnter={() => champion && setHoveredTeamName(champion.name)}
+              onMouseLeave={() => setHoveredTeamName(null)}
               className={clsx(
-                "flex items-center justify-center rounded-full border shadow-xl transition-all duration-500 select-none",
+                "flex items-center justify-center rounded-full border shadow-xl transition-all duration-300 select-none cursor-pointer",
                 champion
                   ? "w-14 h-14 md:w-20 md:h-20 border-yellow-400 dark:border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.4)] bg-white dark:bg-slate-900 p-0.5 overflow-hidden"
-                  : "w-10 h-10 md:w-14 md:h-14 bg-slate-800 border-slate-700 text-slate-500 p-2 md:p-3"
+                  : "w-10 h-10 md:w-14 md:h-14 bg-slate-800 border-slate-700 text-slate-500 p-2 md:p-3",
+                hoveredTeamName && (
+                  hoveredTeamName === champion?.name
+                    ? "scale-110 ring-2 ring-yellow-400 border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.6)]"
+                    : "opacity-20"
+                )
               )}
               style={{
                 viewTransitionName: "flag-champion",
@@ -585,7 +653,7 @@ export function CircularBracketView({
                     <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-white aspect-square">
                       <Flag
                         code={code}
-                        className="object-cover w-full h-full rounded-full scale-105"
+                        className="object-cover w-full h-full aspect-square rounded-full scale-105"
                         alt={champion.name}
                       />
                     </div>
@@ -599,7 +667,10 @@ export function CircularBracketView({
             {/* Champion name chip */}
             {champion && (
               <div
-                className="flex items-center gap-1 bg-yellow-500/10 dark:bg-yellow-500/20 border border-yellow-500/40 text-yellow-800 dark:text-yellow-400 px-1.5 py-0.5 rounded-full font-black text-[8px] md:text-[10px] shadow-xs mt-1.5"
+                className={clsx(
+                  "flex items-center gap-1 bg-yellow-500/10 dark:bg-yellow-500/20 border border-yellow-500/40 text-yellow-800 dark:text-yellow-400 px-1.5 py-0.5 rounded-full font-black text-[8px] md:text-[10px] shadow-xs mt-1.5 transition-all duration-300",
+                  hoveredTeamName && hoveredTeamName !== champion.name && "opacity-20"
+                )}
                 style={{ viewTransitionName: "name-champion" } as any}
               >
                 <Flag
