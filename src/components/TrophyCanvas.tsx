@@ -74,6 +74,11 @@ export default function TrophyCanvas() {
     const trophyGroup = new THREE.Group();
     scene.add(trophyGroup);
 
+    // References for entrance animation
+    let loadedPivot: THREE.Group | null = null;
+    let targetScale = 1.0;
+    let hasFinishedIntro = false;
+
     // 4. Load GLTF Model
     const loader = new GLTFLoader();
     loader.load(
@@ -95,11 +100,14 @@ export default function TrophyCanvas() {
         const maxDim = Math.max(size.x, size.y, size.z);
         const targetHeight = 4.8; // desired unit height
         const scaleFactor = targetHeight / maxDim;
-        pivot.scale.setScalar(scaleFactor);
-
-        // Adjust the pivot height so the middle of the trophy is at the scene origin
-        // This ensures Y rotation rotates around the center of mass
-        pivot.position.y = 0;
+        
+        // Store targets for intro animation
+        targetScale = scaleFactor;
+        loadedPivot = pivot;
+        
+        // Initial state for animation (start small and below view)
+        pivot.scale.setScalar(0.01);
+        pivot.position.y = -2.0;
 
         trophyGroup.add(pivot);
 
@@ -222,6 +230,21 @@ export default function TrophyCanvas() {
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
 
+      // Smooth rise & scale-up intro animation
+      if (loadedPivot && !hasFinishedIntro) {
+        if (loadedPivot.scale.x < targetScale * 0.99) {
+          const nextScale = THREE.MathUtils.lerp(loadedPivot.scale.x, targetScale, 0.05);
+          loadedPivot.scale.setScalar(nextScale);
+          
+          const nextY = THREE.MathUtils.lerp(loadedPivot.position.y, 0, 0.05);
+          loadedPivot.position.y = nextY;
+        } else {
+          loadedPivot.scale.setScalar(targetScale);
+          loadedPivot.position.y = 0;
+          hasFinishedIntro = true;
+        }
+      }
+
       if (!isDragging) {
         // Decay drag momentum
         if (Math.abs(dragVelocity.x) > 0.01) {
@@ -294,7 +317,12 @@ export default function TrophyCanvas() {
       className="w-full h-full relative flex items-center justify-center cursor-grab active:cursor-grabbing select-none group/canvas"
     >
       {/* 3D Canvas */}
-      <canvas ref={canvasRef} className="w-full h-full block" />
+      <canvas
+        ref={canvasRef}
+        className={`w-full h-full block transition-all duration-1000 ease-out ${
+          isLoading ? "opacity-0 scale-95" : "opacity-100 scale-100"
+        }`}
+      />
 
       {/* Glassmorphic overlay loading / placeholder */}
       {isLoading && (
