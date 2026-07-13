@@ -13,6 +13,11 @@ import { useAuth } from "@/context/AuthContext";
 import { useTournament } from "@/context/TournamentContext";
 import { CandidatesTooltip } from "./KnockoutStage";
 import { CircularBracketView } from "./CircularBracketView";
+import dynamic from "next/dynamic";
+
+const TrophyCanvas = dynamic(() => import("@/components/TrophyCanvas"), {
+  ssr: false,
+});
 
 interface MinimalistBracketProps {
   groups: Group[];
@@ -578,6 +583,16 @@ export function MinimalistBracket({
         >
           <X className="w-4 h-4" />
         </button>
+
+        {/* Persistent 3D World Cup Trophy to avoid unmounting during view transitions */}
+        <div
+          className={clsx(
+            "absolute left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-24 md:w-24 md:h-28 z-20 pointer-events-none select-none flex items-center justify-center overflow-hidden transition-all duration-500 ease-in-out",
+            champion ? "top-[calc(50%+115px)]" : "top-[calc(50%+85px)]"
+          )}
+        >
+          <TrophyCanvas targetHeight={3.5} cameraPosition={[0, 0, 7.5]} interactive={false} />
+        </div>
 
         {/* Conditional Content: Linear Grid or Circular Bracket */}
         {viewMode === "linear" ? (

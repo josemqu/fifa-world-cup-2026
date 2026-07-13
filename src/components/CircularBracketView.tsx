@@ -9,6 +9,7 @@ import { Trophy, Zap, Trash2 } from "lucide-react";
 import { clsx } from "clsx";
 import { CandidatesTooltip } from "./KnockoutStage";
 
+
 // ─── SVG ViewBox Constants ───────────────────────────
 const VB = 1000;
 const CX = VB / 2;
@@ -729,6 +730,7 @@ export function CircularBracketView({
             )}
           </div>
         </div>
+
 
       </div>
 
