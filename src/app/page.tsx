@@ -14,6 +14,16 @@ import {
   Zap,
 } from "lucide-react";
 import Countdown from "@/components/Countdown";
+import dynamic from "next/dynamic";
+
+const TrophyCanvas = dynamic(() => import("@/components/TrophyCanvas"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-slate-50/20 dark:bg-slate-950/20 backdrop-blur-xs animate-pulse">
+      <Trophy className="w-12 h-12 text-blue-500/40 animate-bounce" />
+    </div>
+  ),
+});
 
 // Animation variants for container cascading
 const containerVariants = {
@@ -113,11 +123,18 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="flex flex-col items-center lg:items-end shrink-0">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600/80 dark:text-blue-400/80 mb-2">
-                {countdownLabel}
-              </span>
-              <Countdown targetDate={targetDate} />
+            <div className="flex flex-col items-center lg:items-end shrink-0 gap-6">
+              {/* Contenedor 3D de la Copa Mundial */}
+              <div className="w-[280px] h-[320px] md:w-[300px] md:h-[350px] relative rounded-2xl overflow-hidden border border-slate-200/50 dark:border-slate-800/50 bg-slate-50/30 dark:bg-slate-950/20 backdrop-blur-xs flex items-center justify-center shadow-xs">
+                <TrophyCanvas />
+              </div>
+
+              <div className="flex flex-col items-center lg:items-end w-full">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600/80 dark:text-blue-400/80 mb-2">
+                  {countdownLabel}
+                </span>
+                <Countdown targetDate={targetDate} />
+              </div>
             </div>
           </div>
         </div>

@@ -1,0 +1,11 @@
+Model Information:
+* title:	Copa mundial - Cup World
+* source:	https://sketchfab.com/3d-models/copa-mundial-cup-world-049cccadd9364fc187a39d27755f832e
+* author:	marcoseec (https://sketchfab.com/marcoseec)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Copa mundial - Cup World" (https://sketchfab.com/3d-models/copa-mundial-cup-world-049cccadd9364fc187a39d27755f832e) by marcoseec (https://sketchfab.com/marcoseec) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
