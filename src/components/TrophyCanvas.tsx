@@ -20,7 +20,7 @@ export default function TrophyCanvas() {
 
     const container = containerRef.current;
     const canvas = canvasRef.current;
-    
+
     // Set up camera
     const camera = new THREE.PerspectiveCamera(
       45,
@@ -28,7 +28,7 @@ export default function TrophyCanvas() {
       0.1,
       100
     );
-    camera.position.set(0, 0, 8.5);
+    camera.position.set(0, -0.2, 7.0);
 
     // Set up renderer with antialiasing and shadow support
     const renderer = new THREE.WebGLRenderer({
@@ -80,7 +80,7 @@ export default function TrophyCanvas() {
       "/copa_mundial/scene.gltf",
       (gltf) => {
         const model = gltf.scene;
-        
+
         // Calculate bounding box to center and scale the model dynamically
         const box = new THREE.Box3().setFromObject(model);
         const size = box.getSize(new THREE.Vector3());
@@ -90,13 +90,13 @@ export default function TrophyCanvas() {
         const pivot = new THREE.Group();
         model.position.set(-center.x, -center.y, -center.z);
         pivot.add(model);
-        
+
         // Scale to fit target dimensions
         const maxDim = Math.max(size.x, size.y, size.z);
-        const targetHeight = 4.2; // desired unit height
+        const targetHeight = 4.8; // desired unit height
         const scaleFactor = targetHeight / maxDim;
         pivot.scale.setScalar(scaleFactor);
-        
+
         // Adjust the pivot height so the middle of the trophy is at the scene origin
         // This ensures Y rotation rotates around the center of mass
         pivot.position.y = 0;
@@ -108,12 +108,12 @@ export default function TrophyCanvas() {
           if (child instanceof THREE.Mesh) {
             child.castShadow = true;
             child.receiveShadow = true;
-            
+
             // Adjust materials loaded from the GLTF to look extra premium
             if (child.material) {
               if (child.material instanceof THREE.MeshStandardMaterial) {
                 const name = (child.name || "").toLowerCase() + (child.material.name || "").toLowerCase();
-                
+
                 // Enhance gold parts
                 if (name.includes("copa") || name.includes("gold") || name.includes("letras")) {
                   child.material.metalness = 1.0;
@@ -141,11 +141,11 @@ export default function TrophyCanvas() {
     let isDragging = false;
     let previousMousePosition = { x: 0, y: 0 };
     let dragVelocity = { x: 0, y: 0 };
-    
+
     // Auto-rotation speed settings
     let targetAutoSpeed = 0.005;
     let currentAutoSpeed = 0.005;
-    
+
     const onMouseDown = (e: MouseEvent) => {
       isDragging = true;
       previousMousePosition = { x: e.clientX, y: e.clientY };
@@ -266,7 +266,7 @@ export default function TrophyCanvas() {
     return () => {
       cancelAnimationFrame(animationFrameId);
       resizeObserver.disconnect();
-      
+
       // Remove event listeners
       if (canvas) {
         canvas.removeEventListener("mousedown", onMouseDown);
@@ -276,7 +276,7 @@ export default function TrophyCanvas() {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
       window.removeEventListener("touchend", onMouseUp);
-      
+
       if (container) {
         container.removeEventListener("mouseenter", onMouseEnter);
         container.removeEventListener("mouseleave", onMouseLeave);

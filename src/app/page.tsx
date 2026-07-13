@@ -69,12 +69,17 @@ export default function Home() {
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 md:py-14 space-y-12 md:space-y-16">
       {/* SECTION 1: HERO & COUNTDOWN */}
       <section className="relative overflow-hidden rounded-3xl border border-slate-200/60 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/60 backdrop-blur-md shadow-sm">
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 z-0">
           <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
           <div className="absolute -bottom-28 -left-28 h-72 w-72 rounded-full bg-indigo-500/10 blur-3xl" />
         </div>
 
-        <div className="relative p-8 md:p-12">
+        {/* Contenedor 3D de la Copa Mundial (Integrado y monumental) */}
+        <div className="absolute right-0 top-0 bottom-0 w-full lg:w-[50%] h-full pointer-events-none lg:pointer-events-auto select-none opacity-20 dark:opacity-25 lg:opacity-100 overflow-hidden z-0">
+          <TrophyCanvas />
+        </div>
+
+        <div className="relative z-10 p-8 md:p-12">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 md:gap-12">
             <div className="max-w-2xl">
               <span className="inline-flex items-center rounded-full border border-blue-200 dark:border-blue-800/80 bg-blue-50/50 dark:bg-blue-950/30 px-3 py-1 text-xs font-bold text-blue-600 dark:text-blue-400">
@@ -123,18 +128,11 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="flex flex-col items-center lg:items-end shrink-0 gap-6">
-              {/* Contenedor 3D de la Copa Mundial */}
-              <div className="w-[280px] h-[320px] md:w-[300px] md:h-[350px] relative rounded-2xl overflow-hidden border border-slate-200/50 dark:border-slate-800/50 bg-slate-50/30 dark:bg-slate-950/20 backdrop-blur-xs flex items-center justify-center shadow-xs">
-                <TrophyCanvas />
-              </div>
-
-              <div className="flex flex-col items-center lg:items-end w-full">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600/80 dark:text-blue-400/80 mb-2">
-                  {countdownLabel}
-                </span>
-                <Countdown targetDate={targetDate} />
-              </div>
+            <div className="flex flex-col items-center lg:items-end shrink-0">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600/80 dark:text-blue-400/80 mb-2">
+                {countdownLabel}
+              </span>
+              <Countdown targetDate={targetDate} />
             </div>
           </div>
         </div>
