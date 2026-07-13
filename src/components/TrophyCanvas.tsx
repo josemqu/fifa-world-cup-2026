@@ -5,7 +5,17 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { Trophy } from "lucide-react";
 
-export default function TrophyCanvas() {
+interface TrophyCanvasProps {
+  targetHeight?: number;
+  cameraPosition?: [number, number, number];
+  interactive?: boolean;
+}
+
+export default function TrophyCanvas({
+  targetHeight = 4.8,
+  cameraPosition = [0, -0.2, 7.0],
+  interactive = true,
+}: TrophyCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,7 +38,7 @@ export default function TrophyCanvas() {
       0.1,
       100
     );
-    camera.position.set(0, -0.2, 7.0);
+    camera.position.set(cameraPosition[0], cameraPosition[1], cameraPosition[2]);
 
     // Set up renderer with antialiasing and shadow support
     const renderer = new THREE.WebGLRenderer({
@@ -98,7 +108,6 @@ export default function TrophyCanvas() {
 
         // Scale to fit target dimensions
         const maxDim = Math.max(size.x, size.y, size.z);
-        const targetHeight = 4.8; // desired unit height
         const scaleFactor = targetHeight / maxDim;
         
         // Store targets for intro animation
@@ -206,12 +215,14 @@ export default function TrophyCanvas() {
     };
 
     // Listeners
-    canvas.addEventListener("mousedown", onMouseDown);
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-    canvas.addEventListener("touchstart", onTouchStart, { passive: true });
-    canvas.addEventListener("touchmove", onTouchMove, { passive: true });
-    window.addEventListener("touchend", onMouseUp);
+    if (interactive) {
+      canvas.addEventListener("mousedown", onMouseDown);
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mouseup", onMouseUp);
+      canvas.addEventListener("touchstart", onTouchStart, { passive: true });
+      canvas.addEventListener("touchmove", onTouchMove, { passive: true });
+      window.addEventListener("touchend", onMouseUp);
+    }
 
     // Hover effect: Spin faster on hover
     const onMouseEnter = () => {
@@ -221,8 +232,11 @@ export default function TrophyCanvas() {
       targetAutoSpeed = 0.005;
       isDragging = false; // safe release
     };
-    container.addEventListener("mouseenter", onMouseEnter);
-    container.addEventListener("mouseleave", onMouseLeave);
+    
+    if (interactive) {
+      container.addEventListener("mouseenter", onMouseEnter);
+      container.addEventListener("mouseleave", onMouseLeave);
+    }
 
     // 6. Animation Loop
     let animationFrameId: number;
@@ -291,18 +305,20 @@ export default function TrophyCanvas() {
       resizeObserver.disconnect();
 
       // Remove event listeners
-      if (canvas) {
-        canvas.removeEventListener("mousedown", onMouseDown);
-        canvas.removeEventListener("touchstart", onTouchStart);
-        canvas.removeEventListener("touchmove", onTouchMove);
-      }
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-      window.removeEventListener("touchend", onMouseUp);
+      if (interactive) {
+        if (canvas) {
+          canvas.removeEventListener("mousedown", onMouseDown);
+          canvas.removeEventListener("touchstart", onTouchStart);
+          canvas.removeEventListener("touchmove", onTouchMove);
+        }
+        window.removeEventListener("mousemove", onMouseMove);
+        window.removeEventListener("mouseup", onMouseUp);
+        window.removeEventListener("touchend", onMouseUp);
 
-      if (container) {
-        container.removeEventListener("mouseenter", onMouseEnter);
-        container.removeEventListener("mouseleave", onMouseLeave);
+        if (container) {
+          container.removeEventListener("mouseenter", onMouseEnter);
+          container.removeEventListener("mouseleave", onMouseLeave);
+        }
       }
 
       // Dispose resources
@@ -325,7 +341,7 @@ export default function TrophyCanvas() {
       />
 
       {/* Glassmorphic overlay loading / placeholder */}
-      {isLoading && (
+      {isLoading && interactive && (
         <div className="absolute inset-0 bg-slate-50/20 dark:bg-slate-950/20 backdrop-blur-xs flex items-center justify-center animate-pulse">
           <Trophy className="w-12 h-12 text-blue-500/40 animate-bounce" />
         </div>
@@ -340,7 +356,7 @@ export default function TrophyCanvas() {
       )}
 
       {/* Decorative interactive tip */}
-      {!isLoading && !loadError && (
+      {!isLoading && !loadError && interactive && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover/canvas:opacity-100 transition-opacity duration-300 pointer-events-none text-[10px] font-semibold text-slate-500 bg-white/80 dark:bg-slate-900/80 px-2 py-0.5 rounded-full border border-slate-200/50 dark:border-slate-800/50 shadow-xs backdrop-blur-xs">
           Arrastrá para rotar
         </div>

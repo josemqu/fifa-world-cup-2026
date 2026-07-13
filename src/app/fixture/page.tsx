@@ -12,6 +12,11 @@ import { TournamentStatsCard } from "@/components/TournamentStatsCard";
 import { Trophy, GitFork, Loader2, Eye } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
+import dynamic from "next/dynamic";
+
+const TrophyCanvas = dynamic(() => import("@/components/TrophyCanvas"), {
+  ssr: false,
+});
 
 function FixturePageContent() {
   const {
@@ -45,8 +50,12 @@ function FixturePageContent() {
   };
 
   return (
-    <PageTransition className="max-w-[1600px] mx-auto p-4 md:p-4">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <PageTransition className="max-w-[1600px] mx-auto p-4 md:p-4 relative overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none select-none z-0 opacity-[0.08] dark:opacity-[0.05] overflow-hidden flex items-center justify-center">
+        <TrophyCanvas targetHeight={3.2} cameraPosition={[0, 0, 7.5]} interactive={false} />
+      </div>
+
+      <div className="max-w-7xl mx-auto space-y-6 relative z-10">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
