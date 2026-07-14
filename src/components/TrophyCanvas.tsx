@@ -3,7 +3,68 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { Reflector } from "three/examples/jsm/objects/Reflector.js";
 import { Trophy } from "lucide-react";
+
+// Custom shader for the Reflector to achieve a smooth radial fade-out
+const CustomReflectorShader = {
+  name: "CustomReflectorShader",
+  uniforms: {
+    color: { value: null },
+    tDiffuse: { value: null },
+    textureMatrix: { value: null },
+    maxRadius: { value: 3.0 },
+  },
+  vertexShader: `
+    uniform mat4 textureMatrix;
+    varying vec4 vUv;
+    varying vec2 vPosition;
+
+    #include <common>
+    #include <logdepthbuf_pars_vertex>
+
+    void main() {
+      vPosition = position.xy;
+      vUv = textureMatrix * vec4( position, 1.0 );
+      gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+      #include <logdepthbuf_vertex>
+    }
+  `,
+  fragmentShader: `
+    uniform vec3 color;
+    uniform sampler2D tDiffuse;
+    uniform float maxRadius;
+    varying vec4 vUv;
+    varying vec2 vPosition;
+
+    #include <logdepthbuf_pars_fragment>
+
+    float blendOverlay( float base, float blend ) {
+      return( base < 0.5 ? ( 2.0 * base * blend ) : ( 1.0 - 2.0 * ( 1.0 - base ) * ( 1.0 - blend ) ) );
+    }
+
+    vec3 blendOverlay( vec3 base, vec3 blend ) {
+      return vec3( blendOverlay( base.r, blend.r ), blendOverlay( base.g, blend.g ), blendOverlay( base.b, blend.b ) );
+    }
+
+    void main() {
+      #include <logdepthbuf_fragment>
+      vec4 base = texture2DProj( tDiffuse, vUv );
+      
+      // Calculate distance from center of the reflector plane
+      float dist = length(vPosition);
+      
+      // Fades out from the center (using dynamic maxRadius)
+      float falloff = 1.0 - smoothstep(0.0, maxRadius, dist);
+      
+      // Multiply by 0.45 for a premium, subtle reflection
+      gl_FragColor = vec4( blendOverlay( base.rgb, color ), falloff * 0.45 );
+
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }
+  `,
+};
 
 interface TrophyCanvasProps {
   targetHeight?: number;
@@ -23,6 +84,10 @@ export default function TrophyCanvas({
 
   useEffect(() => {
     if (!containerRef.current || !canvasRef.current) return;
+
+    // References for reflector disposal
+    let groundMirror: Reflector | null = null;
+    let reflectorGeometry: THREE.PlaneGeometry | null = null;
 
     // 1. Initialize Scene, Camera, Renderer
     const scene = new THREE.Scene();
@@ -120,6 +185,43 @@ export default function TrophyCanvas({
 
         trophyGroup.add(pivot);
 
+        // Create Reflector surface at the bottom base of the trophy
+        const bottomY = - (size.y * scaleFactor) / 2;
+        reflectorGeometry = new THREE.PlaneGeometry(12, 12);
+        
+        // Calculate dynamic maxRadius proportional to targetHeight (50% of targetHeight)
+        const calculatedMaxRadius = targetHeight * 0.5;
+        
+        // Clone and configure the shader for this instance to have a custom maxRadius uniform value
+        const instanceShader = {
+          name: "CustomReflectorShader",
+          uniforms: {
+            color: { value: null },
+            tDiffuse: { value: null },
+            textureMatrix: { value: null },
+            maxRadius: { value: calculatedMaxRadius },
+          },
+          vertexShader: CustomReflectorShader.vertexShader,
+          fragmentShader: CustomReflectorShader.fragmentShader,
+        };
+
+        groundMirror = new Reflector(reflectorGeometry, {
+          clipBias: 0.003,
+          textureWidth: 512,
+          textureHeight: 512,
+          color: 0x7f7f7f,
+          shader: instanceShader,
+        });
+        
+        if (groundMirror.material instanceof THREE.ShaderMaterial) {
+          groundMirror.material.transparent = true;
+        }
+        
+        // Position slightly below the base to prevent z-fighting
+        groundMirror.position.y = bottomY - 0.02;
+        groundMirror.rotateX(-Math.PI / 2);
+        scene.add(groundMirror);
+
         // Configure shadows and PBR material enhancements
         model.traverse((child) => {
           if (child instanceof THREE.Mesh) {
@@ -175,9 +277,9 @@ export default function TrophyCanvas({
       const deltaY = e.clientY - previousMousePosition.y;
 
       trophyGroup.rotation.y += deltaX * 0.007;
-      // Clamp X rotation to avoid flipping upside down
+      // Clamp X rotation to avoid flipping or clipping the base through the reflector
       const newRotX = trophyGroup.rotation.x + deltaY * 0.007;
-      trophyGroup.rotation.x = Math.max(-0.4, Math.min(0.4, newRotX));
+      trophyGroup.rotation.x = Math.max(-0.15, Math.min(0.15, newRotX));
 
       dragVelocity = { x: deltaX, y: deltaY };
       previousMousePosition = { x: e.clientX, y: e.clientY };
@@ -205,7 +307,7 @@ export default function TrophyCanvas({
 
       trophyGroup.rotation.y += deltaX * 0.007;
       const newRotX = trophyGroup.rotation.x + deltaY * 0.007;
-      trophyGroup.rotation.x = Math.max(-0.4, Math.min(0.4, newRotX));
+      trophyGroup.rotation.x = Math.max(-0.15, Math.min(0.15, newRotX));
 
       dragVelocity = { x: deltaX, y: deltaY };
       previousMousePosition = {
@@ -267,7 +369,7 @@ export default function TrophyCanvas({
         }
         if (Math.abs(dragVelocity.y) > 0.01) {
           const newRotX = trophyGroup.rotation.x + dragVelocity.y * 0.007;
-          trophyGroup.rotation.x = Math.max(-0.4, Math.min(0.4, newRotX));
+          trophyGroup.rotation.x = Math.max(-0.15, Math.min(0.15, newRotX));
           dragVelocity.y *= 0.95;
         }
 
@@ -303,6 +405,12 @@ export default function TrophyCanvas({
     return () => {
       cancelAnimationFrame(animationFrameId);
       resizeObserver.disconnect();
+
+      // Dispose reflector resources
+      if (groundMirror) {
+        if (reflectorGeometry) reflectorGeometry.dispose();
+        groundMirror.dispose();
+      }
 
       // Remove event listeners
       if (interactive) {

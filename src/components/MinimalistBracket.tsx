@@ -587,7 +587,7 @@ export function MinimalistBracket({
         {/* Persistent 3D World Cup Trophy to avoid unmounting during view transitions */}
         <div
           className={clsx(
-            "absolute left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-24 md:w-24 md:h-28 z-20 pointer-events-none select-none flex items-center justify-center overflow-hidden transition-all duration-500 ease-in-out",
+            "absolute left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-32 md:w-32 md:h-36 z-20 pointer-events-none select-none flex items-center justify-center overflow-hidden transition-all duration-500 ease-in-out",
             champion ? "top-[calc(50%+115px)]" : "top-[calc(50%+85px)]"
           )}
         >
