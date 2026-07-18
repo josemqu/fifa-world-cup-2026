@@ -9,6 +9,9 @@ export type PredictionResult = {
   simulations: number;
   championCount: number;
   finalistCount: number;
+  runnerUpCount: number;
+  thirdPlaceCount: number;
+  thirdPlaceWinnerCount: number;
   semiFinalistCount: number;
   quarterFinalistCount: number;
   r16Count: number;
@@ -33,6 +36,9 @@ export const runMonteCarloSimulation = async (
         simulations: iterations,
         championCount: 0,
         finalistCount: 0,
+        runnerUpCount: 0,
+        thirdPlaceCount: 0,
+        thirdPlaceWinnerCount: 0,
         semiFinalistCount: 0,
         quarterFinalistCount: 0,
         r16Count: 0,
@@ -79,12 +85,50 @@ export const runMonteCarloSimulation = async (
     processStage("SF", "semiFinalistCount");
     processStage("Final", "finalistCount");
 
-    // Champion
+    // Champion & Runner Up
     const finalMatch = result.knockoutMatches.find((m) => m.stage === "Final");
-    if (finalMatch?.winner) {
-      const winnerStats = stats.get(finalMatch.winner.id);
-      if (winnerStats) {
-        winnerStats.championCount++;
+    if (finalMatch) {
+      if (finalMatch.winner && !("placeholder" in finalMatch.winner)) {
+        const champStats = stats.get(finalMatch.winner.id);
+        if (champStats) {
+          champStats.championCount++;
+        }
+
+        const homeTeam = finalMatch.homeTeam;
+        const awayTeam = finalMatch.awayTeam;
+        if (homeTeam && awayTeam && !("placeholder" in homeTeam) && !("placeholder" in awayTeam)) {
+          const loser = homeTeam.id === finalMatch.winner.id ? awayTeam : homeTeam;
+          const runnerUpStats = stats.get(loser.id);
+          if (runnerUpStats) {
+            runnerUpStats.runnerUpCount++;
+          }
+        }
+      }
+    }
+
+    // Third Place Match
+    const thirdPlaceMatch = result.knockoutMatches.find((m) => m.stage === "3rdPlace");
+    if (thirdPlaceMatch) {
+      // Reaching the third place match (participants)
+      if (thirdPlaceMatch.homeTeam && !("placeholder" in thirdPlaceMatch.homeTeam)) {
+        const hStats = stats.get(thirdPlaceMatch.homeTeam.id);
+        if (hStats) {
+          hStats.thirdPlaceCount++;
+        }
+      }
+      if (thirdPlaceMatch.awayTeam && !("placeholder" in thirdPlaceMatch.awayTeam)) {
+        const aStats = stats.get(thirdPlaceMatch.awayTeam.id);
+        if (aStats) {
+          aStats.thirdPlaceCount++;
+        }
+      }
+
+      // Winner of third place match
+      if (thirdPlaceMatch.winner && !("placeholder" in thirdPlaceMatch.winner)) {
+        const winnerStats = stats.get(thirdPlaceMatch.winner.id);
+        if (winnerStats) {
+          winnerStats.thirdPlaceWinnerCount++;
+        }
       }
     }
   }

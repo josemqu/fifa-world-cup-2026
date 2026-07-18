@@ -27,6 +27,9 @@ self.onmessage = async (e: MessageEvent) => {
           simulations: iterations,
           championCount: 0,
           finalistCount: 0,
+          runnerUpCount: 0,
+          thirdPlaceCount: 0,
+          thirdPlaceWinnerCount: 0,
           semiFinalistCount: 0,
           quarterFinalistCount: 0,
           r16Count: 0,
@@ -125,11 +128,50 @@ self.onmessage = async (e: MessageEvent) => {
         processStagePredictions("SF", "semiFinalistCount");
         processStagePredictions("Final", "finalistCount");
 
+        // Champion & Runner Up
         const finalMatch = result.knockoutMatches.find((m) => m.stage === "Final");
-        if (finalMatch?.winner) {
-          const winnerStats = stats.get(finalMatch.winner.id);
-          if (winnerStats) {
-            winnerStats.championCount++;
+        if (finalMatch) {
+          if (finalMatch.winner && !("placeholder" in finalMatch.winner)) {
+            const champStats = stats.get(finalMatch.winner.id);
+            if (champStats) {
+              champStats.championCount++;
+            }
+
+            const homeTeam = finalMatch.homeTeam;
+            const awayTeam = finalMatch.awayTeam;
+            if (homeTeam && awayTeam && !("placeholder" in homeTeam) && !("placeholder" in awayTeam)) {
+              const loser = homeTeam.id === finalMatch.winner.id ? awayTeam : homeTeam;
+              const runnerUpStats = stats.get(loser.id);
+              if (runnerUpStats) {
+                runnerUpStats.runnerUpCount++;
+              }
+            }
+          }
+        }
+
+        // Third Place Match
+        const thirdPlaceMatch = result.knockoutMatches.find((m) => m.stage === "3rdPlace");
+        if (thirdPlaceMatch) {
+          // Reaching the third place match (participants)
+          if (thirdPlaceMatch.homeTeam && !("placeholder" in thirdPlaceMatch.homeTeam)) {
+            const hStats = stats.get(thirdPlaceMatch.homeTeam.id);
+            if (hStats) {
+              hStats.thirdPlaceCount++;
+            }
+          }
+          if (thirdPlaceMatch.awayTeam && !("placeholder" in thirdPlaceMatch.awayTeam)) {
+            const aStats = stats.get(thirdPlaceMatch.awayTeam.id);
+            if (aStats) {
+              aStats.thirdPlaceCount++;
+            }
+          }
+
+          // Winner of third place match
+          if (thirdPlaceMatch.winner && !("placeholder" in thirdPlaceMatch.winner)) {
+            const winnerStats = stats.get(thirdPlaceMatch.winner.id);
+            if (winnerStats) {
+              winnerStats.thirdPlaceWinnerCount++;
+            }
           }
         }
 
@@ -209,6 +251,9 @@ self.onmessage = async (e: MessageEvent) => {
     const finalPredictions = Array.from(stats.values()).sort((a, b) => {
       if (b.championCount !== a.championCount) return b.championCount - a.championCount;
       if (b.finalistCount !== a.finalistCount) return b.finalistCount - a.finalistCount;
+      if (b.runnerUpCount !== a.runnerUpCount) return b.runnerUpCount - a.runnerUpCount;
+      if (b.thirdPlaceWinnerCount !== a.thirdPlaceWinnerCount) return b.thirdPlaceWinnerCount - a.thirdPlaceWinnerCount;
+      if (b.thirdPlaceCount !== a.thirdPlaceCount) return b.thirdPlaceCount - a.thirdPlaceCount;
       if (b.semiFinalistCount !== a.semiFinalistCount) return b.semiFinalistCount - a.semiFinalistCount;
       if (b.quarterFinalistCount !== a.quarterFinalistCount) return b.quarterFinalistCount - a.quarterFinalistCount;
       if (b.r16Count !== a.r16Count) return b.r16Count - a.r16Count;

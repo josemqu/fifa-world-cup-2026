@@ -1537,10 +1537,17 @@ function PredictionsTab({
   const handleResetMatch = useCallback((matchId: string) => {
     const resolved = resolvedTeamNames.get(matchId);
     const info = MATCH_LOOKUP.get(matchId);
-    const homeTeamName = resolved?.home || info?.homeTeamName || "?";
-    const awayTeamName = resolved?.away || info?.awayTeamName || "?";
+    const prodeMatch = prodeMatches.get(matchId);
+    const homeIsReal = prodeMatch?.homeTeam && !("placeholder" in prodeMatch.homeTeam);
+    const awayIsReal = prodeMatch?.awayTeam && !("placeholder" in prodeMatch.awayTeam);
+    const homeTeamName = (resolved && resolved.bothTeamsDefined)
+      ? resolved.home
+      : (homeIsReal ? (prodeMatch.homeTeam as Team).name : (resolved?.home || info?.homeTeamName || "?"));
+    const awayTeamName = (resolved && resolved.bothTeamsDefined)
+      ? resolved.away
+      : (awayIsReal ? (prodeMatch.awayTeam as Team).name : (resolved?.away || info?.awayTeamName || "?"));
     setResettingMatch({ matchId, homeTeamName, awayTeamName });
-  }, [resolvedTeamNames]);
+  }, [resolvedTeamNames, prodeMatches]);
 
   if (loadingPredictions) {
     return (
@@ -1668,13 +1675,24 @@ function PredictionsTab({
         {visibleMatchIds.map((matchId) => {
           const info = MATCH_LOOKUP.get(matchId);
           const resolved = resolvedTeamNames.get(matchId);
-          const homeName = resolved?.home || info?.homeTeamName || "?";
-          const awayName = resolved?.away || info?.awayTeamName || "?";
+          const prodeMatch = prodeMatches.get(matchId);
+          const homeIsReal = prodeMatch?.homeTeam && !("placeholder" in prodeMatch.homeTeam);
+          const awayIsReal = prodeMatch?.awayTeam && !("placeholder" in prodeMatch.awayTeam);
+
+          const homeName = (resolved && resolved.bothTeamsDefined)
+            ? resolved.home
+            : (homeIsReal ? (prodeMatch.homeTeam as Team).name : (resolved?.home || info?.homeTeamName || "?"));
+          const awayName = (resolved && resolved.bothTeamsDefined)
+            ? resolved.away
+            : (awayIsReal ? (prodeMatch.awayTeam as Team).name : (resolved?.away || info?.awayTeamName || "?"));
+
           const utcDate = info?.utcDate || "";
           const isKnockout = /^\d+$/.test(matchId);
           const isLockedByGroupStage = isKnockout && !isGroupStageFinished;
-          const resolvedInfo = resolvedTeamNames.get(matchId);
-          const isLockedByUndefinedTeams = isKnockout && resolvedInfo && !resolvedInfo.bothTeamsDefined;
+          const isLockedByUndefinedTeams = isKnockout && !(
+            (resolved && resolved.bothTeamsDefined) ||
+            (homeIsReal && awayIsReal)
+          );
           const isLocked = (utcDate ? new Date() >= new Date(utcDate) : false) || isLockedByGroupStage || !!isLockedByUndefinedTeams;
           const pred = predictions.get(matchId);
 

@@ -430,10 +430,8 @@ export const propagateKnockoutTeams = (
 
           if (prevHomeId !== newHomeId || prevAwayId !== newAwayId) {
             const isNextReal =
-              ((nextMatch.finished === true || nextMatch.status === "finished") && !nextMatch.isSimulated) ||
-              nextMatch.status === "live" ||
-              nextMatch.status === "halftime" ||
-              ((nextMatch.homeScore !== null || nextMatch.awayScore !== null) && !nextMatch.isSimulated);
+              (nextMatch.status === "finished" || nextMatch.status === "live" || nextMatch.status === "halftime" || nextMatch.finished === true) &&
+              !nextMatch.isSimulated;
 
             if (!isNextReal) {
               // If teams changed, reset score, penalties, and winner of next match
@@ -514,10 +512,8 @@ export const propagateKnockoutTeams = (
 
           if (prevHomeId !== newHomeId || prevAwayId !== newAwayId) {
             const isThirdPlaceReal =
-              ((thirdPlaceMatch.finished === true || thirdPlaceMatch.status === "finished") && !thirdPlaceMatch.isSimulated) ||
-              thirdPlaceMatch.status === "live" ||
-              thirdPlaceMatch.status === "halftime" ||
-              ((thirdPlaceMatch.homeScore !== null || thirdPlaceMatch.awayScore !== null) && !thirdPlaceMatch.isSimulated);
+              (thirdPlaceMatch.status === "finished" || thirdPlaceMatch.status === "live" || thirdPlaceMatch.status === "halftime" || thirdPlaceMatch.finished === true) &&
+              !thirdPlaceMatch.isSimulated;
 
             if (!isThirdPlaceReal) {
               // Reset results
@@ -698,10 +694,8 @@ export const runKnockoutSimulation = (
 
         if (staticNextMatch) {
           const isNextReal =
-            ((nextMatch.finished === true || nextMatch.status === "finished") && !nextMatch.isSimulated) ||
-            nextMatch.status === "live" ||
-            nextMatch.status === "halftime" ||
-            ((nextMatch.homeScore !== null || nextMatch.awayScore !== null) && !nextMatch.isSimulated);
+            (nextMatch.status === "finished" || nextMatch.status === "live" || nextMatch.status === "halftime" || nextMatch.finished === true) &&
+            !nextMatch.isSimulated;
 
           if (!isNextReal) {
             const isHomeSource =
@@ -801,10 +795,8 @@ export const runKnockoutSimulation = (
 
         if (staticThirdPlace) {
           const isThirdPlaceReal =
-            ((thirdPlaceMatch.finished === true || thirdPlaceMatch.status === "finished") && !thirdPlaceMatch.isSimulated) ||
-            thirdPlaceMatch.status === "live" ||
-            thirdPlaceMatch.status === "halftime" ||
-            ((thirdPlaceMatch.homeScore !== null || thirdPlaceMatch.awayScore !== null) && !thirdPlaceMatch.isSimulated);
+            (thirdPlaceMatch.status === "finished" || thirdPlaceMatch.status === "live" || thirdPlaceMatch.status === "halftime" || thirdPlaceMatch.finished === true) &&
+            !thirdPlaceMatch.isSimulated;
 
           if (!isThirdPlaceReal) {
             const isHomeSource = staticThirdPlace.home === `L${match.id}`;

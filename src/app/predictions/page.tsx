@@ -43,6 +43,8 @@ type SortColumn =
   | "teamFifaPoints"
   | "championCount"
   | "finalistCount"
+  | "runnerUpCount"
+  | "thirdPlaceWinnerCount"
   | "semiFinalistCount"
   | "quarterFinalistCount"
   | "r16Count"
@@ -758,6 +760,10 @@ function PredictionsPageContent() {
           return b.championCount - a.championCount;
         if (b.finalistCount !== a.finalistCount)
           return b.finalistCount - a.finalistCount;
+        if (b.runnerUpCount !== a.runnerUpCount)
+          return b.runnerUpCount - a.runnerUpCount;
+        if (b.thirdPlaceWinnerCount !== a.thirdPlaceWinnerCount)
+          return b.thirdPlaceWinnerCount - a.thirdPlaceWinnerCount;
         if (b.semiFinalistCount !== a.semiFinalistCount)
           return b.semiFinalistCount - a.semiFinalistCount;
         if (b.quarterFinalistCount !== a.quarterFinalistCount)
@@ -774,7 +780,9 @@ function PredictionsPageContent() {
         r16Count: { min: 0, max: 0 },
         quarterFinalistCount: { min: 0, max: 0 },
         semiFinalistCount: { min: 0, max: 0 },
+        thirdPlaceWinnerCount: { min: 0, max: 0 },
         finalistCount: { min: 0, max: 0 },
+        runnerUpCount: { min: 0, max: 0 },
         championCount: { min: 0, max: 0 },
       };
     }
@@ -783,7 +791,9 @@ function PredictionsPageContent() {
     const r16Vals = sortedResults.map((t) => t.r16Count);
     const qfVals = sortedResults.map((t) => t.quarterFinalistCount);
     const sfVals = sortedResults.map((t) => t.semiFinalistCount);
+    const thirdWinnerVals = sortedResults.map((t) => t.thirdPlaceWinnerCount);
     const finalVals = sortedResults.map((t) => t.finalistCount);
+    const runnerUpVals = sortedResults.map((t) => t.runnerUpCount);
     const champVals = sortedResults.map((t) => t.championCount);
 
     return {
@@ -791,7 +801,9 @@ function PredictionsPageContent() {
       r16Count: { min: Math.min(...r16Vals), max: Math.max(...r16Vals) },
       quarterFinalistCount: { min: Math.min(...qfVals), max: Math.max(...qfVals) },
       semiFinalistCount: { min: Math.min(...sfVals), max: Math.max(...sfVals) },
+      thirdPlaceWinnerCount: { min: Math.min(...thirdWinnerVals), max: Math.max(...thirdWinnerVals) },
       finalistCount: { min: Math.min(...finalVals), max: Math.max(...finalVals) },
+      runnerUpCount: { min: Math.min(...runnerUpVals), max: Math.max(...runnerUpVals) },
       championCount: { min: Math.min(...champVals), max: Math.max(...champVals) },
     };
   }, [sortedResults]);
@@ -1139,7 +1151,9 @@ function PredictionsPageContent() {
                           <SortHeader column="r16Count" label="Octavos" />
                           <SortHeader column="quarterFinalistCount" label="Cuartos" />
                           <SortHeader column="semiFinalistCount" label="Semis" />
-                          <SortHeader column="finalistCount" label="Final" />
+                          <SortHeader column="thirdPlaceWinnerCount" label="3er Puesto" />
+                          <SortHeader column="finalistCount" label="Finalista" />
+                          <SortHeader column="runnerUpCount" label="Subcampeón" />
                           <SortHeader column="championCount" label="Campeón" />
                         </tr>
                       </thead>
@@ -1183,7 +1197,13 @@ function PredictionsPageContent() {
                                 {renderPercentageCell(team.semiFinalistCount, "semiFinalistCount")}
                               </td>
                               <td className="px-4 py-3 text-right">
+                                {renderPercentageCell(team.thirdPlaceWinnerCount, "thirdPlaceWinnerCount")}
+                              </td>
+                              <td className="px-4 py-3 text-right">
                                 {renderPercentageCell(team.finalistCount, "finalistCount")}
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                {renderPercentageCell(team.runnerUpCount, "runnerUpCount")}
                               </td>
                               <td className="px-4 py-3 text-right">
                                 {renderPercentageCell(team.championCount, "championCount")}
