@@ -1153,7 +1153,6 @@ function PredictionsPageContent() {
                           <SortHeader column="semiFinalistCount" label="Semis" />
                           <SortHeader column="thirdPlaceWinnerCount" label="3er Puesto" />
                           <SortHeader column="finalistCount" label="Finalista" />
-                          <SortHeader column="runnerUpCount" label="Subcampeón" />
                           <SortHeader column="championCount" label="Campeón" />
                         </tr>
                       </thead>
@@ -1201,9 +1200,6 @@ function PredictionsPageContent() {
                               </td>
                               <td className="px-4 py-3 text-right">
                                 {renderPercentageCell(team.finalistCount, "finalistCount")}
-                              </td>
-                              <td className="px-4 py-3 text-right">
-                                {renderPercentageCell(team.runnerUpCount, "runnerUpCount")}
                               </td>
                               <td className="px-4 py-3 text-right">
                                 {renderPercentageCell(team.championCount, "championCount")}
