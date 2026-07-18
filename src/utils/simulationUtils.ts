@@ -429,12 +429,20 @@ export const propagateKnockoutTeams = (
               : "";
 
           if (prevHomeId !== newHomeId || prevAwayId !== newAwayId) {
-            // If teams changed, reset score, penalties, and winner of next match
-            nextMatch.homeScore = null;
-            nextMatch.awayScore = null;
-            nextMatch.homePenalties = null;
-            nextMatch.awayPenalties = null;
-            nextMatch.winner = null;
+            const isNextReal =
+              ((nextMatch.finished === true || nextMatch.status === "finished") && !nextMatch.isSimulated) ||
+              nextMatch.status === "live" ||
+              nextMatch.status === "halftime" ||
+              ((nextMatch.homeScore !== null || nextMatch.awayScore !== null) && !nextMatch.isSimulated);
+
+            if (!isNextReal) {
+              // If teams changed, reset score, penalties, and winner of next match
+              nextMatch.homeScore = null;
+              nextMatch.awayScore = null;
+              nextMatch.homePenalties = null;
+              nextMatch.awayPenalties = null;
+              nextMatch.winner = null;
+            }
           }
         }
       }
@@ -505,12 +513,20 @@ export const propagateKnockoutTeams = (
               : "";
 
           if (prevHomeId !== newHomeId || prevAwayId !== newAwayId) {
-            // Reset results
-            thirdPlaceMatch.homeScore = null;
-            thirdPlaceMatch.awayScore = null;
-            thirdPlaceMatch.homePenalties = null;
-            thirdPlaceMatch.awayPenalties = null;
-            thirdPlaceMatch.winner = null;
+            const isThirdPlaceReal =
+              ((thirdPlaceMatch.finished === true || thirdPlaceMatch.status === "finished") && !thirdPlaceMatch.isSimulated) ||
+              thirdPlaceMatch.status === "live" ||
+              thirdPlaceMatch.status === "halftime" ||
+              ((thirdPlaceMatch.homeScore !== null || thirdPlaceMatch.awayScore !== null) && !thirdPlaceMatch.isSimulated);
+
+            if (!isThirdPlaceReal) {
+              // Reset results
+              thirdPlaceMatch.homeScore = null;
+              thirdPlaceMatch.awayScore = null;
+              thirdPlaceMatch.homePenalties = null;
+              thirdPlaceMatch.awayPenalties = null;
+              thirdPlaceMatch.winner = null;
+            }
           }
         }
       }
@@ -684,7 +700,8 @@ export const runKnockoutSimulation = (
           const isNextReal =
             ((nextMatch.finished === true || nextMatch.status === "finished") && !nextMatch.isSimulated) ||
             nextMatch.status === "live" ||
-            nextMatch.status === "halftime";
+            nextMatch.status === "halftime" ||
+            ((nextMatch.homeScore !== null || nextMatch.awayScore !== null) && !nextMatch.isSimulated);
 
           if (!isNextReal) {
             const isHomeSource =
@@ -786,7 +803,8 @@ export const runKnockoutSimulation = (
           const isThirdPlaceReal =
             ((thirdPlaceMatch.finished === true || thirdPlaceMatch.status === "finished") && !thirdPlaceMatch.isSimulated) ||
             thirdPlaceMatch.status === "live" ||
-            thirdPlaceMatch.status === "halftime";
+            thirdPlaceMatch.status === "halftime" ||
+            ((thirdPlaceMatch.homeScore !== null || thirdPlaceMatch.awayScore !== null) && !thirdPlaceMatch.isSimulated);
 
           if (!isThirdPlaceReal) {
             const isHomeSource = staticThirdPlace.home === `L${match.id}`;
