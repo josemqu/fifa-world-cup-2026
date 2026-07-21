@@ -1,11 +1,11 @@
 name: Prode Notifications
 
 on:
-  schedule:
-    # Every hour: check for upcoming matches without predictions
-    - cron: '0 * * * *'
-    # 02:00 UTC daily (23:00 Argentina): daily winners
-    - cron: '0 2 * * *'
+  # schedule:
+  #   # Every hour: check for upcoming matches without predictions
+  #   - cron: '0 * * * *'
+  #   # 02:00 UTC daily (23:00 Argentina): daily winners
+  #   - cron: '0 2 * * *'
   workflow_dispatch:
     inputs:
       type:
